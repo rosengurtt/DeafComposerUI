@@ -1,0 +1,10 @@
+.headerContent{
+  display:grid;
+  width:100%;
+  grid-template-columns: repeat(4, 1fr);
+  align-items: center;
+}
+a {
+  text-decoration: none;
+  color:white;
+  }

@@ -1,0 +1,79 @@
+<div class="container">
+	<div class="row1">
+		<div class="styles">
+			<h2>Music Styles</h2>
+
+
+
+			<div class="mat-elevation-z8">
+				<table mat-table [dataSource]="stylesDataSource" class="mat-elevation-z8" matSort>
+			
+					<ng-container matColumnDef="name">
+						<th mat-header-cell *matHeaderCellDef mat-sort-header >Style</th>
+						<td mat-cell *matCellDef="let style" (click)="selectStyle(style.id)"
+						[class.selected]="style.id==selectedStyleId"><span>{{style.name}}</span></td>
+					</ng-container>
+			
+					<tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+				</table>
+			
+				<mat-paginator #stylesPaginator 
+				[length]= "stylesPaginationData.totalItems"
+				[pageIndex] =  "stylesPaginationData.pageNo"
+				[pageSize] = "stylesPaginationData.pageSize"
+				[hidePageSize]="true"
+				(page) = "getStylesPage($event)"
+				 showFirstLastButtons></mat-paginator>
+			</div>
+		</div>
+		<div class="bands">
+			<h2>Bands</h2>
+
+			<div class="mat-elevation-z8">
+				<table mat-table [dataSource]="bandsDataSource" class="mat-elevation-z8" matSort>			
+					<ng-container matColumnDef="name">
+						<th mat-header-cell *matHeaderCellDef mat-sort-header>Style</th>
+						<td mat-cell *matCellDef="let band" (click)="selectBand(band.id)"
+						[class.selected]="band.id==selectedBandId"><span>{{band.name}}</span></td>
+					</ng-container>			
+					<tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+				</table>			
+				<mat-paginator #bandsPaginator 
+				[length]= "bandsPaginationData.totalItems"
+				[pageIndex] =  "bandsPaginationData.pageNo"
+				[pageSize] = "bandsPaginationData.pageSize"
+				[hidePageSize]="true"
+				(page)="getBandsPage($event)" 
+				showFirstLastButtons></mat-paginator>
+			</div>
+
+		</div>
+		<div class="songs">
+			<div class="panel panel-info">
+				<h2>Songs</h2>
+
+				<div class="mat-elevation-z8">
+					<table mat-table [dataSource]="songsDataSource" class="mat-elevation-z8" matSort>				
+						<ng-container matColumnDef="name">
+							<th mat-header-cell *matHeaderCellDef mat-sort-header>Style</th>
+							<td mat-cell *matCellDef="let song"><span>{{song.name}}</span></td>
+						</ng-container>				
+						<tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+					</table>				
+					<mat-paginator #songsPaginator 
+					[length]= "songsPaginationData.totalItems"
+					[pageIndex] =  "songsPaginationData.pageNo"
+					[pageSize] = "songsPaginationData.pageSize"
+					[hidePageSize]="true"
+					(page) = "getSongsPage($event)" 
+					showFirstLastButtons></mat-paginator>
+				</div>
+			</div>
+		</div>
+	</div>
+	<div class="row2">
+		<div class="col col-lg-6" style="padding:20px">
+Aca va la cancion seleccionada
+		</div>
+	</div>
+</div>

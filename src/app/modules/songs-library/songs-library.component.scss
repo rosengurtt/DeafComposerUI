@@ -1,0 +1,21 @@
+:host {
+    display: block;
+    width: 100%;
+  }
+.row1{
+  display:grid;
+  width:100%;
+  height: 100%;
+  grid-template-columns: repeat(3, 1fr);
+  align-items:  start;
+
+}
+.selected{
+  color: black;
+  background-color: white;
+  font-weight: bold;
+}
+table {
+  width: 100%;
+}
+
