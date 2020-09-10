@@ -1,0 +1,17 @@
+
+// Import material theming functions
+@import '~@angular/material/theming';
+
+// Copy the palettes from your selected theme (usually theme.scss).
+
+$candy-app-primary: mat-palette($mat-indigo);
+$candy-app-secondary: mat-palette($mat-green);
+$candy-app-accent: mat-palette($mat-pink, A200, A100, A400);
+$candy-app-warn: mat-palette($mat-red);
+
+// Create your Sass color vars (will be available in all the project)
+$primary: mat-color($candy-app-primary);
+$secondary: mat-color($candy-app-secondary);
+$accent: mat-color($candy-app-accent);
+$warn: mat-color($candy-app-warn);
+

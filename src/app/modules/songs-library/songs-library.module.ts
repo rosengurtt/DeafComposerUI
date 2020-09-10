@@ -6,18 +6,28 @@ import { MaterialModule } from '../../core/material.module';
 import { SongsLibraryComponent } from './songs-library.component'
 import { SongFilterPipe } from './pipes/song-filter.pipe'
 import { SortPipe } from '../../core/pipes/sort-by.pipe'
+import { TimeSignaturePipe } from '../../core/pipes/time-signature.pipe'
+import { TimeDurationPipe } from '../../core/pipes/time-duration.pipe'
+import { FileNameToSongNamePipe } from '../../core/pipes/filename2songname.pipe'
+import { InstrumentCodeToNamePipe } from '../../core/pipes/instrumentCode2Name'
 
 import { SongsRepositoryService } from '../../core/services/songs-repository/songs-repository.service';
+import { ReactiveFormsModule } from '@angular/forms';
 
 @NgModule({
     declarations: [
       SongsLibraryComponent,
       SongFilterPipe,
-      SortPipe
+      SortPipe,
+      TimeSignaturePipe,
+      TimeDurationPipe,
+      FileNameToSongNamePipe,
+      InstrumentCodeToNamePipe
     ],
     imports: [
       BrowserModule,
       MaterialModule,
+      ReactiveFormsModule,
       RouterModule.forChild([
         { path: 'songs-library', component: SongsLibraryComponent },
       ])

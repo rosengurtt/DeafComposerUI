@@ -1,5 +1,9 @@
-export class MusicStyle{
+export class MusicStyle {
     name: string
-    // tslint:disable-next-line: variable-name
     id: number
+
+    constructor(name: string, id: number) {
+        this.name = name
+        this.id = id
+    }
 }
