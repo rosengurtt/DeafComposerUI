@@ -3,6 +3,14 @@
     <span>Deaf Composer</span>
     <div><a href="/" class="mat-h3"><mat-icon>home</mat-icon>Home</a></div>
     <div><a href="/songs-library" class="mat-h3"><mat-icon>library_music</mat-icon>Songs Library</a></div>
-    <div><a href="/song-panel/1" class="mat-h3"><mat-icon>music_note</mat-icon>Songs Panel</a></div>
+    <div>
+      <mat-form-field appearance="fill">
+        <mat-label>Song Panel</mat-label>
+        <select matNativeControl (change)="selectSong($event)">
+          <option value="lolo">mierda</option>
+          <option *ngFor="let song of songs" [value]="song.id">{{song.name}}</option>
+        </select>
+      </mat-form-field>
+      </div>
   </div>
 </mat-toolbar>

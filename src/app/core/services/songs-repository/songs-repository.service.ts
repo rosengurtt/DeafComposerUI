@@ -49,8 +49,12 @@ export class SongsRepositoryService {
         return this.http.get<GetSongsResponse>(url);
     }
 
-    getSongById(id: number): Observable<GetSongResponse> {
+    getSongInfoById(id: number): Observable<GetSongResponse> {
         return this.http.get<GetSongResponse>(this.songLibraryUrl + 'song/' + id + '/info');
+    }
+
+    getSongById(id: number): Observable<GetSongResponse> {
+        return this.http.get<GetSongResponse>(this.songLibraryUrl + 'song/' + id);
     }
 
     addPaginationParameters(url: string, paginationData?: PaginationData) {

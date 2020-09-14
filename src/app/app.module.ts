@@ -10,10 +10,12 @@ import { HeaderComponent } from './core/header/header.component';
 import { MaterialModule } from './core/material.module';
 import { HomeComponent } from './modules/home/home.component';
 import { SongsLibraryModule } from './modules/songs-library/songs-library.module';
+import {SongPanelModule} from './modules/song-panel/song-panel.module'
 import { HttpClientModule } from '@angular/common/http';
 import { SongsRepositoryService } from './core/services/songs-repository/songs-repository.service';
 import { SongsLibraryEventsService } from './modules/songs-library/services/songs-library-events.service';
 import { SongSearchService } from './core/services/song-search.service';
+import {AppStateServiceService} from './core/services/app-state.service'
 
 export function init_app(appLoadService: AppInitService) {
   return () => appLoadService.init();
@@ -32,6 +34,7 @@ export function init_app(appLoadService: AppInitService) {
     BrowserAnimationsModule,
     MaterialModule,
     SongsLibraryModule,
+    SongPanelModule,
     HttpClientModule
   ],
   providers: [
@@ -44,7 +47,8 @@ export function init_app(appLoadService: AppInitService) {
     },
     SongsRepositoryService,
     SongsLibraryEventsService,
-    SongSearchService
+    SongSearchService,
+    AppStateServiceService
   ],
   bootstrap: [AppComponent]
 })

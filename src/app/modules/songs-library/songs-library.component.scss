@@ -4,11 +4,11 @@
     display: block;
     width: 100%;
   }
-.row1{
+.container{
   display:grid;
   width:100%;
   height: 100%;
-  grid-template-columns: 300px 300px 400px auto;
+  grid-template-columns: 200px 250px 400px auto;
   align-items:  start;
 
 }
@@ -22,7 +22,8 @@ table {
 }
 .songStatsTable {
   display:grid;
-  grid-template-columns: 180px auto;
+  grid-template-columns: 220px auto;
+  padding: 4px;
 
 }
 .songStatsTable div:nth-child(4n+1), .songStatsTable div:nth-child(4n+2) {
@@ -33,4 +34,14 @@ input{
 }
 .searchBox {
   padding: 3px;
+}
+.songStatsTable div{
+  padding: 3px;
+}
+
+.songStatsTitle {
+  display:grid;
+  padding: 8px;
+  align-items: center;
+  grid-template-columns: auto fit-content(100px);
 }

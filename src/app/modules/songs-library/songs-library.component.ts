@@ -12,6 +12,7 @@ import { MatTableDataSource } from '@angular/material/table';
 import { MatPaginator, PageEvent } from '@angular/material/paginator';
 import { PaginationData } from '../../core/models/pagination-data';
 import { FormControl } from '@angular/forms'
+import { AppStateServiceService } from 'src/app/core/services/app-state.service'
 
 @Component({
   selector: 'dc-songs-library',
@@ -53,7 +54,7 @@ export class SongsLibraryComponent implements OnInit {
   constructor(
     private router: Router,
     private songService: SongsRepositoryService,
-    private songsLibraryEventsService: SongsLibraryEventsService) {
+    private appStateServiceService: AppStateServiceService) {
   }
 
   async ngOnInit(): Promise<any> {
@@ -111,14 +112,11 @@ export class SongsLibraryComponent implements OnInit {
     this.refreshSongs()
   }
   async selectSong(songId: number) {
-
-    // this.router.navigate(['/song-panel/', songId])
     this.selectedSongId = songId
 
-    this.songService.getSongById(songId).subscribe(
+    this.songService.getSongInfoById(songId).subscribe(
       data => {
         this.selectedSong = data.result
-        console.log(this.selectedSong)
         // const eventData: any = { id: songId, songName: data.result.name, bandName: data.result.band.name }
         // this.songsLibraryEventsService.raiseEvent(SongsLibraryEventTypes.songSelected, eventData)
       }
@@ -141,7 +139,7 @@ export class SongsLibraryComponent implements OnInit {
     return event;
   }
 
-  public getSongsPage(event?: PageEvent) {
+  public getSongsPage(event?: PageEvent): PageEvent {
     if (event) {
       this.selectedSongId = -1
       this.songsPaginationData.pageNo = event.pageIndex
@@ -150,6 +148,10 @@ export class SongsLibraryComponent implements OnInit {
     return event;
   }
 
+  public analyzeSong(){
+    this.appStateServiceService.addSong(this.selectedSong)
+    this.router.navigate(["song-panel", this.selectedSongId])
+  }
 
   ngOnDestroy() {
     this.subscriptionSearchTerms.forEach(t => t.unsubscribe())
