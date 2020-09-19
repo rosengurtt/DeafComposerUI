@@ -1,7 +1,9 @@
 import { Injectable } from '@angular/core';
 import { Subject, Observable } from 'rxjs';
 
-@Injectable()
+@Injectable({
+    providedIn: 'root',
+   })
 export class SongSearchService {
     // Observable string sources
     private searchTermSource = new Subject<string>();

@@ -1,7 +1,7 @@
 import { Component, EventEmitter, Output, ViewChild, OnInit } from '@angular/core'
 import { Router } from '@angular/router'
 import { SongsRepositoryService } from 'src/app/core/services/songs-repository/songs-repository.service'
-import { SongSearchService } from 'src/app/core/services/song-search.service'
+import { SongSearchService } from 'src/app/modules/songs-library/services/song-search.service'
 import { SongsLibraryEventsService } from './services/songs-library-events.service'
 import { MusicStyle } from 'src/app/core/models/music-style'
 import { Band } from 'src/app/core/models/band'

@@ -13,6 +13,7 @@ import { InstrumentCodeToNamePipe } from '../../core/pipes/instrumentCode2Name'
 
 import { SongsRepositoryService } from '../../core/services/songs-repository/songs-repository.service';
 import { ReactiveFormsModule } from '@angular/forms';
+import { SongSearchService } from 'src/app/modules/songs-library/services/song-search.service';
 
 @NgModule({
     declarations: [
@@ -33,7 +34,8 @@ import { ReactiveFormsModule } from '@angular/forms';
       ])
     ],
     providers: [
-      SongsRepositoryService
+      SongsRepositoryService,
+      SongSearchService
     ],
     schemas: [CUSTOM_ELEMENTS_SCHEMA]
   })

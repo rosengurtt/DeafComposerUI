@@ -14,7 +14,7 @@ import {SongPanelModule} from './modules/song-panel/song-panel.module'
 import { HttpClientModule } from '@angular/common/http';
 import { SongsRepositoryService } from './core/services/songs-repository/songs-repository.service';
 import { SongsLibraryEventsService } from './modules/songs-library/services/songs-library-events.service';
-import { SongSearchService } from './core/services/song-search.service';
+import { SongSearchService } from './modules/songs-library/services/song-search.service';
 import {AppStateServiceService} from './core/services/app-state.service'
 
 export function init_app(appLoadService: AppInitService) {
@@ -47,7 +47,6 @@ export function init_app(appLoadService: AppInitService) {
     },
     SongsRepositoryService,
     SongsLibraryEventsService,
-    SongSearchService,
     AppStateServiceService
   ],
   bootstrap: [AppComponent]
