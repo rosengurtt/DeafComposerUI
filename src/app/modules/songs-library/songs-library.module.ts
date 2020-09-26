@@ -14,6 +14,10 @@ import { InstrumentCodeToNamePipe } from '../../core/pipes/instrumentCode2Name'
 import { SongsRepositoryService } from '../../core/services/songs-repository/songs-repository.service';
 import { ReactiveFormsModule } from '@angular/forms';
 import { SongSearchService } from 'src/app/modules/songs-library/services/song-search.service';
+import { StoreModule } from '@ngrx/store';
+import { EffectsModule } from '@ngrx/effects';
+import {songsLibraryFeatureKey} from './state'
+import {songsLibraryReducer} from './state/songs-library.reducer'
 
 @NgModule({
     declarations: [
@@ -31,7 +35,9 @@ import { SongSearchService } from 'src/app/modules/songs-library/services/song-s
       ReactiveFormsModule,
       RouterModule.forChild([
         { path: 'songs-library', component: SongsLibraryComponent },
-      ])
+      ]),
+      StoreModule.forFeature(songsLibraryFeatureKey, songsLibraryReducer),
+      EffectsModule.forFeature([ProductEffects])
     ],
     providers: [
       SongsRepositoryService,

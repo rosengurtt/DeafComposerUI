@@ -1,6 +1,6 @@
 export class PaginationData {
-    totalItems: number
+    totalItems?: number
     pageNo: number
     pageSize: number
-    totalPages: number
+    totalPages?: number
   }
