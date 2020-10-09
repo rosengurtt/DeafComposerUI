@@ -1,0 +1,47 @@
+@import "../../../_variables.scss";
+
+:host {
+    display: block;
+    width: 100%;
+  }
+.container{
+  display:grid;
+  width:100%;
+  height: 100%;
+  grid-template-columns: 200px 250px 400px auto;
+  align-items:  start;
+
+}
+.selected{
+  color: $accent;
+  background-color: white;
+  font-weight: bold;
+}
+table {
+  width: 100%;
+}
+.songStatsTable {
+  display:grid;
+  grid-template-columns: 220px auto;
+  padding: 4px;
+
+}
+.songStatsTable div:nth-child(4n+1), .songStatsTable div:nth-child(4n+2) {
+background: $secondary
+}
+input{
+  width:100%;
+}
+.searchBox {
+  padding: 3px;
+}
+.songStatsTable div{
+  padding: 3px;
+}
+
+.songStatsTitle {
+  display:grid;
+  padding: 8px;
+  align-items: center;
+  grid-template-columns: auto fit-content(100px);
+}

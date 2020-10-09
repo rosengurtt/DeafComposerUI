@@ -1,11 +1,11 @@
 import { createAction, props } from '@ngrx/store'
-import { Band } from 'src/app/core/models/band'
-import { Song } from 'src/app/core/models/song'
-import { MusicStyle } from '../../../../core/models/music-style'
+import { BandsPaginated } from 'src/app/core/services/songs-repository/responses-format/bands-paginated'
+import { MusicStylesPaginated } from 'src/app/core/services/songs-repository/responses-format/music-styles-paginated'
+import { SongsPaginated } from 'src/app/core/services/songs-repository/responses-format/songs-paginated'
 
 export const loadStylesSuccess = createAction(
     '[SongsLibrary API] Styles Load Success',
-    props<{ styles: MusicStyle[] }>()
+    props<{ musicStylesPaginated: MusicStylesPaginated }>()
 )
 
 export const loadStylesFailure = createAction(
@@ -15,7 +15,7 @@ export const loadStylesFailure = createAction(
 
 export const loadBandsSuccess = createAction(
     '[SongsLibrary API] Bands Load Success',
-    props<{ bands: Band[] }>()
+    props<{ bandsPaginated: BandsPaginated }>()
 )
 
 export const loadBandsFailure = createAction(
@@ -25,7 +25,7 @@ export const loadBandsFailure = createAction(
 
 export const loadSongsSuccess = createAction(
     '[SongsLibrary API] Songs Load Success',
-    props<{ songs: Song[] }>()
+    props<{ songsPaginated: SongsPaginated }>()
 )
 
 export const loadSongsFailure = createAction(

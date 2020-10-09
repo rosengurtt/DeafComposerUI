@@ -1,0 +1,31 @@
+<dc-songs-library-new 
+
+    [stylesDataSource] = "stylesDatasource$ | async" 
+    [bandsDataSource] = "bandsDatasource$ | async" 
+    [songsDataSource] = "songsDatasource$ | async" 
+
+    [stylesPageNo] = "stylesPageNo$ | async"
+    [bandsPageNo] = "bandsPageNo$ | async"
+    [songsPageNo] = "songsPageNo$ | async"
+    
+    [totalStyles] = "totalStyles$ | async"
+    [totalBands] = "totalBands$ | async"
+    [totalSongs] = "totalSongs$ | async"
+
+    [stylesPageSize] = "stylesPageSize"
+    [bandsPageSize] = "bandsPageSize"
+    [songsPageSize] = "songsPageSize"
+
+    (stylesPageChanged) = "stylesPageChanged($any($event))"
+    (bandsPageChanged) = "bandsPageChanged($any($event))"
+    (songsPageChanged) = "songsPageChanged($any($event))"
+
+    (stylesTermChanged) = "stylesTermChanged($any($event))"
+    (bandsTermChanged) = "bandsTermChanged($any($event))"
+    (songsTermChanged) = "songsTermChanged($any($event))"
+
+    (styleSelected) ="styleSelected($any($event))"
+    (bandSelected) ="bandSelected($any($event))"
+    (songSelected) ="songSelected($any($event))"
+>
+</dc-songs-library-new>

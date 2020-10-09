@@ -4,6 +4,8 @@ import { BrowserModule } from '@angular/platform-browser'
 import { MaterialModule } from '../../core/material.module';
 
 import { SongsLibraryComponent } from './songs-library.component'
+import { SongsLibraryShellComponent } from './songs-library-shell.component'
+import { SongsLibraryNewComponent } from './songs-library-new.component'
 import { SongFilterPipe } from './pipes/song-filter.pipe'
 import { SortPipe } from '../../core/pipes/sort-by.pipe'
 import { TimeSignaturePipe } from '../../core/pipes/time-signature.pipe'
@@ -18,10 +20,13 @@ import { StoreModule } from '@ngrx/store';
 import { EffectsModule } from '@ngrx/effects';
 import {songsLibraryFeatureKey} from './state'
 import {songsLibraryReducer} from './state/songs-library.reducer'
+import { SongsLibraryEffects} from '../songs-library/state/songs-library.effects'
 
 @NgModule({
     declarations: [
       SongsLibraryComponent,
+      SongsLibraryShellComponent,
+      SongsLibraryNewComponent,
       SongFilterPipe,
       SortPipe,
       TimeSignaturePipe,
@@ -35,9 +40,10 @@ import {songsLibraryReducer} from './state/songs-library.reducer'
       ReactiveFormsModule,
       RouterModule.forChild([
         { path: 'songs-library', component: SongsLibraryComponent },
+        { path: 'songs-library-new', component: SongsLibraryShellComponent },
       ]),
       StoreModule.forFeature(songsLibraryFeatureKey, songsLibraryReducer),
-      EffectsModule.forFeature([ProductEffects])
+      EffectsModule.forFeature([SongsLibraryEffects])
     ],
     providers: [
       SongsRepositoryService,

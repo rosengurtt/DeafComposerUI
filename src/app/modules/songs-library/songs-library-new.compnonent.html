@@ -1,0 +1,142 @@
+<div class="container">
+	<div class="styles">
+		<h2>Music Styles</h2>
+		<mat-form-field>
+			<mat-icon matPrefix>search</mat-icon>
+			<input class="searchBox" matInput type="search" placeholder="Enter Search keyword"
+			[formControl]="styleTerm" />
+		</mat-form-field>
+		<div class="mat-elevation-z8">
+			<table mat-table [dataSource]="stylesDataSource" class="mat-elevation-z8" matSort>
+
+				<ng-container matColumnDef="name">
+					<th mat-header-cell *matHeaderCellDef mat-sort-header>Style</th>
+					<td mat-cell *matCellDef="let style" (click)="selectStyle(style.id)"
+						[class.selected]="selectedStyle && style.id==selectedStyle.id"><span>{{style.name}}</span></td>
+				</ng-container>
+
+				<tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+			</table>
+
+			<mat-paginator #stylesPaginator [length]="totalStyles"
+				[pageIndex]="stylesPageNo" [pageSize]="stylesPageSize"
+				[hidePageSize]="true" (page)="getStylesPage($event)"></mat-paginator>
+		</div>
+	</div>
+	<div class="bands">
+		<h2>Bands</h2>
+		<mat-form-field>
+			<mat-icon matPrefix>search</mat-icon>
+			<input class="searchBox" matInput type="search" placeholder="Enter Search keyword"
+			[formControl]="bandTerm"  />
+		</mat-form-field>
+		<div class="mat-elevation-z8">
+			<table mat-table [dataSource]="bandsDataSource" class="mat-elevation-z8" matSort>
+				<ng-container matColumnDef="name">
+					<th mat-header-cell *matHeaderCellDef mat-sort-header>Band</th>
+					<td mat-cell *matCellDef="let band" (click)="selectBand(band.id)"
+						[class.selected]="selectedBand && band.id==selectedBand.id"><span>{{band.name}}</span></td>
+				</ng-container>
+				<tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+			</table>
+			<mat-paginator #bandsPaginator [length]="totalBands"
+				[pageIndex]="bandsPageNo" [pageSize]="bandsPageSize" [hidePageSize]="true"
+				(page)="getBandsPage($event)" showFirstLastButtons></mat-paginator>
+		</div>
+
+	</div>
+	<div class="songs">
+		<div class="panel panel-info">
+			<h2>Songs</h2>
+			<mat-form-field>
+				<mat-icon matPrefix>search</mat-icon>
+				<input class="searchBox" matInput type="search" placeholder="Enter Search keyword"
+				[formControl]="songTerm"   />
+			</mat-form-field>
+			<div class="mat-elevation-z8">
+				<table mat-table [dataSource]="songsDataSource" class="mat-elevation-z8" matSort>
+					<ng-container matColumnDef="name">
+						<th mat-header-cell *matHeaderCellDef mat-sort-header>Song</th>
+						<td mat-cell *matCellDef="let song" [class.selected]="selectedSong && song.id==selectedSong.id"><span
+								(click)="selectSong(song.id)">{{song.name}}</span>
+						</td>
+					</ng-container>
+					<tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+				</table>
+				<mat-paginator #songsPaginator [length]="totalSongs"
+					[pageIndex]="songsPageNo" [pageSize]="songsPageSize"
+					[hidePageSize]="true" (page)="getSongsPage($event)" showFirstLastButtons></mat-paginator>
+			</div>
+		</div>
+	</div>
+
+
+	<div>
+		<div class="songStatsTitle" *ngIf="selectedSong">
+			<h2>Song stats</h2>
+			<div><button mat-raised-button color="primary" >Analyze</button></div>
+		</div>
+		<div *ngIf="selectedSong" class="songStatsTable">
+			<div>Style</div>
+			<div>{{selectedSong.style.name}}</div>
+			<div>Band</div>
+			<div>{{selectedSong.band.name}}</div>
+			<div>Song name</div>
+			<div>{{selectedSong.name | fileNameToSongName}}</div>
+			<div>Duration</div>
+			<div>{{selectedSong.songStats.durationInSeconds | timeDuration}}</div>
+			<div>Highest pitch</div>
+			<div>{{selectedSong.songStats.highestPitch | number}}</div>
+			<div>Lowest pitch</div>
+			<div>{{selectedSong.songStats.lowestPitch | number}}</div>
+			<div>Number of bars</div>
+			<div>{{selectedSong.songStats.numberBars | number}}</div>
+			<div>Number of ticks</div>
+			<div>{{selectedSong.songStats.numberOfTicks | number}}</div>
+			<div>Tempo in microseconds per beat</div>
+			<div>{{selectedSong.songStats.tempoInMicrosecondsPerBeat | number}}</div>
+			<div>Tempo in bpm</div>
+			<div>{{selectedSong.songStats.tempoInBeatsPerMinute | number}}</div>
+			<div>Time Signature</div>
+			<div>{{selectedSong.songStats.timeSignature | timeSignature}}</div>
+			<div>Total different pitches</div>
+			<div>{{selectedSong.songStats.totalDifferentPitches | number}}</div>
+			<div>Total unique pitches</div>
+			<div>{{selectedSong.songStats.totalUniquePitches}}</div>
+			<div>Total tracks</div>
+			<div>{{selectedSong.songStats.totalTracks | number}}</div>
+			<div>Total bass tracks</div>
+			<div>{{selectedSong.songStats.totalBassTracks | number}}</div>
+			<div>Total chord tracks</div>
+			<div>{{selectedSong.songStats.totalChordTracks | number}}</div>
+			<div>Total melodic tracks</div>
+			<div>{{selectedSong.songStats.totalMelodicTracks | number}}</div>
+			<div>Total percussion tracks</div>
+			<div>{{selectedSong.songStats.totalPercussionTracks | number}}</div>
+			<div>Total instruments</div>
+			<div>{{selectedSong.songStats.totalInstruments | number}}</div>
+			<div>Instruments</div>
+			<div>{{selectedSong.songStats.instrumentsAsString | instrumentCodeToName}}</div>
+			<div>Total percussion instruments</div>
+			<div>{{selectedSong.songStats.totalPercussionInstruments | number}}</div>
+			<div>Total channels</div>
+			<div>{{selectedSong.songStats.totalChannels | number}}</div>
+			<div>Total tempo changes</div>
+			<div>{{selectedSong.songStats.totalTempoChanges | number}}</div>
+			<div>Total events</div>
+			<div>{{selectedSong.songStats.totalEvents | number}}</div>
+			<div>Total note events</div>
+			<div>{{selectedSong.songStats.totalNoteEvents | number}}</div>
+			<div>Total pitch bend events</div>
+			<div>{{selectedSong.songStats.totalPitchBendEvents | number}}</div>
+			<div>Total program change events</div>
+			<div>{{selectedSong.songStats.totalProgramChangeEvents | number}}</div>
+			<div>Total control change events</div>
+			<div>{{selectedSong.songStats.totalControlChangeEvents | number}}</div>
+			<div>Total sustain pedal events</div>
+			<div>{{selectedSong.songStats.totalSustainPedalEvents | number}}</div>
+			<div>Total chanel independent events</div>
+			<div>{{selectedSong.songStats.totalChannelIndependentEvents | number}}</div>
+		</div>
+	</div>
+</div>

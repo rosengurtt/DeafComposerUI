@@ -1,5 +1,6 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, Input, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
+import { Observable } from 'rxjs';
 import { Song } from '../models/song';
 import { AppStateServiceService } from '../services/app-state.service';
 
@@ -8,16 +9,14 @@ import { AppStateServiceService } from '../services/app-state.service';
   templateUrl: './header.component.html',
   styleUrls: ['./header.component.scss']
 })
-export class HeaderComponent implements OnInit {
-  songs: Song[]
+export class HeaderComponent {
+  @Input() songs: Song[];
 
   constructor(
     private router: Router,
     private appStateService: AppStateServiceService) { }
 
-  ngOnInit(): void {
-    this.songs = this.appStateService.getSongs()
-  }
+ 
   selectSong(event) {
     if (event) {
       console.log(event)

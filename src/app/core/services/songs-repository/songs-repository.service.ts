@@ -16,11 +16,12 @@ import { PaginationData } from '../../models/pagination-data';
 
 
 export class SongsRepositoryService {
-    private songLibraryUrl: string
+    get songLibraryUrl(): string{
+        return environment.GetEnvironment().DeafComposerBackend
+    }
 
 
-    constructor(private http: HttpClient) {
-        this.songLibraryUrl = environment.GetEnvironment().DeafComposerBackend
+    constructor(private http: HttpClient) {    
     }
 
 
