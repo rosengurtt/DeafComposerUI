@@ -144,4 +144,102 @@ export const songsLibraryReducer = createReducer<SongsLibraryState>(
         newState.errorSongs = action.error
         return newState
     }),
+
+    on(SongsLibraryApiActions.stylesPageChangeSuccess, (state, action): SongsLibraryState => {
+        let newState = cloneDeep(state)
+        newState.musicStylesPaginated = action.musicStylesPaginated
+        return newState
+    }),
+    on(SongsLibraryApiActions.bandsPageChangeSuccess, (state, action): SongsLibraryState => {
+        let newState = cloneDeep(state)
+        console.log("estas son las bandas paginated")
+        console.log(action.bandsPaginated)
+        newState.bandsPaginated = action.bandsPaginated
+        return newState
+    }),
+    on(SongsLibraryApiActions.songsPageChangeSuccess, (state, action): SongsLibraryState => {
+        let newState = cloneDeep(state)
+        newState.songsPaginated = action.songsPaginated
+        return newState
+    }),
+    on(SongsLibraryApiActions.stylessPageChangeFailure, (state, action): SongsLibraryState => {
+        let newState = cloneDeep(state)
+        newState.musicStylesPaginated = {
+            pageNo: 0,
+            pageSize: 10,
+            totalItems: 0,
+            totalPages: 0,
+            styles: []
+        }
+        newState.errorStyles = action.error
+        return newState
+    }),
+    on(SongsLibraryApiActions.bandsPageChangeFailure, (state, action): SongsLibraryState => {
+        let newState = cloneDeep(state)
+        newState.bandsPaginated = {
+            pageNo: 0,
+            pageSize: 10,
+            totalItems: 0,
+            totalPages: 0,
+            bands: []
+        }
+        newState.errorBands = action.error
+        return newState
+    }),
+    on(SongsLibraryApiActions.songsPageChangeFailure, (state, action): SongsLibraryState => {
+        let newState = cloneDeep(state)
+        newState.songsPaginated = {
+            pageNo: 0,
+            pageSize: 10,
+            totalItems: 0,
+            totalPages: 0,
+            songs: []
+        }
+        newState.errorSongs = action.error
+        return newState
+    }),
+
+    on(SongsLibraryApiActions.styleSelectedSuccess, (state, action): SongsLibraryState => {
+        let newState = cloneDeep(state)
+        newState.bandsPaginated = action.bandsPaginated
+        newState.songsPaginated=action.songsPaginated
+        return newState
+    }),
+    on(SongsLibraryApiActions.styleSelectedFailure, (state, action): SongsLibraryState => {
+        let newState = cloneDeep(state)
+        newState.songsPaginated = {
+            pageNo: 0,
+            pageSize: 10,
+            totalItems: 0,
+            totalPages: 0,
+            songs: []
+        }
+        newState.bandsPaginated = {
+            pageNo: 0,
+            pageSize: 10,
+            totalItems: 0,
+            totalPages: 0,
+            bands: []
+        }
+        newState.errorBands = action.error
+        return newState
+    }),
+    
+    on(SongsLibraryApiActions.bandSelectedSuccess, (state, action): SongsLibraryState => {
+        let newState = cloneDeep(state)
+        newState.songsPaginated=action.songsPaginated
+        return newState
+    }),
+    on(SongsLibraryApiActions.bandSelectedFailure, (state, action): SongsLibraryState => {
+        let newState = cloneDeep(state)
+        newState.songsPaginated = {
+            pageNo: 0,
+            pageSize: 10,
+            totalItems: 0,
+            totalPages: 0,
+            songs: []
+        }
+        newState.errorSongs = action.error
+        return newState
+    }),
 );

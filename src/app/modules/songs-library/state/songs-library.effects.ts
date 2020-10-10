@@ -1,7 +1,7 @@
 import { Store } from '@ngrx/store';
 import { Injectable } from '@angular/core';
 
-import { mergeMap, map, catchError, withLatestFrom } from 'rxjs/operators';
+import { mergeMap, map, catchError, withLatestFrom, tap } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { SongsRepositoryService } from '../../../core/services/songs-repository/songs-repository.service';
 
@@ -47,7 +47,6 @@ export class SongsLibraryEffects {
         )
       )
   })
-
   loadSongs$ = createEffect(() => {
     return this.actions$
       .pipe(
@@ -58,6 +57,86 @@ export class SongsLibraryEffects {
             .pipe(
               map(data => SongsLibraryApiActions.loadSongsSuccess({ songsPaginated: data.result })),
               catchError(error => of(SongsLibraryApiActions.loadSongsFailure({ error })))
+            )
+        )
+      )
+  })
+  stylesPageChange$ = createEffect(() => {
+    return this.actions$
+      .pipe(
+        ofType(SongsLibraryPageActions.stylesPageChange),
+        withLatestFrom(this.store$.select(getSongsLibraryState)),
+        mergeMap(([action, state]) =>
+          this.songsRepositoryService.getStyles({ pageNo: action.page, pageSize: state.musicStylesPaginated.pageSize }, state.styleTerm)
+            .pipe(
+              map(data => SongsLibraryApiActions.loadStylesSuccess({ musicStylesPaginated: data.result })),
+              catchError(error => of(SongsLibraryApiActions.loadStylesFailure({ error })))
+            )
+        )
+      )
+  })
+  bandsPageChange$ = createEffect(() => {
+    return this.actions$
+      .pipe(
+        ofType(SongsLibraryPageActions.bandsPageChange),
+        withLatestFrom(this.store$.select(getSongsLibraryState)),
+        mergeMap(([action, state]) =>
+          this.songsRepositoryService.getBands(state.selectedStyle?.id, { pageNo: action.page, pageSize: state.bandsPaginated.pageSize }, state.bandTerm)
+            .pipe(
+              map(data => SongsLibraryApiActions.loadBandsSuccess({ bandsPaginated: data.result })),
+              catchError(error => of(SongsLibraryApiActions.loadBandsFailure({ error })))
+            )
+        )
+      )
+  })
+  songsPageChange$ = createEffect(() => {
+    return this.actions$
+      .pipe(
+        ofType(SongsLibraryPageActions.songsPageChange),
+        withLatestFrom(this.store$.select(getSongsLibraryState)),
+        mergeMap(([action, state]) =>
+          this.songsRepositoryService.getSongs(state.selectedStyle?.id, state.selectedBand?.id, { pageNo: action.page, pageSize: state.songsPaginated.pageSize }, state.songTerm)
+            .pipe(
+              map(data => SongsLibraryApiActions.loadSongsSuccess({ songsPaginated: data.result })),
+              catchError(error => of(SongsLibraryApiActions.loadSongsFailure({ error })))
+            )
+        )
+      )
+  })
+
+
+  styleSelected$ = createEffect(() => {
+    return this.actions$
+      .pipe(
+        ofType(SongsLibraryPageActions.styleSelected),
+        withLatestFrom(this.store$.select(getSongsLibraryState)),
+        mergeMap(([action, state]) =>
+          this.songsRepositoryService.getBands(action.selectedStyle.id, { pageNo: 0, pageSize: state.bandsPaginated.pageSize }, state.bandTerm)
+            .pipe(
+              withLatestFrom(this.songsRepositoryService.getSongs(action.selectedStyle.id, null, { pageNo: 0, pageSize: state.songsPaginated.pageSize }, state.songTerm)),
+              map(([bands, songs]) =>
+                SongsLibraryApiActions.styleSelectedSuccess({ bandsPaginated: bands.result, songsPaginated: songs.result })),
+              catchError(error => of(SongsLibraryApiActions.styleSelectedFailure({ error })))
+            )
+        )
+      )
+  })
+
+
+  bandSelected$ = createEffect(() => {
+    return this.actions$
+      .pipe(
+        ofType(SongsLibraryPageActions.bandSelected),
+        tap(e=>console.log(e)),
+        withLatestFrom(this.store$.select(getSongsLibraryState)),
+        tap(e=>console.log("voy a entrar al mergemap papi")),
+        mergeMap(([action, state]) =>
+          this.songsRepositoryService.getSongs(state.selectedStyle?.id, action.selectedBand.id, { pageNo: 0, pageSize: state.songsPaginated.pageSize }, state.songTerm)
+            .pipe(
+              tap(e=>console.log(action.selectedBand.id)),
+              map(data => SongsLibraryApiActions.bandSelectedSuccess({ songsPaginated: data.result })),
+              tap(e=>console.log(e)),
+              catchError(error => of(SongsLibraryApiActions.bandSelectedFailure({ error })))
             )
         )
       )
