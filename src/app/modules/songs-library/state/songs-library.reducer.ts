@@ -242,4 +242,57 @@ export const songsLibraryReducer = createReducer<SongsLibraryState>(
         newState.errorSongs = action.error
         return newState
     }),
+
+
+    on(SongsLibraryApiActions.filterStyleTermChangeSuccess, (state, action): SongsLibraryState => {
+        let newState = cloneDeep(state)
+        newState.musicStylesPaginated = action.musicStylesPaginated
+        return newState
+    }),
+    on(SongsLibraryApiActions.filterBandTermChangeSuccess, (state, action): SongsLibraryState => {
+        let newState = cloneDeep(state)
+        newState.bandsPaginated = action.bandsPaginated
+        return newState
+    }),
+    on(SongsLibraryApiActions.filterSongTermChangeSuccess, (state, action): SongsLibraryState => {
+        let newState = cloneDeep(state)
+        newState.songsPaginated = action.songsPaginated
+        return newState
+    }),
+    on(SongsLibraryApiActions.filterStyleTermChangeFailure, (state, action): SongsLibraryState => {
+        let newState = cloneDeep(state)
+        newState.musicStylesPaginated = {
+            pageNo: 0,
+            pageSize: 10,
+            totalItems: 0,
+            totalPages: 0,
+            styles: []
+        }
+        newState.errorStyles = action.error
+        return newState
+    }),
+    on(SongsLibraryApiActions.filterBandTermChangeFailure, (state, action): SongsLibraryState => {
+        let newState = cloneDeep(state)
+        newState.bandsPaginated = {
+            pageNo: 0,
+            pageSize: 10,
+            totalItems: 0,
+            totalPages: 0,
+            bands: []
+        }
+        newState.errorBands = action.error
+        return newState
+    }),
+    on(SongsLibraryApiActions.filterSongTermChangeFailure, (state, action): SongsLibraryState => {
+        let newState = cloneDeep(state)
+        newState.songsPaginated = {
+            pageNo: 0,
+            pageSize: 10,
+            totalItems: 0,
+            totalPages: 0,
+            songs: []
+        }
+        newState.errorSongs = action.error
+        return newState
+    }),
 );

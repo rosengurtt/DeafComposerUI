@@ -127,18 +127,63 @@ export class SongsLibraryEffects {
     return this.actions$
       .pipe(
         ofType(SongsLibraryPageActions.bandSelected),
-        tap(e=>console.log(e)),
+        tap(e => console.log(e)),
         withLatestFrom(this.store$.select(getSongsLibraryState)),
-        tap(e=>console.log("voy a entrar al mergemap papi")),
+        tap(e => console.log("voy a entrar al mergemap papi")),
         mergeMap(([action, state]) =>
           this.songsRepositoryService.getSongs(state.selectedStyle?.id, action.selectedBand.id, { pageNo: 0, pageSize: state.songsPaginated.pageSize }, state.songTerm)
             .pipe(
-              tap(e=>console.log(action.selectedBand.id)),
+              tap(e => console.log(action.selectedBand.id)),
               map(data => SongsLibraryApiActions.bandSelectedSuccess({ songsPaginated: data.result })),
-              tap(e=>console.log(e)),
+              tap(e => console.log(e)),
               catchError(error => of(SongsLibraryApiActions.bandSelectedFailure({ error })))
             )
         )
       )
   })
+
+  filterStyleTermChange$ = createEffect(() => {
+    return this.actions$
+      .pipe(
+        ofType(SongsLibraryPageActions.filterStyleTermChange),
+        withLatestFrom(this.store$.select(getSongsLibraryState)),
+        mergeMap(([action, state]) =>
+          this.songsRepositoryService.getStyles({ pageNo: 0, pageSize: state.musicStylesPaginated.pageSize }, action.styleTerm)
+            .pipe(
+              map(data => SongsLibraryApiActions.filterStyleTermChangeSuccess({ musicStylesPaginated: data.result })),
+              catchError(error => of(SongsLibraryApiActions.filterStyleTermChangeFailure({ error })))
+            )
+        )
+      )
+  })
+
+  filterBandTermChange$ = createEffect(() => {
+    return this.actions$
+      .pipe(
+        ofType(SongsLibraryPageActions.filterBandTermChange),
+        withLatestFrom(this.store$.select(getSongsLibraryState)),
+        mergeMap(([action, state]) =>
+          this.songsRepositoryService.getBands(state.selectedStyle?.id, { pageNo: 0, pageSize: state.bandsPaginated.pageSize }, action.bandTerm)
+            .pipe(
+              map(data => SongsLibraryApiActions.filterBandTermChangeSuccess({ bandsPaginated: data.result })),
+              catchError(error => of(SongsLibraryApiActions.filterBandTermChangeFailure({ error })))
+            )
+        )
+      )
+  })
+  filterSongTermChange$ = createEffect(() => {
+    return this.actions$
+      .pipe(
+        ofType(SongsLibraryPageActions.filterSongTermChange),
+        withLatestFrom(this.store$.select(getSongsLibraryState)),
+        mergeMap(([action, state]) =>
+          this.songsRepositoryService.getSongs(state.selectedStyle?.id, state.selectedBand?.id, { pageNo: 0, pageSize: state.songsPaginated.pageSize }, action.songTerm)
+            .pipe(
+              map(data => SongsLibraryApiActions.filterSongTermChangeSuccess({ songsPaginated: data.result })),
+              catchError(error => of(SongsLibraryApiActions.filterSongTermChangeFailure({ error })))
+            )
+        )
+      )
+  })
+
 }

@@ -82,3 +82,35 @@ export const bandSelectedFailure = createAction(
     '[SongsLibrary API] Band Selected Fail',
     props<{ error: string }>()
 )
+
+
+
+export const filterStyleTermChangeSuccess = createAction(
+    '[SongsLibrary API] Filter Styles Term Change Success',
+    props<{ musicStylesPaginated: MusicStylesPaginated }>()
+)
+
+export const filterStyleTermChangeFailure = createAction(
+    '[SongsLibrary API] Filter Styles Term Change Fail',
+    props<{ error: string }>()
+)
+
+export const filterBandTermChangeSuccess = createAction(
+    '[SongsLibrary API] Filter Bands Term Change Success',
+    props<{ bandsPaginated: BandsPaginated }>()
+)
+
+export const filterBandTermChangeFailure = createAction(
+    '[SongsLibrary API] Filter Bands Term Change Fail',
+    props<{ error: string }>()
+)
+
+export const filterSongTermChangeSuccess = createAction(
+    '[SongsLibrary API] Filter Songs Term Change Success',
+    props<{ songsPaginated: SongsPaginated }>()
+)
+
+export const filterSongTermChangeFailure = createAction(
+    '[SongsLibrary API] Filter Songs Term Change Fail',
+    props<{ error: string }>()
+)

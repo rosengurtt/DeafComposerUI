@@ -46,8 +46,8 @@ export class SongsLibraryNewComponent {
 
     async ngOnInit(): Promise<any> {
         this.subscriptionSearchTerms.push(this.styleTerm.valueChanges.subscribe(value => this.stylesTermChanged.emit(value)))
-        this.subscriptionSearchTerms.push(this.bandTerm.valueChanges.subscribe(value => this.stylesTermChanged.emit(value)))
-        this.subscriptionSearchTerms.push(this.songTerm.valueChanges.subscribe(value => this.stylesTermChanged.emit(value)))
+        this.subscriptionSearchTerms.push(this.bandTerm.valueChanges.subscribe(value => this.bandsTermChanged.emit(value)))
+        this.subscriptionSearchTerms.push(this.songTerm.valueChanges.subscribe(value => this.songsTermChanged.emit(value)))
 
       }
 
