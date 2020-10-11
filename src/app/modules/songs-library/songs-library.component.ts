@@ -8,12 +8,12 @@ import { Subscription } from 'rxjs';
 import { FormControl } from '@angular/forms';
 
 @Component({
-    selector: 'dc-songs-library-new',
-    templateUrl: './songs-library-new.compnonent.html',
-    styleUrls: ['./songs-library-new.component.scss'],
+    selector: 'dc-songs-library',
+    templateUrl: './songs-library.compnonent.html',
+    styleUrls: ['./songs-library.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class SongsLibraryNewComponent {
+export class SongsLibraryComponent {
     @Input() stylesDataSource: MatTableDataSource<MusicStyle>
     @Input() bandsDataSource: MatTableDataSource<Band>
     @Input() songsDataSource: MatTableDataSource<Song>
