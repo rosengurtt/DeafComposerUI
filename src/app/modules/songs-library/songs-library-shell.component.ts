@@ -29,6 +29,9 @@ import { Song } from '../../core/models/song';
 import { SongsLibraryPageActions } from './state/actions';
 import { map } from 'rxjs/operators';
 
+import { State } from '../../core/state/app.state'
+import { SongPanelPageActions } from '../song-panel/state/actions'
+
 @Component({
     templateUrl: './songs-library-shell.component.html'
 })
@@ -58,62 +61,67 @@ export class SongsLibraryShellComponent implements OnInit {
     errorBandsMessage$: Observable<string>;
     errorSongsMessage$: Observable<string>;
 
-    constructor(private store: Store<SongsLibraryState>) { }
+    constructor(
+        private songsLibStore: Store<SongsLibraryState>,
+        private mainStore: Store<State>) { }
 
     ngOnInit(): void {
-        this.stylesDatasource$ = this.store.select(getStyles).pipe(map(styles => new MatTableDataSource<MusicStyle>(styles)))
-        this.bandsDatasource$ = this.store.select(getBands).pipe(map(bands => new MatTableDataSource<Band>(bands)))
-        this.songsDatasource$ = this.store.select(getSongs).pipe(map(songs => new MatTableDataSource<Song>(songs)))
+        this.stylesDatasource$ = this.songsLibStore.select(getStyles).pipe(map(styles => new MatTableDataSource<MusicStyle>(styles)))
+        this.bandsDatasource$ = this.songsLibStore.select(getBands).pipe(map(bands => new MatTableDataSource<Band>(bands)))
+        this.songsDatasource$ = this.songsLibStore.select(getSongs).pipe(map(songs => new MatTableDataSource<Song>(songs)))
 
-        this.stylesPageNo$ = this.store.select(getStylesCurrentPage)
-        this.bandsPageNo$ = this.store.select(getBandsCurrentPage)
-        this.songsPageNo$ = this.store.select(getSongsCurrentPage)
+        this.stylesPageNo$ = this.songsLibStore.select(getStylesCurrentPage)
+        this.bandsPageNo$ = this.songsLibStore.select(getBandsCurrentPage)
+        this.songsPageNo$ = this.songsLibStore.select(getSongsCurrentPage)
 
-        this.totalStyles$ = this.store.select(getTotalStyles)
-        this.totalBands$ = this.store.select(getTotalBands)
-        this.totalSongs$ = this.store.select(getTotalSongs)
+        this.totalStyles$ = this.songsLibStore.select(getTotalStyles)
+        this.totalBands$ = this.songsLibStore.select(getTotalBands)
+        this.totalSongs$ = this.songsLibStore.select(getTotalSongs)
 
-        this.styleSelected$ = this.store.select(getStyleSelected)
-        this.bandSelected$ = this.store.select(getBandSelected)
-        this.songSelected$ = this.store.select(getSongSelected)
+        this.styleSelected$ = this.songsLibStore.select(getStyleSelected)
+        this.bandSelected$ = this.songsLibStore.select(getBandSelected)
+        this.songSelected$ = this.songsLibStore.select(getSongSelected)
 
-        this.errorStylesMessage$ = this.store.select(getErrorStyles)
-        this.errorBandsMessage$ = this.store.select(getErrorBands)
-        this.errorSongsMessage$ = this.store.select(getErrorSongs)
+        this.errorStylesMessage$ = this.songsLibStore.select(getErrorStyles)
+        this.errorBandsMessage$ = this.songsLibStore.select(getErrorBands)
+        this.errorSongsMessage$ = this.songsLibStore.select(getErrorSongs)
 
-        this.store.dispatch(SongsLibraryPageActions.loadStyles({ pageSize: this.stylesPageSize }));
-        this.store.dispatch(SongsLibraryPageActions.loadBands({ pageSize: this.bandsPageSize, styleId: null }));
-        this.store.dispatch(SongsLibraryPageActions.loadSongs({ pageSize: this.songsPageSize, styleId: null, bandId: null }));
+        this.songsLibStore.dispatch(SongsLibraryPageActions.loadStyles({ pageSize: this.stylesPageSize }));
+        this.songsLibStore.dispatch(SongsLibraryPageActions.loadBands({ pageSize: this.bandsPageSize, styleId: null }));
+        this.songsLibStore.dispatch(SongsLibraryPageActions.loadSongs({ pageSize: this.songsPageSize, styleId: null, bandId: null }));
     }
 
 
     stylesPageChanged(page: number): void {
-        this.store.dispatch(SongsLibraryPageActions.stylesPageChange({ page: page }))
+        this.songsLibStore.dispatch(SongsLibraryPageActions.stylesPageChange({ page: page }))
     }
     bandsPageChanged(page: number): void {
-        this.store.dispatch(SongsLibraryPageActions.bandsPageChange({ page: page }))
+        this.songsLibStore.dispatch(SongsLibraryPageActions.bandsPageChange({ page: page }))
     }
     songsPageChanged(page: number): void {
-        this.store.dispatch(SongsLibraryPageActions.songsPageChange({ page: page }))
+        this.songsLibStore.dispatch(SongsLibraryPageActions.songsPageChange({ page: page }))
     }
 
     stylesTermChanged(term: string): void {
-        this.store.dispatch(SongsLibraryPageActions.filterStyleTermChange({ styleTerm: term }))
+        this.songsLibStore.dispatch(SongsLibraryPageActions.filterStyleTermChange({ styleTerm: term }))
     }
     bandsTermChanged(term: string): void {
-        this.store.dispatch(SongsLibraryPageActions.filterBandTermChange({ bandTerm: term }))
+        this.songsLibStore.dispatch(SongsLibraryPageActions.filterBandTermChange({ bandTerm: term }))
     }
     songsTermChanged(term: string): void {
-        this.store.dispatch(SongsLibraryPageActions.filterSongTermChange({ songTerm: term }))
+        this.songsLibStore.dispatch(SongsLibraryPageActions.filterSongTermChange({ songTerm: term }))
     }
 
     styleSelectedChange(style: MusicStyle): void {
-        this.store.dispatch(SongsLibraryPageActions.styleSelectedChange({ selectedStyle: style }))
+        this.songsLibStore.dispatch(SongsLibraryPageActions.styleSelectedChange({ selectedStyle: style }))
     }
     bandSelectedChange(band: Band): void {
-        this.store.dispatch(SongsLibraryPageActions.bandSelectedChange({ selectedBand: band }))
+        this.songsLibStore.dispatch(SongsLibraryPageActions.bandSelectedChange({ selectedBand: band }))
     }
     songSelectedChange(song: Song): void {
-        this.store.dispatch(SongsLibraryPageActions.songSelectedChange({ selectedSong: song }))
+        this.songsLibStore.dispatch(SongsLibraryPageActions.songSelectedChange({ selectedSong: song }))
+    }
+    analizeSong(song: Song): void {
+        this.mainStore.dispatch(SongPanelPageActions.addSong({ song: song }))
     }
 }

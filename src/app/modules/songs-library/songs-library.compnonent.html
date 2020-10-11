@@ -74,7 +74,7 @@
 	<div>
 		<div class="songStatsTitle" *ngIf="songSelected">
 			<h2>Song stats</h2>
-			<div><button mat-raised-button color="primary" >Analyze</button></div>
+			<div><button mat-raised-button color="primary" (click)="analyzeSongClicked(songSelected)">Analyze</button></div>
 		</div>
 		<div *ngIf="songSelected" class="songStatsTable">
 			<div>Style</div>

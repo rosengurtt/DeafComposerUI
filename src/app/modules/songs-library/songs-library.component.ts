@@ -6,6 +6,7 @@ import { PageEvent } from '@angular/material/paginator';
 import { MatTableDataSource } from '@angular/material/table';
 import { Subscription } from 'rxjs';
 import { FormControl } from '@angular/forms';
+import { Router } from '@angular/router';
 
 @Component({
     selector: 'dc-songs-library',
@@ -38,11 +39,15 @@ export class SongsLibraryComponent {
     @Output() styleSelectedChanged = new EventEmitter<MusicStyle>()
     @Output() bandSelectedChanged = new EventEmitter<Band>()
     @Output() songSelectedChanged = new EventEmitter<Song>()
+    @Output() analyzeSong = new EventEmitter<Song>()
     displayedColumns: string[] = ['name'];
     subscriptionSearchTerms: Subscription[] = []
     styleTerm = new FormControl()
     bandTerm = new FormControl()
     songTerm = new FormControl()
+
+    constructor(private router: Router) {
+      }
 
     async ngOnInit(): Promise<any> {
         this.subscriptionSearchTerms.push(this.styleTerm.valueChanges.subscribe(value => this.stylesTermChanged.emit(value)))
@@ -84,5 +89,9 @@ export class SongsLibraryComponent {
     }
     newSongTerm(newTerm: string) {
         this.songsTermChanged.emit(newTerm)
+    }
+    analyzeSongClicked(song: Song){
+        this.analyzeSong.emit(song)
+        this.router.navigate(["song-panel", song.id])
     }
 }

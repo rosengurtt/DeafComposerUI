@@ -1,18 +1,17 @@
 <mat-toolbar color="primary">
   <div class="headerContent">
     <span>Deaf Composer</span>
-    <div><a href="/" class="mat-h3"><mat-icon>home</mat-icon>Home</a></div>
-    <div><a href="/songs-library" class="mat-h3"><mat-icon>library_music</mat-icon>Songs Library New</a></div>
+    <div><a routerLink="/" class="mat-h3"><mat-icon>home</mat-icon>Home</a></div>
+    <div><a routerLink="/songs-library" class="mat-h3"><mat-icon>library_music</mat-icon>Songs Library New</a></div>
     <div>
-      <!--
         <mat-form-field appearance="fill">
           <mat-label>Songs in analysis</mat-label>
           <mat-select>
-            <mat-option *ngFor="let song of songs" [value]="song.id">
-              {{song.name}}
+            <mat-option *ngFor="let song of songsUnderAnalysis" [value]="song.id">
+              <a routerLink="/song-panel/{{song.id}}" style="color:black">{{song.name}}-{{song.band.name}}</a>
             </mat-option>
           </mat-select>
-        </mat-form-field>-->
+        </mat-form-field>
       </div>
   </div>
 </mat-toolbar>

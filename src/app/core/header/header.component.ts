@@ -1,8 +1,6 @@
 import { Component, Input, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { Observable } from 'rxjs';
 import { Song } from '../models/song';
-import { AppStateServiceService } from '../services/app-state.service';
 
 @Component({
   selector: 'dc-header',
@@ -10,19 +8,10 @@ import { AppStateServiceService } from '../services/app-state.service';
   styleUrls: ['./header.component.scss']
 })
 export class HeaderComponent {
-  @Input() songs: Song[];
+  @Input() songsUnderAnalysis: Song[]
 
-  constructor(
-    private router: Router,
-    private appStateService: AppStateServiceService) { }
+  constructor(private router: Router) { }
 
- 
-  selectSong(event) {
-    if (event) {
-      console.log(event)
-      this.router.navigate(["song-panel", "1"])
-    }
-  }
 
 
 }
