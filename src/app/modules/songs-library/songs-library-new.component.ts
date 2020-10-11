@@ -17,9 +17,9 @@ export class SongsLibraryNewComponent {
     @Input() stylesDataSource: MatTableDataSource<MusicStyle>
     @Input() bandsDataSource: MatTableDataSource<Band>
     @Input() songsDataSource: MatTableDataSource<Song>
-    @Input() selectedStyle: MusicStyle
-    @Input() selectedBand: Band
-    @Input() selectedSong: Song
+    @Input() styleSelected: MusicStyle
+    @Input() bandSelected: Band
+    @Input() songSelected: Song
     @Input() stylesPageNo: number
     @Input() bandsPageNo: number
     @Input() songsPageNo: number
@@ -35,9 +35,9 @@ export class SongsLibraryNewComponent {
     @Output() stylesTermChanged = new EventEmitter<string>()
     @Output() bandsTermChanged = new EventEmitter<string>()
     @Output() songsTermChanged = new EventEmitter<string>()
-    @Output() styleSelected = new EventEmitter<number>()
-    @Output() bandSelected = new EventEmitter<number>()
-    @Output() songSelected = new EventEmitter<number>()
+    @Output() styleSelectedChanged = new EventEmitter<MusicStyle>()
+    @Output() bandSelectedChanged = new EventEmitter<Band>()
+    @Output() songSelectedChanged = new EventEmitter<Song>()
     displayedColumns: string[] = ['name'];
     subscriptionSearchTerms: Subscription[] = []
     styleTerm = new FormControl()
@@ -66,14 +66,14 @@ export class SongsLibraryNewComponent {
         return event;
     }
 
-    selectStyle(styleId: number) {
-        this.styleSelected.emit(styleId)
+    selectStyle(style: MusicStyle) {
+        this.styleSelectedChanged.emit(style)
     }
-    selectBand(bandId: number) {
-        this.bandSelected.emit(bandId)
+    selectBand(band: Band) {
+        this.bandSelectedChanged.emit(band)
     }
-    selectSong(songId: number) {
-        this.songSelected.emit(songId)
+    selectSong(song: Song) {
+        this.songSelectedChanged.emit(song)
     }
 
     newStyleTerm(newTerm: string) {

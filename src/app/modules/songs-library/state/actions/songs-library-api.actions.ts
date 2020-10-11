@@ -1,4 +1,5 @@
 import { createAction, props } from '@ngrx/store'
+import { Song } from 'src/app/core/models/song'
 import { BandsPaginated } from 'src/app/core/services/songs-repository/responses-format/bands-paginated'
 import { MusicStylesPaginated } from 'src/app/core/services/songs-repository/responses-format/music-styles-paginated'
 import { SongsPaginated } from 'src/app/core/services/songs-repository/responses-format/songs-paginated'
@@ -83,6 +84,15 @@ export const bandSelectedFailure = createAction(
     props<{ error: string }>()
 )
 
+export const songSelectedSuccess = createAction(
+    '[SongsLibrary API] Song Selected Success',
+    props<{ song: Song }>()
+)
+
+export const songSelectedFailure = createAction(
+    '[SongsLibrary API] Song Selected Fail',
+    props<{ error: string }>()
+)
 
 
 export const filterStyleTermChangeSuccess = createAction(

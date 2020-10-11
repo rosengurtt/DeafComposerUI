@@ -16,6 +16,10 @@
     [bandsPageSize] = "bandsPageSize"
     [songsPageSize] = "songsPageSize"
 
+    [styleSelected] = "styleSelected$ | async"
+    [bandSelected] = "bandSelected$ | async"
+    [songSelected] = "songSelected$ | async"
+
     (stylesPageChanged) = "stylesPageChanged($any($event))"
     (bandsPageChanged) = "bandsPageChanged($any($event))"
     (songsPageChanged) = "songsPageChanged($any($event))"
@@ -24,8 +28,8 @@
     (bandsTermChanged) = "bandsTermChanged($any($event))"
     (songsTermChanged) = "songsTermChanged($any($event))"
 
-    (styleSelected) ="styleSelected($any($event))"
-    (bandSelected) ="bandSelected($any($event))"
-    (songSelected) ="songSelected($any($event))"
+    (styleSelectedChanged) ="styleSelectedChange($any($event))"
+    (bandSelectedChanged) ="bandSelectedChange($any($event))"
+    (songSelectedChanged) ="songSelectedChange($any($event))"
 >
 </dc-songs-library-new>

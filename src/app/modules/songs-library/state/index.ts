@@ -17,9 +17,9 @@ export interface SongsLibraryState {
     stylesNewPage: number | null
     bandsNewPage: number | null
     songsNewPage: number | null
-    selectedStyle: MusicStyle
-    selectedBand: Band
-    selectedSong: Song   
+    styleSelected: MusicStyle
+    bandSelected: Band
+    songSelected: Song   
     errorStyles: string
     errorBands: string
     errorSongs: string
@@ -85,17 +85,17 @@ export const getTotalSongs = createSelector(
     state => state.songsPaginated.totalItems
 )
 
-export const getSelectedStyle = createSelector(
+export const getStyleSelected = createSelector(
     getSongsLibraryFeatureState,
-    state => state.selectedStyle
+    state => state.styleSelected
 )
-export const getSelectedBandI= createSelector(
+export const getBandSelected= createSelector(
     getSongsLibraryFeatureState,
-    state => state.selectedBand
+    state => state.bandSelected
 )
-export const getSelectedSong = createSelector(
+export const getSongSelected = createSelector(
     getSongsLibraryFeatureState,
-    state => state.selectedSong
+    state => state.songSelected
 )
 export const getErrorStyles = createSelector(
     getSongsLibraryFeatureState,

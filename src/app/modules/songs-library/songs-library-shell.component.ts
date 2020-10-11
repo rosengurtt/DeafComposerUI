@@ -3,20 +3,24 @@ import { Observable } from 'rxjs';
 
 /* NgRx */
 import { Store } from '@ngrx/store';
-import { getBands, 
-        getStyles, 
-        getSongs, 
-        SongsLibraryState, 
-        getErrorStyles, 
-        getErrorBands, 
-        getSongsCurrentPage, 
-        getBandsCurrentPage, 
-        getErrorSongs, 
-        getStylesCurrentPage,
-        getTotalStyles,
-        getTotalBands,
-        getTotalSongs
-     } from './state';
+import {
+    getBands,
+    getStyles,
+    getSongs,
+    SongsLibraryState,
+    getErrorStyles,
+    getErrorBands,
+    getSongsCurrentPage,
+    getBandsCurrentPage,
+    getErrorSongs,
+    getStylesCurrentPage,
+    getTotalStyles,
+    getTotalBands,
+    getTotalSongs,
+    getStyleSelected,
+    getBandSelected,
+    getSongSelected
+} from './state';
 
 import { MatTableDataSource } from '@angular/material/table';
 import { MusicStyle } from '../../core/models/music-style';
@@ -34,9 +38,9 @@ export class SongsLibraryShellComponent implements OnInit {
     bandsDatasource$: Observable<MatTableDataSource<Band>>
     songsDatasource$: Observable<MatTableDataSource<Song>>
 
-    selectedStyleId$: Observable<number>
-    selectedBandId$: Observable<number>
-    selectedSongId$: Observable<number>
+    styleSelected$: Observable<MusicStyle>
+    bandSelected$: Observable<Band>
+    songSelected$: Observable<Song>
 
     stylesPageNo$: Observable<number>
     bandsPageNo$: Observable<number>
@@ -61,13 +65,17 @@ export class SongsLibraryShellComponent implements OnInit {
         this.bandsDatasource$ = this.store.select(getBands).pipe(map(bands => new MatTableDataSource<Band>(bands)))
         this.songsDatasource$ = this.store.select(getSongs).pipe(map(songs => new MatTableDataSource<Song>(songs)))
 
-        this.stylesPageNo$=this.store.select(getStylesCurrentPage)
-        this.bandsPageNo$=this.store.select(getBandsCurrentPage)
-        this.songsPageNo$=this.store.select(getSongsCurrentPage)
+        this.stylesPageNo$ = this.store.select(getStylesCurrentPage)
+        this.bandsPageNo$ = this.store.select(getBandsCurrentPage)
+        this.songsPageNo$ = this.store.select(getSongsCurrentPage)
 
-        this.totalStyles$=this.store.select(getTotalStyles)
-        this.totalBands$=this.store.select(getTotalBands)
-        this.totalSongs$=this.store.select(getTotalSongs)
+        this.totalStyles$ = this.store.select(getTotalStyles)
+        this.totalBands$ = this.store.select(getTotalBands)
+        this.totalSongs$ = this.store.select(getTotalSongs)
+
+        this.styleSelected$ = this.store.select(getStyleSelected)
+        this.bandSelected$ = this.store.select(getBandSelected)
+        this.songSelected$ = this.store.select(getSongSelected)
 
         this.errorStylesMessage$ = this.store.select(getErrorStyles)
         this.errorBandsMessage$ = this.store.select(getErrorBands)
@@ -99,13 +107,13 @@ export class SongsLibraryShellComponent implements OnInit {
         this.store.dispatch(SongsLibraryPageActions.filterSongTermChange({ songTerm: term }))
     }
 
-    styleSelected(style: MusicStyle): void {
-        this.store.dispatch(SongsLibraryPageActions.styleSelected({ selectedStyle: style }))
+    styleSelectedChange(style: MusicStyle): void {
+        this.store.dispatch(SongsLibraryPageActions.styleSelectedChange({ selectedStyle: style }))
     }
-    bandSelected(band: Band): void {
-        this.store.dispatch(SongsLibraryPageActions.bandSelected({ selectedBand: band }))
+    bandSelectedChange(band: Band): void {
+        this.store.dispatch(SongsLibraryPageActions.bandSelectedChange({ selectedBand: band }))
     }
-    songSelected(song: Song): void {
-        this.store.dispatch(SongsLibraryPageActions.songSelected({ selectedSong: song }))
+    songSelectedChange(song: Song): void {
+        this.store.dispatch(SongsLibraryPageActions.songSelectedChange({ selectedSong: song }))
     }
 }

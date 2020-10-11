@@ -3,7 +3,6 @@ import { RouterModule } from '@angular/router'
 import { BrowserModule } from '@angular/platform-browser'
 import { MaterialModule } from '../../core/material.module';
 
-import { SongsLibraryComponent } from './songs-library.component'
 import { SongsLibraryShellComponent } from './songs-library-shell.component'
 import { SongsLibraryNewComponent } from './songs-library-new.component'
 import { SongFilterPipe } from './pipes/song-filter.pipe'
@@ -24,7 +23,6 @@ import { SongsLibraryEffects} from '../songs-library/state/songs-library.effects
 
 @NgModule({
     declarations: [
-      SongsLibraryComponent,
       SongsLibraryShellComponent,
       SongsLibraryNewComponent,
       SongFilterPipe,
@@ -39,7 +37,6 @@ import { SongsLibraryEffects} from '../songs-library/state/songs-library.effects
       MaterialModule,
       ReactiveFormsModule,
       RouterModule.forChild([
-        { path: 'songs-library', component: SongsLibraryComponent },
         { path: 'songs-library-new', component: SongsLibraryShellComponent },
       ]),
       StoreModule.forFeature(songsLibraryFeatureKey, songsLibraryReducer),

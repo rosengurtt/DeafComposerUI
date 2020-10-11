@@ -40,15 +40,15 @@ export const loadSongs = createAction(
   '[Songs-Library Page] Load Songs',
   props<{ pageSize: number, styleId: number | null, bandId: number | null }>()
 )
-export const styleSelected = createAction(
-  '[Songs-Library Page] Style Selected',
+export const styleSelectedChange = createAction(
+  '[Songs-Library Page] Style Selected Change',
   props<{ selectedStyle: MusicStyle }>()
 )
-export const bandSelected = createAction(
-  '[Songs-Library Page] Band Selected',
+export const bandSelectedChange = createAction(
+  '[Songs-Library Page] Band Selected Change',
   props<{ selectedBand: Band }>()
 )
-export const songSelected = createAction(
-  '[Songs-Library Page] Song Selected',
+export const songSelectedChange = createAction(
+  '[Songs-Library Page] Song Selected Change',
   props<{ selectedSong: Song }>()
 )
