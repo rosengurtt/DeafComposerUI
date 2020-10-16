@@ -1,1 +1,45 @@
 <h1>song panel {{songId}}</h1>
+<div>
+    <mat-slider 
+        min="0" 
+        [attr.max] = "sliderMax" 
+        [attr.step] = "sliderStep" 
+        value = "50" 
+        class="sliderHoriz"
+        (input)="moveHorizontal($event)"></mat-slider>
+</div>
+
+<div class="sliderVert" >
+    <mat-slider 
+    min="0" 
+    [attr.max] = "sliderMax" 
+    [attr.step] = "sliderStep" 
+    value = "50" 
+    class="sliderVert" vertical
+    (input)="moveVertical($event)"></mat-slider>
+    <svg [attr.width]="svgBoxWidth" 
+        [attr.height]="svgBoxHeight"  
+        style="border:1px solid white"
+        xmlns="http://www.w3.org/2000/svg" [attr.viewBox]="viewBox" 
+        xmlns:xlink="http://www.w3.org/1999/xlink">
+      <defs>
+        <radialGradient id="gradient">
+          <stop offset="0%" stop-color="#8cffa0" />
+          <stop offset="100%" stop-color="#8ca0ff" />
+        </radialGradient>    
+      </defs>
+    
+      <circle r="50" cx="180" cy="50" style="fill:url(#gradient)"/>
+    
+      <circle r="100" cx="500" cy="200" style="fill:url(#gradient)"/>
+    </svg>
+</div>
+<div>
+    <mat-slider 
+    min="0" 
+    [attr.max] = "sliderMax" 
+    [attr.step] = "sliderStep" 
+    value = "50" 
+     class="sliderHoriz"
+    (input)="changeScale($event)"></mat-slider>
+</div>

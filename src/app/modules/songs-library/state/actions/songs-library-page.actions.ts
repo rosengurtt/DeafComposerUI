@@ -1,8 +1,8 @@
 import { createAction, props } from '@ngrx/store'
-
 import { MusicStyle } from '../../../../core/models/music-style'
 import {Band}from '../../../../core/models/band'
 import {Song}from '../../../../core/models/song'
+import { PaginationData } from 'src/app/core/models/pagination-data'
 
 export const filterStyleTermChange = createAction(
   '[Songs-Library Page] Filter Style',
@@ -16,29 +16,17 @@ export const filterSongTermChange = createAction(
   '[Songs-Library Page] Filter Song',
   props<{ songTerm: string }>()
 )
-export const stylesPageChange = createAction(
+export const stylesPaginationChange = createAction(
   '[Songs-Library Page] Page Style',
-  props<{ page: number }>()
+  props<{ paginationData: PaginationData }>()
 )
-export const bandsPageChange = createAction(
+export const bandsPaginationChange = createAction(
   '[Songs-Library Page] Page Band',
-  props<{ page: number }>()
+  props<{ paginationData: PaginationData }>()
 )
-export const songsPageChange = createAction(
+export const songsPaginationChange = createAction(
   '[Songs-Library Page] Page Song',
-  props<{ page: number }>()
-)
-export const loadStyles = createAction(
-  '[Songs-Library Page] Load Styles',
-  props<{ pageSize: number }>()
-)
-export const loadBands = createAction(
-  '[Songs-Library Page] Load Bands',
-  props<{ pageSize: number, styleId: number | null }>()
-)
-export const loadSongs = createAction(
-  '[Songs-Library Page] Load Songs',
-  props<{ pageSize: number, styleId: number | null, bandId: number | null }>()
+  props<{ paginationData: PaginationData }>()
 )
 export const styleSelectedChange = createAction(
   '[Songs-Library Page] Style Selected Change',

@@ -1,8 +1,8 @@
-import { Component, OnInit } from '@angular/core';
-import { Observable } from 'rxjs';
-
-/* NgRx */
-import { Store } from '@ngrx/store';
+import { Component, OnInit } from '@angular/core'
+import { Observable } from 'rxjs'
+import { map } from 'rxjs/operators'
+import { Store } from '@ngrx/store'
+import { MatTableDataSource } from '@angular/material/table'
 import {
     getBands,
     getStyles,
@@ -20,17 +20,14 @@ import {
     getStyleSelected,
     getBandSelected,
     getSongSelected
-} from './state';
-
-import { MatTableDataSource } from '@angular/material/table';
-import { MusicStyle } from '../../core/models/music-style';
-import { Band } from '../../core/models/band';
-import { Song } from '../../core/models/song';
-import { SongsLibraryPageActions } from './state/actions';
-import { map } from 'rxjs/operators';
-
+} from './state'
+import { MusicStyle } from '../../core/models/music-style'
+import { Band } from '../../core/models/band'
+import { Song } from '../../core/models/song'
+import { SongsLibraryPageActions } from './state/actions'
 import { State } from '../../core/state/app.state'
 import { SongPanelPageActions } from '../song-panel/state/actions'
+import { PaginationData } from 'src/app/core/models/pagination-data'
 
 @Component({
     templateUrl: './songs-library-shell.component.html'
@@ -57,9 +54,9 @@ export class SongsLibraryShellComponent implements OnInit {
     bandsPageSize = 10
     songsPageSize = 11
 
-    errorStylesMessage$: Observable<string>;
-    errorBandsMessage$: Observable<string>;
-    errorSongsMessage$: Observable<string>;
+    errorStylesMessage$: Observable<string>
+    errorBandsMessage$: Observable<string>
+    errorSongsMessage$: Observable<string>
 
     constructor(
         private songsLibStore: Store<SongsLibraryState>,
@@ -86,20 +83,20 @@ export class SongsLibraryShellComponent implements OnInit {
         this.errorBandsMessage$ = this.songsLibStore.select(getErrorBands)
         this.errorSongsMessage$ = this.songsLibStore.select(getErrorSongs)
 
-        this.songsLibStore.dispatch(SongsLibraryPageActions.loadStyles({ pageSize: this.stylesPageSize }));
-        this.songsLibStore.dispatch(SongsLibraryPageActions.loadBands({ pageSize: this.bandsPageSize, styleId: null }));
-        this.songsLibStore.dispatch(SongsLibraryPageActions.loadSongs({ pageSize: this.songsPageSize, styleId: null, bandId: null }));
+        this.songsLibStore.dispatch(SongsLibraryPageActions.stylesPaginationChange({ paginationData: { pageSize: this.stylesPageSize, pageNo: 0 } }))
+        this.songsLibStore.dispatch(SongsLibraryPageActions.bandsPaginationChange({  paginationData: { pageSize: this.bandsPageSize, pageNo: 0 } }))
+        this.songsLibStore.dispatch(SongsLibraryPageActions.songsPaginationChange({  paginationData: { pageSize: this.songsPageSize, pageNo: 0 } }))
     }
 
 
-    stylesPageChanged(page: number): void {
-        this.songsLibStore.dispatch(SongsLibraryPageActions.stylesPageChange({ page: page }))
+    stylesPageChanged(paginationData: PaginationData): void {
+        this.songsLibStore.dispatch(SongsLibraryPageActions.stylesPaginationChange({ paginationData: paginationData }))
     }
-    bandsPageChanged(page: number): void {
-        this.songsLibStore.dispatch(SongsLibraryPageActions.bandsPageChange({ page: page }))
+    bandsPageChanged(paginationData: PaginationData): void {
+        this.songsLibStore.dispatch(SongsLibraryPageActions.bandsPaginationChange({ paginationData: paginationData }))
     }
-    songsPageChanged(page: number): void {
-        this.songsLibStore.dispatch(SongsLibraryPageActions.songsPageChange({ page: page }))
+    songsPageChanged(paginationData: PaginationData): void {
+        this.songsLibStore.dispatch(SongsLibraryPageActions.songsPaginationChange({ paginationData: paginationData }))
     }
 
     stylesTermChanged(term: string): void {

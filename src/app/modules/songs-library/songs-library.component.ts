@@ -1,12 +1,13 @@
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from "@angular/core";
-import { Band } from "../../core/models/band";
-import { MusicStyle } from "../../core/models/music-style";
-import { Song } from "../../core/models/song";
-import { PageEvent } from '@angular/material/paginator';
-import { MatTableDataSource } from '@angular/material/table';
-import { Subscription } from 'rxjs';
-import { FormControl } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from "@angular/core"
+import { Subscription } from 'rxjs'
+import { FormControl } from '@angular/forms'
+import { Router } from '@angular/router'
+import { PageEvent } from '@angular/material/paginator'
+import { MatTableDataSource } from '@angular/material/table'
+import { Band } from "../../core/models/band"
+import { MusicStyle } from "../../core/models/music-style"
+import { Song } from "../../core/models/song"
+import { PaginationData } from 'src/app/core/models/pagination-data'
 
 @Component({
     selector: 'dc-songs-library',
@@ -30,9 +31,9 @@ export class SongsLibraryComponent {
     @Input() totalStyles: number | null
     @Input() totalBands: number | null
     @Input() totalSongs: number | null
-    @Output() stylesPageChanged = new EventEmitter<number>()
-    @Output() bandsPageChanged = new EventEmitter<number>()
-    @Output() songsPageChanged = new EventEmitter<number>()
+    @Output() stylesPageChanged = new EventEmitter<PaginationData>()
+    @Output() bandsPageChanged = new EventEmitter<PaginationData>()
+    @Output() songsPageChanged = new EventEmitter<PaginationData>()
     @Output() stylesTermChanged = new EventEmitter<string>()
     @Output() bandsTermChanged = new EventEmitter<string>()
     @Output() songsTermChanged = new EventEmitter<string>()
@@ -40,35 +41,35 @@ export class SongsLibraryComponent {
     @Output() bandSelectedChanged = new EventEmitter<Band>()
     @Output() songSelectedChanged = new EventEmitter<Song>()
     @Output() analyzeSong = new EventEmitter<Song>()
-    displayedColumns: string[] = ['name'];
+    displayedColumns: string[] = ['name']
     subscriptionSearchTerms: Subscription[] = []
     styleTerm = new FormControl()
     bandTerm = new FormControl()
     songTerm = new FormControl()
 
     constructor(private router: Router) {
-      }
+    }
 
     async ngOnInit(): Promise<any> {
         this.subscriptionSearchTerms.push(this.styleTerm.valueChanges.subscribe(value => this.stylesTermChanged.emit(value)))
         this.subscriptionSearchTerms.push(this.bandTerm.valueChanges.subscribe(value => this.bandsTermChanged.emit(value)))
         this.subscriptionSearchTerms.push(this.songTerm.valueChanges.subscribe(value => this.songsTermChanged.emit(value)))
 
-      }
+    }
 
     public getStylesPage(event?: PageEvent) {
-        if (event) this.stylesPageChanged.emit(event.pageIndex)
-        return event;
+        if (event) this.stylesPageChanged.emit({ pageNo: event.pageIndex, pageSize: event.pageSize })
+        return event
     }
 
     public getBandsPage(event?: PageEvent) {
-        if (event) this.bandsPageChanged.emit(event.pageIndex)
-        return event;
+        if (event) this.bandsPageChanged.emit({ pageNo: event.pageIndex, pageSize: event.pageSize })
+        return event
     }
 
     public getSongsPage(event?: PageEvent) {
-        if (event) this.songsPageChanged.emit(event.pageIndex)
-        return event;
+        if (event) this.songsPageChanged.emit({ pageNo: event.pageIndex, pageSize: event.pageSize })
+        return event
     }
 
     selectStyle(style: MusicStyle) {
@@ -90,7 +91,7 @@ export class SongsLibraryComponent {
     newSongTerm(newTerm: string) {
         this.songsTermChanged.emit(newTerm)
     }
-    analyzeSongClicked(song: Song){
+    analyzeSongClicked(song: Song) {
         this.analyzeSong.emit(song)
         this.router.navigate(["song-panel", song.id])
     }

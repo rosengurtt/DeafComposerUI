@@ -5,7 +5,6 @@ import { Song } from 'src/app/core/models/song'
 import { MusicStylesPaginated } from 'src/app/core/services/songs-repository/responses-format/music-styles-paginated'
 import { BandsPaginated } from 'src/app/core/services/songs-repository/responses-format/bands-paginated'
 import { SongsPaginated } from 'src/app/core/services/songs-repository/responses-format/songs-paginated'
-import * as AppState from '../../../core//state/app.state'
 
 // State for this feature (Product)
 export interface SongsLibraryState {
