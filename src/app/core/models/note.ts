@@ -6,7 +6,12 @@ export class Note {
     volume: number
     startSinceBeginningOfSongInTicks: number
     endSinceBeginningOfSongInTicks: number
-    isPercussion: number
+    isPercussion: boolean
     voice: number
     PitchBending: PitchBending[]
+    instrument: number
+
+    get durationInTicks(): number {
+        return this.endSinceBeginningOfSongInTicks - this.endSinceBeginningOfSongInTicks
+    }
 }

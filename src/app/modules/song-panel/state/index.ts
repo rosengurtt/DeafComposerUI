@@ -16,3 +16,10 @@ export const getSongsUnderAnalysis = createSelector(
     getSongPanelFeatureState,
     state => state.songsUnderAnalysis
 )
+
+export const getSongById = createSelector(
+    getSongPanelFeatureState,
+    (state, props) => {
+            return props ? state.songsUnderAnalysis.find(p => p.id === props.id) : null
+        }
+)

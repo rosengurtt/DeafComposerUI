@@ -17,7 +17,6 @@ export class HeaderShellComponent implements OnInit {
     constructor(private mainStore: Store<State>) { }
 
     ngOnInit(): void {
-        console.log("estoy en el init")
         this.songsUnderAnalysis$ = this.mainStore.select(getSongsUnderAnalysis)
     }
 

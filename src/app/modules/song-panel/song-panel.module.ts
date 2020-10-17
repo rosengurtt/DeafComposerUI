@@ -6,21 +6,25 @@ import { MaterialModule } from '../../core/material.module'
 
 import { SongsRepositoryService } from '../../core/services/songs-repository/songs-repository.service'
 import { ReactiveFormsModule } from '@angular/forms'
+import { SongPanelShellComponent } from './song-panel-shell.component'
 import { SongPanelComponent } from './song-panel.component'
 import { StoreModule } from '@ngrx/store'
 import { songsPanelFeatureKey } from './state'
-import { songPanelReducer } from './state/song-panel.reducer'
+import { songPanelReducer } from './state/song-panel.reducer';
+import { TrackComponent } from './track/track.component'
 
 @NgModule({
     declarations: [
-      SongPanelComponent
+      SongPanelComponent,
+      SongPanelShellComponent,
+      TrackComponent
     ],
     imports: [
       BrowserModule,
       MaterialModule,
       ReactiveFormsModule,
       RouterModule.forChild([
-        { path: 'song-panel/:songId', component: SongPanelComponent },
+        { path: 'song-panel/:songId', component: SongPanelShellComponent },
       ]),
       StoreModule.forFeature(songsPanelFeatureKey, songPanelReducer)
       
