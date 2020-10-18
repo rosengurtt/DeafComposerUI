@@ -7,18 +7,37 @@ export class SongSimplification {
     notes: Note[]
     numberOfVoices: number
 
-    getNotesOfVoice(voice: number): Note[] {
-        return this.notes.filter(note => note.voice === voice)
-            .sort(
-                (a, b) => (a.startSinceBeginningOfSongInTicks < b.startSinceBeginningOfSongInTicks ? -1 : 1)
-            )
+    constructor(data: any) {
+        this.id = data.id
+        this.songId = data.songId
+        this.simplificationVersion = data.simplificationVersion
+        this.notes = data.notes
+        this.numberOfVoices = data.numberOfVoices
     }
 
-    getInstrumentOfVoice(voice: number): number {
-        return this.notes.filter(note => note.voice === voice)[0].instrument
+    public getNotesOfVoice(voice: number): Note[] {
+        if (this.notes && this.notes.length > 0) {
+            return this.notes.filter(note => note.voice === voice)
+                .sort(
+                    (a, b) => (a.startSinceBeginningOfSongInTicks < b.startSinceBeginningOfSongInTicks ? -1 : 1)
+                )
+        }
+        return []
     }
 
-    isVoicePercusion(voice: number): boolean {
-        return this.notes.filter(note => note.voice === voice)[0].isPercussion
+    public getInstrumentOfVoice(voice: number): number | null {
+        if (this.notes && this.notes.length > 0) {
+            const note = this.notes.find(note => note.voice === voice)
+            if (note) return note.instrument
+        }
+        return 0
+    }
+
+    public isVoicePercusion(voice: number): boolean {
+        if (this.notes && this.notes.length > 0) {
+            const note = this.notes.find(note => note.voice === voice)
+            if (note) return note.isPercussion
+        }
+        return false
     }
 }

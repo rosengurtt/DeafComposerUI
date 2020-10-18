@@ -1,88 +1,87 @@
-import { Injectable } from '@angular/core';
+import { Injectable } from '@angular/core'
 
 import { Instrument } from '../../../core/models/midi/midi-codes/instrument.enum'
 import { SongSimplification } from '../../../core/models/song-simplification'
 import { Song } from '../../../core/models/song'
-import { Note } from '../../../core/models/note';
+import { Note } from '../../../core/models/note'
+import { SongStats } from 'src/app/core/models/song-stats'
 
 
 @Injectable()
 export class DrawingService {
-    svgns = 'http://www.w3.org/2000/svg';
-    colorMusicBar = 'rgb(200,180,170)';
-    colorProgressBar = 'rgb(200,0,0)';
+    svgns = 'http://www.w3.org/2000/svg'
+    colorMusicBar = 'rgb(200,180,170)'
+    colorProgressBar = 'rgb(200,0,0)'
     // keyboards are blue
-    colorPiano = 'rgb(51,0,153)';
-    colorOrgan = 'rgb(71,0,214)';
-    colorSynthLead = 'rgb(0,102,153)';
-    colorSynthPad = 'rgb(99,20,255)';
-    colorSynthEffects = 'rgb(0,0,102)';
-    colorEnsemble = 'rgb(122,122,255)';
+    colorPiano = 'rgb(51,0,153)'
+    colorOrgan = 'rgb(71,0,214)'
+    colorSynthLead = 'rgb(0,102,153)'
+    colorSynthPad = 'rgb(99,20,255)'
+    colorSynthEffects = 'rgb(0,0,102)'
+    colorEnsemble = 'rgb(122,122,255)'
     // bass is violet
-    colorBass = 'rgb(163,0,163)';
+    colorBass = 'rgb(163,0,163)'
     // string are red
-    colorGuitar = 'rgb(214,0,0)';
-    colorStrings = 'rgb(255,20,99)';
+    colorGuitar = 'rgb(214,0,0)'
+    colorStrings = 'rgb(255,20,99)'
     // viento are green
-    colorBrass = 'rgb(0,102,0)';
-    colorReed = 'rgb(102,102,0)';
-    colorPipe = 'rgb(0,224,0)';
+    colorBrass = 'rgb(0,102,0)'
+    colorReed = 'rgb(102,102,0)'
+    colorPipe = 'rgb(0,224,0)'
     // drums and percussion are black
-    colorDrums = 'rgb(0,0,0)';
-    colorPercussion = 'rgb(50,50,50)';
-    colorEthnic = 'rgb(100,100,100';
-    colorSoundEffects = 'rgb(140,140,140)';
+    colorDrums = 'rgb(0,0,0)'
+    colorPercussion = 'rgb(50,50,50)'
+    colorEthnic = 'rgb(100,100,100'
+    colorSoundEffects = 'rgb(140,140,140)'
 
-    noteDotRadio = 1;
+    noteDotRadio = 1
 
     private getColor(instrument: Instrument, isPercusion: boolean): string {
-        if (isPercusion) { return this.colorDrums; }
-        if (instrument < 8) { return this.colorPiano; }
-        if (instrument < 16) { return this.colorPercussion; }
-        if (instrument < 24) { return this.colorOrgan; }
-        if (instrument < 32) { return this.colorGuitar; }
-        if (instrument < 40) { return this.colorBass; }
-        if (instrument < 48) { return this.colorStrings; }
-        if (instrument < 56) { return this.colorEnsemble; }
-        if (instrument < 64) { return this.colorBrass; }
-        if (instrument < 72) { return this.colorReed; }
-        if (instrument < 80) { return this.colorPipe; }
-        if (instrument < 88) { return this.colorSynthLead; }
-        if (instrument < 96) { return this.colorSynthPad; }
-        if (instrument < 104) { return this.colorSynthEffects; }
-        if (instrument < 112) { return this.colorEthnic; }
-        if (instrument < 120) { return this.colorPercussion; }
-        return this.colorSoundEffects;
+        if (isPercusion) { return this.colorDrums }
+        if (instrument < 8) { return this.colorPiano }
+        if (instrument < 16) { return this.colorPercussion }
+        if (instrument < 24) { return this.colorOrgan }
+        if (instrument < 32) { return this.colorGuitar }
+        if (instrument < 40) { return this.colorBass }
+        if (instrument < 48) { return this.colorStrings }
+        if (instrument < 56) { return this.colorEnsemble }
+        if (instrument < 64) { return this.colorBrass }
+        if (instrument < 72) { return this.colorReed }
+        if (instrument < 80) { return this.colorPipe }
+        if (instrument < 88) { return this.colorSynthLead }
+        if (instrument < 96) { return this.colorSynthPad }
+        if (instrument < 104) { return this.colorSynthEffects }
+        if (instrument < 112) { return this.colorEthnic }
+        if (instrument < 120) { return this.colorPercussion }
+        return this.colorSoundEffects
     }
 
     public createProgressBar(
         svgBoxId: string,
         progressBarId: string,
-        scrollDisplacementX: number,
         progress: number): any {
-        let progressBar = document.getElementById(progressBarId);
-        const svgBox = document.getElementById(svgBoxId);
+        let progressBar = document.getElementById(progressBarId)
+        const svgBox = document.getElementById(svgBoxId)
         if (svgBox) {
-            const svgBoxWidth = svgBox.clientWidth;
-            const x = progress * svgBoxWidth;
-            const actualx: number = x - scrollDisplacementX;
-            this.deleteProgressBar(svgBoxId, progressBarId);
-            if (actualx > 0 && actualx < svgBoxWidth) {
-                progressBar = this.createLine(actualx, actualx, 0, svgBox.clientHeight, 2,
-                    this.colorProgressBar, progressBarId, svgBox);
+            const svgBoxWidth = svgBox.clientWidth
+            const x = progress * svgBoxWidth
+            this.deleteProgressBar(svgBoxId, progressBarId)
+            if (x > 0 && x < svgBoxWidth) {
+                progressBar = this.createLine(x, x, 0, svgBox.clientHeight, 2,
+                    this.colorProgressBar, progressBarId, svgBox)
             }
         }
     }
 
     public deleteProgressBar(svgBoxId: string, progressBarId: string) {
-        const progressBar = document.getElementById(progressBarId);
-        const svgBox = document.getElementById(svgBoxId);
+        const progressBar = document.getElementById(progressBarId)
+        const svgBox = document.getElementById(svgBoxId)
         if (progressBar) {
             try {
-                svgBox.removeChild(progressBar);
+                svgBox.removeChild(progressBar)
             } catch (error) {
-                console.log('The progressBar object is not null, but when trying to remove it an exception was raised');
-                console.log(error);
+                console.log('The progressBar object is not null, but when trying to remove it an exception was raised')
+                console.log(error)
             }
         }
     }
@@ -96,18 +95,18 @@ export class DrawingService {
         color: string,
         id: string,
         svgBox: any): any {
-        const line: any = document.createElementNS(this.svgns, 'line');
-        line.setAttributeNS(null, 'width', width);
-        line.setAttributeNS(null, 'x1', x1);
-        line.setAttributeNS(null, 'x2', x2);
-        line.setAttributeNS(null, 'y1', y1);
-        line.setAttributeNS(null, 'y2', y2);
-        line.setAttributeNS(null, 'style', 'stroke:' + color);
+        const line: any = document.createElementNS(this.svgns, 'line')
+        line.setAttributeNS(null, 'width', width)
+        line.setAttributeNS(null, 'x1', x1)
+        line.setAttributeNS(null, 'x2', x2)
+        line.setAttributeNS(null, 'y1', y1)
+        line.setAttributeNS(null, 'y2', y2)
+        line.setAttributeNS(null, 'style', 'stroke:' + color)
         if (id) {
-            line.setAttributeNS(null, 'id', id);
+            line.setAttributeNS(null, 'id', id)
         }
-        svgBox.appendChild(line);
-        return line;
+        svgBox.appendChild(line)
+        return line
     }
     private createNote(
         x: number,
@@ -115,16 +114,16 @@ export class DrawingService {
         l: number,
         color: string,
         svgBoxId: string): any {
-        const svgBox = document.getElementById(svgBoxId);
-        const line: any = document.createElementNS(this.svgns, 'line');
-        line.setAttributeNS(null, 'width', 1);
-        line.setAttributeNS(null, 'x1', x);
-        line.setAttributeNS(null, 'x2', x + l);
-        line.setAttributeNS(null, 'y1', y);
-        line.setAttributeNS(null, 'y2', y);
-        line.setAttributeNS(null, 'style', 'stroke:' + color);
-        svgBox.appendChild(line);
-        return line;
+        const svgBox = document.getElementById(svgBoxId)
+        const line: any = document.createElementNS(this.svgns, 'line')
+        line.setAttributeNS(null, 'width', 1)
+        line.setAttributeNS(null, 'x1', x)
+        line.setAttributeNS(null, 'x2', x + l)
+        line.setAttributeNS(null, 'y1', y)
+        line.setAttributeNS(null, 'y2', y)
+        line.setAttributeNS(null, 'style', 'stroke:' + color)
+        svgBox.appendChild(line)
+        return line
     }
 
     // returns a reference to the dot created
@@ -134,14 +133,14 @@ export class DrawingService {
         r: number,
         color: string,
         svgBoxId: string): any {
-        const svgBox = document.getElementById(svgBoxId);
-        const dot: any = document.createElementNS(this.svgns, 'circle');
-        dot.setAttributeNS(null, 'cx', x);
-        dot.setAttributeNS(null, 'cy', y);
-        dot.setAttributeNS(null, 'r', r);
-        dot.setAttributeNS(null, 'fill', color);
-        svgBox.appendChild(dot);
-        return dot;
+        const svgBox = document.getElementById(svgBoxId)
+        const dot: any = document.createElementNS(this.svgns, 'circle')
+        dot.setAttributeNS(null, 'cx', x)
+        dot.setAttributeNS(null, 'cy', y)
+        dot.setAttributeNS(null, 'r', r)
+        dot.setAttributeNS(null, 'fill', color)
+        svgBox.appendChild(dot)
+        return dot
     }
 
     private createText(
@@ -150,48 +149,47 @@ export class DrawingService {
         y: number,
         fontSize: string,
         svgBox: any) {
-        const textElement: any = document.createElementNS(this.svgns, 'text');
-        const textNode = document.createTextNode(text);
-        textElement.appendChild(textNode);
-        textElement.setAttributeNS(null, 'x', x);
-        textElement.setAttributeNS(null, 'y', y);
-        textElement.setAttributeNS(null, 'font-size', fontSize);
-        svgBox.appendChild(textElement);
-        return textElement;
+        const textElement: any = document.createElementNS(this.svgns, 'text')
+        const textNode = document.createTextNode(text)
+        textElement.appendChild(textNode)
+        textElement.setAttributeNS(null, 'x', x)
+        textElement.setAttributeNS(null, 'y', y)
+        textElement.setAttributeNS(null, 'font-size', fontSize)
+        textElement.setAttributeNS(null, 'fill', 'white')
+        svgBox.appendChild(textElement)
+        return textElement
     }
 
     public drawTrackGraphic(
         trackNumber: number,
         svgBoxId: string,
         song: Song,
-        simplification: number,
-        scrollDisplacementX: number,
-        scrollDisplacementY: number,
+        simplificationNo: number,
         createProgressBar: boolean,
         progressBarId?: string): string {
-        const svgBox = document.getElementById(svgBoxId);
+        const svgBox = document.getElementById(svgBoxId)
         if (!svgBox) {
-            return;
+            return
         }
-        const svgBoxWidth = svgBox.clientWidth;
-        const svgBoxHeight = svgBox.clientHeight;
-        this.cleanSvg(svgBoxId);
+        const svgBoxWidth = svgBox.clientWidth
+        const svgBoxHeight = svgBox.clientHeight
+        //this.cleanSvg(svgBoxId)
         let horizontalScale: number = svgBoxWidth / song.songStats.numberOfTicks
 
-        const notes = song.songSimplifications[simplification].getNotesOfVoice(trackNumber)
-        const pitchSpaceLength = 128;
-        const verticalScale: number = svgBoxHeight / pitchSpaceLength;
-        const instrument = song.songSimplifications[simplification].getInstrumentOfVoice(trackNumber);
-        const isPercusion = song.songSimplifications[simplification].isVoicePercusion(trackNumber)
-        const color = this.getColor(instrument, isPercusion);
+        const simplif = new SongSimplification(song.songSimplifications[simplificationNo])
+        const notes = simplif.getNotesOfVoice(trackNumber)
+        const pitchSpaceLength = 128
+        const verticalScale: number = svgBoxHeight / pitchSpaceLength
+        const instrument = simplif.getInstrumentOfVoice(trackNumber)
+        const isPercusion = simplif.isVoicePercusion(trackNumber)
+        const color = this.getColor(instrument, isPercusion)
 
 
-        this.paintNotesTrack(notes, horizontalScale, verticalScale, svgBoxId,
-            scrollDisplacementX, scrollDisplacementY, color);
+        this.paintNotesTrack(notes, horizontalScale, verticalScale, svgBoxId, color)
 
-        this.createStaffBars(horizontalScale, svgBoxId, song, scrollDisplacementX);
+        this.createStaffBars(horizontalScale, svgBoxId, song)
         if (createProgressBar) {
-            this.createProgressBar(svgBoxId, progressBarId, scrollDisplacementX, 0);
+            this.createProgressBar(svgBoxId, progressBarId, 0)
         }
     }
 
@@ -199,35 +197,32 @@ export class DrawingService {
     public drawTracksCollapsedGraphic(
         svgBoxId: string,
         song: Song,
-        simplification: number,
-        scrollDisplacementX: number,
-        scrollDisplacementY: number,
+        simplificationNo: number,
         createProgressBar: boolean,
         progressBarId?: string): string {
 
-        const svgBox = document.getElementById(svgBoxId);
-        const simpl = song.songSimplifications[simplification]
+        const svgBox = document.getElementById(svgBoxId)
+        const simplif = new SongSimplification(song.songSimplifications[simplificationNo])
         if (!svgBox) {
-            return;
+            return
         }
-        const svgBoxWidth = svgBox.clientWidth;
-        const svgBoxHeight = svgBox.clientHeight;
-        this.cleanSvg(svgBoxId);
+        const svgBoxWidth = svgBox.clientWidth
+        const svgBoxHeight = svgBox.clientHeight
+        //this.cleanSvg(svgBoxId)
         let horizontalScale: number = svgBoxWidth / song.songStats.numberOfTicks
 
-        const pitchSpaceLength = 128;
-        const verticalScale: number = svgBoxHeight / pitchSpaceLength;
-        for (let i = 0; i < simpl.numberOfVoices; i++) {
-            const instrument = simpl.getInstrumentOfVoice(i);
-            const isPercusion = simpl.isVoicePercusion(i)
-            const color = this.getColor(instrument, isPercusion);
+        const pitchSpaceLength = 128
+        const verticalScale: number = svgBoxHeight / pitchSpaceLength
+        for (let i = 0; i < simplif.numberOfVoices; i++) {
+            const instrument = simplif.getInstrumentOfVoice(i)
+            const isPercusion = simplif.isVoicePercusion(i)
+            const color = this.getColor(instrument, isPercusion)
 
-            this.paintNotesTrack(simpl.getNotesOfVoice(i), horizontalScale, verticalScale, svgBoxId,
-                scrollDisplacementX, scrollDisplacementY, color);
+            this.paintNotesTrack(simplif.getNotesOfVoice(i), horizontalScale, verticalScale, svgBoxId, color)
         }
-        this.createStaffBars(horizontalScale, svgBoxId, song, scrollDisplacementX);
+        this.createStaffBars(horizontalScale, svgBoxId, song)
         if (createProgressBar) {
-            this.createProgressBar(svgBoxId, progressBarId, scrollDisplacementX, 0);
+            this.createProgressBar(svgBoxId, progressBarId, 0)
         }
     }
     private paintNotesTrack(
@@ -235,48 +230,45 @@ export class DrawingService {
         horizontalScale: number,
         verticalScale: number,
         svgBoxId: string,
-        scrollDisplacementX: number,
-        scrollDisplacementY: number,
         color: string) {
-        const svgBox = document.getElementById(svgBoxId);
-        const svgBoxWidth = svgBox.clientWidth;
-        const svgBoxHeight = svgBox.clientHeight;
+        const svgBox = document.getElementById(svgBoxId)
+        const svgBoxWidth = svgBox.clientWidth
+        const svgBoxHeight = svgBox.clientHeight
         for (const note of noteSeq) {
-            const cx: number = note.startSinceBeginningOfSongInTicks * horizontalScale;
-            const cy: number = svgBoxHeight - note.pitch * verticalScale;
-            if (cx - scrollDisplacementX < svgBoxWidth &&
-                cx - scrollDisplacementX > 0 &&
-                cy - scrollDisplacementY < svgBoxHeight &&
-                cy - scrollDisplacementY > 0) {
-                this.createNote(cx - scrollDisplacementX, cy - scrollDisplacementY,
-                    note.durationInTicks * horizontalScale, color, svgBoxId);
+            const cx: number = note.startSinceBeginningOfSongInTicks * horizontalScale
+            const cy: number = svgBoxHeight - note.pitch * verticalScale
+            if (cx  < svgBoxWidth &&
+                cx  > 0 &&
+                cy < svgBoxHeight &&
+                cy > 0) {
+                this.createNote(cx, cy, note.durationInTicks * horizontalScale, color, svgBoxId)
             }
         }
     }
     private createStaffBars(
         horizontalScale: number,
         svgBoxId: string,
-        song: Song,
-        scrollDisplacement: number) {
-        const svgBox = document.getElementById(svgBoxId);
+        song: Song) {
+        const svgBox = document.getElementById(svgBoxId)
         if (svgBox) {
-            const svgBoxWidth = svgBox.clientWidth;
-            const svgBoxHeight = svgBox.clientHeight;
-            const fontSize = 10;
-            let barx = 0;
-            const barwidth = song.songStats.getTicksPerBar() * horizontalScale;
-            let barNo = 1 + Math.floor(scrollDisplacement / barwidth);
+            const svgBoxWidth = svgBox.clientWidth
+            const svgBoxHeight = svgBox.clientHeight
+            const fontSize = 10
+            let barx = 0
+            const songStats= new SongStats(song.songStats)
+            const barwidth = songStats.getTicksPerBar() * horizontalScale
+            let barNo = 1 
             let xOfPreviousBarNumber = 0
             while (barx < svgBoxWidth) {
-                this.createLine(barx, barx, 0, svgBoxHeight, 1, this.colorMusicBar, '', svgBox);
-                const xOfText = ((barwidth < 15) || (barNo > 100)) ? barx + 1 : barx + barwidth / 3;
+                this.createLine(barx, barx, 0, svgBoxHeight, 1, this.colorMusicBar, '', svgBox)
+                const xOfText = ((barwidth < 15) || (barNo > 100)) ? barx + 1 : barx + barwidth / 3
                 // Show the bar number if there is enough space between bars
                 if (xOfText - xOfPreviousBarNumber > 20) {
-                    this.createText(barNo.toString(), xOfText, fontSize, fontSize.toString(), svgBox);
-                    xOfPreviousBarNumber = xOfText;
+                    this.createText(barNo.toString(), xOfText, fontSize, fontSize.toString(), svgBox)
+                    xOfPreviousBarNumber = xOfText
                 }
-                barx += barwidth;
-                barNo++;
+                barx += barwidth
+                barNo++
             }
         }
     }
@@ -284,11 +276,11 @@ export class DrawingService {
 
     // Cleans the graphic and the information svg boxes
     private cleanSvg(svgBoxId: string) {
-        let svgBox = document.getElementById(svgBoxId);
-        const parentElement = svgBox.parentElement;
-        const emptySvg = svgBox.cloneNode(false);
-        parentElement.removeChild(svgBox);
-        parentElement.appendChild(emptySvg);
-        svgBox = document.getElementById(svgBoxId);
+        let svgBox = document.getElementById(svgBoxId)
+        const parentElement = svgBox.parentElement
+        const emptySvg = svgBox.cloneNode(false)
+        parentElement.removeChild(svgBox)
+        parentElement.appendChild(emptySvg)
+        svgBox = document.getElementById(svgBoxId)
     }
 }

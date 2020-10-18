@@ -12,6 +12,7 @@ import { StoreModule } from '@ngrx/store'
 import { songsPanelFeatureKey } from './state'
 import { songPanelReducer } from './state/song-panel.reducer';
 import { TrackComponent } from './track/track.component'
+import { DrawingService } from './services/drawing.service'
 
 @NgModule({
     declarations: [
@@ -30,7 +31,8 @@ import { TrackComponent } from './track/track.component'
       
     ],
     providers: [
-      SongsRepositoryService
+      SongsRepositoryService,
+      DrawingService
     ],
     schemas: [CUSTOM_ELEMENTS_SCHEMA]
   })
