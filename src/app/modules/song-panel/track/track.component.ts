@@ -1,4 +1,4 @@
-import { Component, OnInit, Input, OnChanges, SimpleChanges, AfterViewInit } from '@angular/core'
+import { Component, OnInit, Input, OnChanges, SimpleChanges, AfterViewInit, ViewChild } from '@angular/core'
 import { MatSliderChange } from '@angular/material/slider'
 import { Song } from 'src/app/core/models/song'
 import { SongSimplification } from 'src/app/core/models/song-simplification'
@@ -18,7 +18,7 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
   @Input() songId: number
   @Input() trackId: number
   @Input() song: Song
-  @Input() scale: number
+  @Input() scaleX: number
   @Input() xDisplacement: number
   @Input() svgBoxWidth: number
   @Input() svgBoxHeight: number
@@ -26,9 +26,11 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
   @Input() sliderStep: number
   @Input() sliderDefaultValue: number
   @Input() simplification: number
+  scaleY = 128
   viewBox: string
   yDisplacement = 0
   svgBox: any
+  @ViewChild('slider') slider
 
   constructor(private drawingService: DrawingService) {
 
@@ -55,17 +57,23 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
   }
 
   moveVertical(event: MatSliderChange): void {
-    this.yDisplacement = (event.value - this.sliderDefaultValue) * (2 / this.scale)
+    this.yDisplacement = -(event.value - this.sliderDefaultValue) * (2 / this.scaleX)
     this.redrawSvgBox()
   }
   redrawSvgBox(): void {
-    this.viewBox = `${this.xDisplacement} ${this.yDisplacement} ${this.scale * this.svgBoxWidth} ${this.scale * this.svgBoxHeight}`
+    const scaleFactorX = this.scaleX * this.song.songStats.numberOfTicks
+    this.viewBox = `${this.xDisplacement} ${this.yDisplacement} ${scaleFactorX} ${this.scaleY}`
+  }
+  changeScale(scale: number){
+    this.scaleY *= scale
+    this.redrawSvgBox()
   }
 
   reset() {
-    console.log("entre al puto reset")
     this.yDisplacement = 0
+    this.scaleY = 128
     this.redrawSvgBox()
+    this.slider.value = 50
   }
 
 

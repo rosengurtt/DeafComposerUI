@@ -1,21 +1,25 @@
-.sliderHoriz{
+.sliderHoriz {
     width: 1200px;
     grid-area: horizSlider;
 }
 
-.sliderVert{
-    height: 200px;
-    grid-area: vertSlider;
+.sliderVert {
+    height: 120px;
 }
-.canvas{
+.canvas {
     grid-area: canvas;
     border:1px solid white;
 }
 
 
-.box{
+.box {
     display: grid;
     grid-template-columns: 50px auto;
+    row-gap: 4px;
     grid-template-areas: 
-    "vertSlider canvas"
+    "controls canvas"
+}
+.controls {
+    display: grid;
+    grid-area: controls;
 }

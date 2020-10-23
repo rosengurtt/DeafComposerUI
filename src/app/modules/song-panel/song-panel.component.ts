@@ -1,4 +1,4 @@
-import { Component, OnChanges, SimpleChange, OnInit, Input, Output, EventEmitter, ViewChildren, QueryList } from '@angular/core'
+import { Component, OnChanges, SimpleChange, OnInit, Input, Output, EventEmitter, ViewChildren, QueryList, ViewChild } from '@angular/core'
 import { MatSliderChange } from '@angular/material/slider'
 import { Song } from 'src/app/core/models/song'
 import { TrackComponent } from './track/track.component'
@@ -17,7 +17,7 @@ export class SongPanelComponent implements OnInit {
   sliderMax = 100
   sliderStep = 1
   sliderDefaultValue = 50
-  scale = 1
+  scaleX = 1
   xDisplacement = 0
   svgBoxWidth = 1200
   svgBoxHeight = 200
@@ -25,6 +25,7 @@ export class SongPanelComponent implements OnInit {
   svgBoxIdPrefix = "svgTrack"
   progressBarIdPrefix = "progBarTrack"
   @ViewChildren(TrackComponent) childrenTracks: QueryList<TrackComponent>
+  @ViewChild('slider') slider
 
   ngOnInit() {
     this.tracks = Array(this.song.songSimplifications[0].numberOfVoices).fill(0).map((x, i) => i + 1)
@@ -32,17 +33,17 @@ export class SongPanelComponent implements OnInit {
   }
 
   changeScale(value: number): void {
-    this.scale = this.scale * value
+    this.scaleX = this.scaleX * value
   }
   moveHorizontal(event: MatSliderChange): void {
-    this.xDisplacement = -(event.value - this.sliderDefaultValue) * (50 / this.scale)
+    this.xDisplacement = (event.value - this.sliderDefaultValue) * (80 / this.scaleX)
   }
 
   reset() {
-    this.scale = 1
+    this.scaleX = 1
     this.xDisplacement = 0
     this.childrenTracks.forEach(x => x.reset())
-
+    this.slider.value = 50
   }
 }
 
