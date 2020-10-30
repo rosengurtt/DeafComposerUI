@@ -126,5 +126,6 @@ export enum Instrument {
     TelephoneRing = 124,
     Helicopter = 125,
     Applause = 126,
-    Gunshot = 127
+    Gunshot = 127,
+    Drums = 128
 }

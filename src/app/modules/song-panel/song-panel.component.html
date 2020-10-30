@@ -1,31 +1,41 @@
-<h1>{{song.name}}</h1>
-<div class = "panelControl">
-  <button mat-fab color="warn" aria-label="Zoom in" (click)="changeScale(0.95)">
-    <mat-icon>zoom_in</mat-icon>
-  </button>
-  <button mat-fab color="warn" aria-label="Zoom in" (click)="changeScale(1.05)">
-    <mat-icon>zoom_out</mat-icon>
-  </button>
-  <button mat-fab color="warn" aria-label="Zoom in" (click)="reset()">
-    Reset
-  </button>
+<h1 >{{song?.name}}</h1>
+
+<div class="container">
+  <div class="left">
+
+  </div>
+  <div class="right">
+    <div class="panelControl">
+      <button mat-fab color="warn" aria-label="Zoom in" (click)="changeScale(0.95)">
+        <mat-icon>zoom_in</mat-icon>
+      </button>
+      <button mat-fab color="warn" aria-label="Zoom in" (click)="changeScale(1.05)">
+        <mat-icon>zoom_out</mat-icon>
+      </button>
+      <button mat-fab color="warn" aria-label="Zoom in" (click)="reset()">
+        Reset
+      </button>
+      <button mat-fab color="warn" aria-label="Zoom in" (click)="play()">
+        <mat-icon>play_circle_filled</mat-icon>
+      </button>
+
+      <button mat-fab color="warn" aria-label="Zoom in" (click)="stop()">
+        <mat-icon>pause_circle_filled</mat-icon>
+      </button>
+    </div>
+    
+    <mat-slider #slider min="0" [attr.max]="sliderMax" [attr.step]="sliderStep" value="50" class="sliderHoriz"
+      (input)="moveHorizontal($event)"></mat-slider>
+  
+  </div>
 </div>
-<mat-slider #slider min="0" [attr.max]="sliderMax" [attr.step]="sliderStep" value="50" class="sliderHoriz"
-  (input)="moveHorizontal($event)"></mat-slider>
 <div *ngFor="let track of tracks">
-  <dc-track 
-  [svgBoxIdPrefix] = "svgBoxIdPrefix"
-  [progressBarIdPrefix] = "progressBarIdPrefix"
-  [song] = "song"
-  [songId] = "songId"
-  [trackId] = "track"
-  [scaleX] = "scaleX"
-  [sliderMax] = "sliderMax"
-  [sliderStep] = "sliderStep"
-  [sliderDefaultValue] = "sliderDefaultValue"
-  [xDisplacement] = "xDisplacement"
-  [svgBoxWidth] = "svgBoxWidth"
-  [svgBoxHeight] = "svgBoxHeight"
-  [simplification] = "simplification"
-   ></dc-track>
+  <dc-track [svgBoxIdPrefix]="svgBoxIdPrefix" [progressBarIdPrefix]="progressBarIdPrefix" [song]="song"
+    [songId]="songId" [trackId]="track" [scaleX]="scaleX" [sliderMax]="sliderMax" [sliderStep]="sliderStep"
+    [sliderDefaultValue]="sliderDefaultValue" [xDisplacement]="xDisplacement" [svgBoxWidth]="svgBoxWidth"
+    [svgBoxHeight]="svgBoxHeight" [simplification]="simplification"></dc-track>
 </div>
+
+
+
+

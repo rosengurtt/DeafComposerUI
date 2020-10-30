@@ -1,6 +1,7 @@
 import { Component, OnChanges, SimpleChange, OnInit, Input, Output, EventEmitter, ViewChildren, QueryList, ViewChild } from '@angular/core'
 import { MatSliderChange } from '@angular/material/slider'
 import { Song } from 'src/app/core/models/song'
+import { SongSimplification } from 'src/app/core/models/song-simplification'
 import { TrackComponent } from './track/track.component'
 
 declare var MIDIjs: any
@@ -28,15 +29,15 @@ export class SongPanelComponent implements OnInit {
   @ViewChild('slider') slider
 
   ngOnInit() {
-    this.tracks = Array(this.song.songSimplifications[0].numberOfVoices).fill(0).map((x, i) => i + 1)
-
+    let typescriptSacamela = new SongSimplification(this.song.songSimplifications[0])
+    this.tracks = typescriptSacamela.voicesWithNotes
   }
 
   changeScale(value: number): void {
     this.scaleX = this.scaleX * value
   }
   moveHorizontal(event: MatSliderChange): void {
-    this.xDisplacement = (event.value - this.sliderDefaultValue) * (80 / this.scaleX)
+    this.xDisplacement = (event.value - this.sliderDefaultValue) * (200 / this.scaleX)
   }
 
   reset() {
@@ -45,5 +46,14 @@ export class SongPanelComponent implements OnInit {
     this.childrenTracks.forEach(x => x.reset())
     this.slider.value = 50
   }
+
+  play(): void {
+    MIDIjs.play(`https://localhost:9001/api/song/${this.song.id}/midi`)
+  }
+
+  stop(): void {
+    MIDIjs.stop()
+  }
+
 }
 

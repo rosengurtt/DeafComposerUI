@@ -13,12 +13,14 @@ import { songsPanelFeatureKey } from './state'
 import { songPanelReducer } from './state/song-panel.reducer';
 import { TrackComponent } from './track/track.component'
 import { DrawingService } from './services/drawing.service'
+import { SplitCamelCasePipe } from 'src/app/core/pipes/split-camel-case.pipe'
 
 @NgModule({
     declarations: [
       SongPanelComponent,
       SongPanelShellComponent,
-      TrackComponent
+      TrackComponent,
+      SplitCamelCasePipe
     ],
     imports: [
       BrowserModule,

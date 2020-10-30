@@ -11,15 +11,25 @@
     border:1px solid white;
 }
 
+.trackInfo {
+    grid-area: trackInfo;
+    
+}
+
 
 .box {
     display: grid;
-    grid-template-columns: 50px auto;
+    grid-template-columns: 100px 50px auto;
     row-gap: 4px;
     grid-template-areas: 
-    "controls canvas"
+    "trackInfo controls canvas"
 }
 .controls {
     display: grid;
     grid-area: controls;
+}
+
+.trackInfo {
+    padding: 4px;
+    font-size: 0.8em;
 }

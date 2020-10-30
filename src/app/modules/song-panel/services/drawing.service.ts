@@ -13,47 +13,30 @@ export class DrawingService {
     colorMusicBar = 'rgb(250,200,190)'
     colorProgressBar = 'rgb(200,0,0)'
     // keyboards are blue
-    colorPiano = 'rgb(51,0,153)'
-    colorOrgan = 'rgb(71,0,214)'
-    colorSynthLead = 'rgb(0,102,153)'
-    colorSynthPad = 'rgb(99,20,255)'
-    colorSynthEffects = 'rgb(0,0,102)'
-    colorEnsemble = 'rgb(122,122,255)'
+    colorKeyboard = 'rgb(100,100,224)'
     // bass is violet
-    colorBass = 'rgb(163,0,163)'
-    // string are red
-    colorGuitar = 'rgb(214,0,0)'
-    colorStrings = 'rgb(255,20,99)'
-    // viento are green
-    colorBrass = 'rgb(0,102,0)'
-    colorReed = 'rgb(102,102,0)'
-    colorPipe = 'rgb(0,224,0)'
-    // drums and percussion are black
-    colorDrums = 'rgb(0,0,0)'
-    colorPercussion = 'rgb(50,50,50)'
-    colorEthnic = 'rgb(100,100,100'
-    colorSoundEffects = 'rgb(140,140,140)'
+    colorBass = 'rgb(224,100,224)'
+    // guitar is red
+    colorGuitar = 'rgb(224,100,100)'
+    // drums are green
+    colorDrums = 'rgb(100,224,100)'
+    // others are yellow
+    colorOthers = 'rgb(224,224,100)'
 
     noteDotRadio = 1
 
     private getColor(instrument: Instrument, isPercusion: boolean): string {
-        if (isPercusion) { return this.colorDrums }
-        if (instrument < 8) { return this.colorPiano }
-        if (instrument < 16) { return this.colorPercussion }
-        if (instrument < 24) { return this.colorOrgan }
-        if (instrument < 32) { return this.colorGuitar }
-        if (instrument < 40) { return this.colorBass }
-        if (instrument < 48) { return this.colorStrings }
-        if (instrument < 56) { return this.colorEnsemble }
-        if (instrument < 64) { return this.colorBrass }
-        if (instrument < 72) { return this.colorReed }
-        if (instrument < 80) { return this.colorPipe }
-        if (instrument < 88) { return this.colorSynthLead }
-        if (instrument < 96) { return this.colorSynthPad }
-        if (instrument < 104) { return this.colorSynthEffects }
-        if (instrument < 112) { return this.colorEthnic }
-        if (instrument < 120) { return this.colorPercussion }
-        return this.colorSoundEffects
+        if (isPercusion) return this.colorDrums
+        if (instrument < 8) return this.colorKeyboard
+        if (instrument < 16) return this.colorDrums
+        if (instrument < 24) return this.colorKeyboard
+        if (instrument < 32) return this.colorGuitar
+        if (instrument < 40) return this.colorBass
+        if (instrument < 48) return this.colorGuitar
+        if (instrument < 80) return this.colorOthers
+        if (instrument < 96) return this.colorKeyboard
+        if (instrument == 128) return this.colorDrums
+        return this.colorOthers
     }
 
     public createProgressBar(

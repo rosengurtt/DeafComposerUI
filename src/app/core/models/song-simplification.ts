@@ -6,6 +6,7 @@ export class SongSimplification {
     simplificationVersion: number
     notes: Note[]
     numberOfVoices: number
+    voicesWithNotes: number[]
 
     constructor(data: any) {
         this.id = data.id
@@ -13,6 +14,13 @@ export class SongSimplification {
         this.simplificationVersion = data.simplificationVersion
         this.notes = data.notes
         this.numberOfVoices = data.numberOfVoices
+        this.voicesWithNotes = this.getVoicesWithNotes()
+    }
+
+    private getVoicesWithNotes(): number[] {
+        let voices: Set<number> = new Set()
+        this.notes.forEach(x => voices.add(x.voice))
+        return Array.from(voices.values())
     }
 
     public getNotesOfVoice(voice: number): Note[] {
@@ -28,7 +36,9 @@ export class SongSimplification {
     public getInstrumentOfVoice(voice: number): number | null {
         if (this.notes && this.notes.length > 0) {
             const note = this.notes.find(note => note.voice === voice)
-            if (note) return note.instrument
+            if (note && !note.isPercussion) return note.instrument
+            // 128 is not really a valid code. We use it to denote that the track is a drums track
+            if (note && note.isPercussion) return 128
         }
         return 0
     }

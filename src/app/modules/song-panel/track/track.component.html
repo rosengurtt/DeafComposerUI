@@ -1,4 +1,7 @@
 <div class="box">
+  <div class="trackInfo">
+     {{instrument | splitCamelCase}}
+  </div>
   <div class="controls">
     <button mat-mini-fab color="warn" aria-label="Zoom in" (click)="changeScale(0.95)">
       <mat-icon>zoom_in</mat-icon>

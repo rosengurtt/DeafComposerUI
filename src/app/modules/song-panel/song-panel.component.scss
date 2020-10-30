@@ -12,14 +12,16 @@
 }
 
 .panelControl{
-    grid-area: panelControl
+    grid-area: panelControl;
+    display: grid;
+    grid-template-columns: 100px 100px 100px 100px 100px ;
 }
 
-.box{
+.container{
     display: grid;
-    grid-template-columns: 50px auto;
-    grid-template-areas: 
-    ". panelControl"
-    ". horizSlider"
-    "vertSlider canvas"
+    grid-template-columns: 150px auto;
+}
+
+h1 {
+    padding: 22px;
 }

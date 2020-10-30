@@ -1,5 +1,6 @@
 import { Component, OnInit, Input, OnChanges, SimpleChanges, AfterViewInit, ViewChild } from '@angular/core'
 import { MatSliderChange } from '@angular/material/slider'
+import { Instrument } from 'src/app/core/models/midi/midi-codes/instrument.enum'
 import { Song } from 'src/app/core/models/song'
 import { SongSimplification } from 'src/app/core/models/song-simplification'
 import { DrawingService } from '../services/drawing.service'
@@ -30,6 +31,7 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
   viewBox: string
   yDisplacement = 0
   svgBox: any
+  instrument: string
   @ViewChild('slider') slider
 
   constructor(private drawingService: DrawingService) {
@@ -46,7 +48,9 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
 
   ngOnInit() {
     this.redrawSvgBox()
-
+    let typescriptSacamela = new SongSimplification(this.song.songSimplifications[0])
+    let instrumentCode = typescriptSacamela.getInstrumentOfVoice(this.trackId)
+    this.instrument = Instrument[instrumentCode]
   }
 
 
@@ -64,7 +68,7 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
     const scaleFactorX = this.scaleX * this.song.songStats.numberOfTicks
     this.viewBox = `${this.xDisplacement} ${this.yDisplacement} ${scaleFactorX} ${this.scaleY}`
   }
-  changeScale(scale: number){
+  changeScale(scale: number) {
     this.scaleY *= scale
     this.redrawSvgBox()
   }
