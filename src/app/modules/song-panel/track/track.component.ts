@@ -19,7 +19,7 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
   @Input() songId: number
   @Input() trackId: number
   @Input() song: Song
-  @Input() scaleX: number
+  @Input() xScale: number
   @Input() xDisplacement: number
   @Input() svgBoxWidth: number
   @Input() svgBoxHeight: number
@@ -38,7 +38,7 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
 
   }
   ngAfterViewInit(): void {
-    const svgBoxId = this.svgBoxIdPrefix + this.trackId;
+    const svgBoxId = `${this.svgBoxIdPrefix}_${this.songId}_${this.trackId}`
     const progressBarId = this.progressBarIdPrefix + this.trackId;
     const simplification = 0
     const songIsPlaying = false
@@ -61,11 +61,11 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
   }
 
   moveVertical(event: MatSliderChange): void {
-    this.yDisplacement = -(event.value - this.sliderDefaultValue) * (2 / this.scaleX)
+    this.yDisplacement = -(event.value - this.sliderDefaultValue) * (2 / this.xScale)
     this.redrawSvgBox()
   }
   redrawSvgBox(): void {
-    const scaleFactorX = this.scaleX * this.song.songStats.numberOfTicks
+    const scaleFactorX = this.xScale * this.song.songStats.numberOfTicks
     this.viewBox = `${this.xDisplacement} ${this.yDisplacement} ${scaleFactorX} ${this.scaleY}`
   }
   changeScale(scale: number) {

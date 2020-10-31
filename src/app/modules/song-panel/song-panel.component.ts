@@ -1,4 +1,4 @@
-import { Component, OnChanges, SimpleChange, OnInit, Input, Output, EventEmitter, ViewChildren, QueryList, ViewChild } from '@angular/core'
+import { Component, OnChanges, SimpleChange, OnInit, Input, Output, EventEmitter, ViewChildren, QueryList, ViewChild, SimpleChanges } from '@angular/core'
 import { MatSliderChange } from '@angular/material/slider'
 import { Song } from 'src/app/core/models/song'
 import { SongSimplification } from 'src/app/core/models/song-simplification'
@@ -11,15 +11,20 @@ declare var MIDIjs: any
   templateUrl: './song-panel.component.html',
   styleUrls: ['./song-panel.component.scss']
 })
-export class SongPanelComponent implements OnInit {
+export class SongPanelComponent implements OnInit, OnChanges {
   @Input() songId: number
   @Input() song: Song
+  @Input() xDisplacement: number
+  @Input() xScale
+
+  @Output() xDisplacementChanged = new EventEmitter<number>()
+  @Output() xScaleChanged = new EventEmitter<number>()
+
   tracks: number[]
   sliderMax = 100
   sliderStep = 1
   sliderDefaultValue = 50
-  scaleX = 1
-  xDisplacement = 0
+
   svgBoxWidth = 1200
   svgBoxHeight = 200
   simplification = 0
@@ -29,21 +34,29 @@ export class SongPanelComponent implements OnInit {
   @ViewChild('slider') slider
 
   ngOnInit() {
+    this.setTracks()
+  }
+
+  setTracks():void{
     let typescriptSacamela = new SongSimplification(this.song.songSimplifications[0])
     this.tracks = typescriptSacamela.voicesWithNotes
   }
 
+  ngOnChanges(changes: SimpleChanges): void {
+    for (const propName in changes) {
+      if (propName == "song")  this.setTracks()
+    }
+  }
   changeScale(value: number): void {
-    this.scaleX = this.scaleX * value
+    this.xScaleChanged.emit(value * this.xScale)
   }
   moveHorizontal(event: MatSliderChange): void {
-    this.xDisplacement = (event.value - this.sliderDefaultValue) * (200 / this.scaleX)
+
   }
 
   reset() {
-    this.scaleX = 1
-    this.xDisplacement = 0
-    this.childrenTracks.forEach(x => x.reset())
+    this.xScaleChanged.emit(1)
+    this.xDisplacementChanged.emit(0)
     this.slider.value = 50
   }
 

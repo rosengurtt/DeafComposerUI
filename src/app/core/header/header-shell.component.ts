@@ -4,6 +4,7 @@ import { Store } from '@ngrx/store';
 import { Song } from '../../core/models/song'
 import { State } from '../../core/state/app.state'
 import { getSongsUnderAnalysis } from '../../modules/song-panel/state'
+import {map} from 'rxjs/operators'
 
 @Component({
     selector: 'dc-header-shell',
@@ -18,6 +19,7 @@ export class HeaderShellComponent implements OnInit {
 
     ngOnInit(): void {
         this.songsUnderAnalysis$ = this.mainStore.select(getSongsUnderAnalysis)
+            .pipe(map(s=> Array.from(s.values())))
     }
 
 

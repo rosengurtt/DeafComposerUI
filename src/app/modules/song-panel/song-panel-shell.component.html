@@ -1,4 +1,12 @@
 <dc-song-panel 
     [song]="song$ | async" 
-    [songId]="songId">
+    [songId]="songId"
+    [xDisplacement]="xDisplacement$ | async"
+    [xScale]="xScale$ | async"
+
+    
+    (xDisplacementChanged) = "xDisplacementChanged($any($event))"
+    (xScaleChanged) = "xScaleChanged($any($event))"
+
+    >
 </dc-song-panel>

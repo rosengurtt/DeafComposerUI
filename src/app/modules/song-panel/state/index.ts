@@ -1,9 +1,13 @@
-import { createFeatureSelector, createSelector } from '@ngrx/store';
-import { Song } from '../../../core/models/song';
+
+import { createFeatureSelector, createSelector } from '@ngrx/store'
+import { Song } from 'src/app/core/models/song'
+import { StringifiedMap } from 'src/app/core/utilities/stringified-map'
 
 // State for this feature (Product)
 export interface SongPanelState {
     songsUnderAnalysis: Song[]
+    xDisplacement: string
+    xScale: string
     error: string
 }
 
@@ -14,12 +18,25 @@ const getSongPanelFeatureState = createFeatureSelector<SongPanelState>(songsPane
 
 export const getSongsUnderAnalysis = createSelector(
     getSongPanelFeatureState,
-    state => state.songsUnderAnalysis
+    state=> state.songsUnderAnalysis
 )
 
-export const getSongById = createSelector(
+export const getSongUnderAnalysisById = createSelector(
     getSongPanelFeatureState,
     (state, props) => {
-            return props ? state.songsUnderAnalysis.find(p => p.id === props.id) : null
-        }
+        return props ? state.songsUnderAnalysis.find(p => p.id === props.id) : null
+    }
+)
+
+export const getXdisplacementBySongId = createSelector(
+    getSongPanelFeatureState,
+    (state, props) => {
+        return props ? StringifiedMap.get(state.xDisplacement, props.id) : null
+    }
+)
+export const getXscaleBySongId = createSelector(
+    getSongPanelFeatureState,
+    (state, props) => {
+        return props ? StringifiedMap.get(state.xScale, props.id) : null
+    }
 )
