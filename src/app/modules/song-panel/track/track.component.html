@@ -3,20 +3,15 @@
      {{instrument | splitCamelCase}}
   </div>
   <div class="controls">
-    <button mat-mini-fab color="warn" aria-label="Zoom in" (click)="changeScale(0.95)">
-      <mat-icon>zoom_in</mat-icon>
-    </button>
-    <button mat-mini-fab color="warn" aria-label="Zoom in" (click)="changeScale(1.05)">
-      <mat-icon>zoom_out</mat-icon>
-    </button>    
-    <mat-slider #slider min="0" [attr.max]="sliderMax" [attr.step]="sliderStep" value="50" class="sliderVert" vertical
-      (input)="moveVertical($event)"></mat-slider>
+
   </div>
   
     <svg class="canvas" preserveAspectRatio="none"
       [attr.width]="svgBoxWidth" [attr.height]="svgBoxHeight" 
       id="{{svgBoxIdPrefix}}_{{songId}}_{{trackId}}"
-      xmlns="http://www.w3.org/2000/svg" [attr.viewBox]="viewBox" xmlns:xlink="http://www.w3.org/1999/xlink">
+      xmlns="http://www.w3.org/2000/svg" [attr.viewBox]="viewBox" xmlns:xlink="http://www.w3.org/1999/xlink"
+      (mousedown)="dragStarted($event)" (mouseup)="dragFinished()" (mouseleave)="dragFinished()" (mousemove)="drag($event)"
+      >
 
     </svg>
   </div>

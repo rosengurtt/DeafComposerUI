@@ -1,12 +1,16 @@
 <dc-song-panel 
     [song]="song$ | async" 
     [songId]="songId"
-    [xDisplacement]="xDisplacement$ | async"
-    [xScale]="xScale$ | async"
+    [displacement]="displacement$ | async"
+    [scale]="scale$ | async"
+    [playingSong]="playingSong$ | async"
 
     
-    (xDisplacementChanged) = "xDisplacementChanged($any($event))"
-    (xScaleChanged) = "xScaleChanged($any($event))"
-
+    (displacementChanged) = "displacementChanged($any($event))"
+    (scaleChanged) = "scaleChanged($any($event))"
+    (songStartedPlaying) = "songStartedPlaying($any($event))"
+    (songStoppedPlaying) = "songStoppedPlaying()"
+    (songPaused) = "songPaused()"
+    (songResumed) = "songResumed()"
     >
 </dc-song-panel>

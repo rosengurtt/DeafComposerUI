@@ -1,5 +1,6 @@
-import { Component, OnInit, Input, OnChanges, SimpleChanges, AfterViewInit, ViewChild } from '@angular/core'
+import { Component, OnInit, Input, OnChanges, SimpleChanges, AfterViewInit, ViewChild, Output, EventEmitter } from '@angular/core'
 import { MatSliderChange } from '@angular/material/slider'
+import { Coordenadas } from 'src/app/core/models/coordenadas'
 import { Instrument } from 'src/app/core/models/midi/midi-codes/instrument.enum'
 import { Song } from 'src/app/core/models/song'
 import { SongSimplification } from 'src/app/core/models/song-simplification'
@@ -19,20 +20,22 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
   @Input() songId: number
   @Input() trackId: number
   @Input() song: Song
-  @Input() xScale: number
-  @Input() xDisplacement: number
+  @Input() scale: number
+  @Input() displacement: Coordenadas
   @Input() svgBoxWidth: number
   @Input() svgBoxHeight: number
   @Input() sliderMax: number
   @Input() sliderStep: number
   @Input() sliderDefaultValue: number
   @Input() simplification: number
-  scaleY = 128
+  @Output() displaceChange = new EventEmitter<Coordenadas>()
+
   viewBox: string
-  yDisplacement = 0
   svgBox: any
   instrument: string
-  @ViewChild('slider') slider
+  isDragActive = false
+  lastXrecorded: number | null
+  lastYrecorded: number | null
 
   constructor(private drawingService: DrawingService) {
 
@@ -60,24 +63,33 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
     this.redrawSvgBox()
   }
 
-  moveVertical(event: MatSliderChange): void {
-    this.yDisplacement = -(event.value - this.sliderDefaultValue) * (2 / this.xScale)
-    this.redrawSvgBox()
-  }
+
   redrawSvgBox(): void {
-    const scaleFactorX = this.xScale * this.song.songStats.numberOfTicks
-    this.viewBox = `${this.xDisplacement} ${this.yDisplacement} ${scaleFactorX} ${this.scaleY}`
-  }
-  changeScale(scale: number) {
-    this.scaleY *= scale
-    this.redrawSvgBox()
+    const scaleFactorX = this.scale * this.song.songStats.numberOfTicks
+    const scaleFactorY = this.scale * 128
+    this.viewBox = `${this.displacement.x} ${this.displacement.y} ${scaleFactorX} ${scaleFactorY}`
   }
 
+
   reset() {
-    this.yDisplacement = 0
-    this.scaleY = 128
     this.redrawSvgBox()
-    this.slider.value = 50
+  }
+  dragStarted(event) {
+    this.isDragActive = true
+    this.lastXrecorded = event.offsetX
+    this.lastYrecorded = event.offsetY
+  }
+  dragFinished() {
+    this.isDragActive = false
+  }
+
+  drag(event) {    
+    if (this.isDragActive && this.lastXrecorded) {
+      let coor = new Coordenadas(event.offsetX - this.lastXrecorded, event.offsetY - this.lastYrecorded)
+      this.displaceChange.emit(coor)
+      this.lastXrecorded = event.offsetX
+      this.lastYrecorded = event.offsetY
+    }
   }
 
 

@@ -1,4 +1,6 @@
 import { createAction, props } from '@ngrx/store'
+import { Coordenadas } from 'src/app/core/models/coordenadas'
+import { PlayingSong } from 'src/app/core/models/playing-song'
 import { Song } from '../../../../core/models/song'
 
 export const addSong = createAction(
@@ -10,12 +12,30 @@ export const removeSong = createAction(
   props<{ song: Song }>()
 )
 
-export const xDisplacementChange = createAction(
-  '[Songs-Panel Page] xDisplacement change',
-  props<{ songId: number, displacement: number }>()
+export const displacementChange = createAction(
+  '[Songs-Panel Page] Displacement change',
+  props<{ songId: number, displacement: Coordenadas }>()
 )
 
-export const xScaleChange = createAction(
-  '[Songs-Panel Page] xScale change',
+export const scaleChange = createAction(
+  '[Songs-Panel Page] Scale change',
   props<{ songId: number, scale: number }>()
+)
+
+export const startPlayingSong = createAction(
+  '[Songs-Panel Page] Start playing song',
+  props<{ playingSong: PlayingSong }>()
+)
+export const elapsedSecondPlayingSong = createAction(
+  '[Songs-Panel Page] Elapsed second playing song',
+  props<{ seconds: number }>()
+)
+export const stopPlayingSong = createAction(
+  '[Songs-Panel Page] Stop playing song'
+)
+export const pausePlayingSong = createAction(
+  '[Songs-Panel Page] Pause playing song'
+)
+export const resumePlayingSong = createAction(
+  '[Songs-Panel Page] Resume playing song'
 )

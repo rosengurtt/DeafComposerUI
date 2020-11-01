@@ -2,12 +2,14 @@
 import { createFeatureSelector, createSelector } from '@ngrx/store'
 import { Song } from 'src/app/core/models/song'
 import { StringifiedMap } from 'src/app/core/utilities/stringified-map'
+import {PlayingSong} from 'src/app/core/models/playing-song'
 
 // State for this feature (Product)
 export interface SongPanelState {
     songsUnderAnalysis: Song[]
-    xDisplacement: string
-    xScale: string
+    displacement: string
+    scale: string
+    playingSong: PlayingSong
     error: string
 }
 
@@ -18,7 +20,7 @@ const getSongPanelFeatureState = createFeatureSelector<SongPanelState>(songsPane
 
 export const getSongsUnderAnalysis = createSelector(
     getSongPanelFeatureState,
-    state=> state.songsUnderAnalysis
+    state => state.songsUnderAnalysis
 )
 
 export const getSongUnderAnalysisById = createSelector(
@@ -28,15 +30,20 @@ export const getSongUnderAnalysisById = createSelector(
     }
 )
 
-export const getXdisplacementBySongId = createSelector(
+export const getDisplacementBySongId = createSelector(
     getSongPanelFeatureState,
     (state, props) => {
-        return props ? StringifiedMap.get(state.xDisplacement, props.id) : null
+        return props ? StringifiedMap.get(state.displacement, props.id) : null
     }
 )
-export const getXscaleBySongId = createSelector(
+export const getScaleBySongId = createSelector(
     getSongPanelFeatureState,
     (state, props) => {
-        return props ? StringifiedMap.get(state.xScale, props.id) : null
+        return props ? StringifiedMap.get(state.scale, props.id) : null
     }
+)
+
+export const getPlayingSong = createSelector(
+    getSongPanelFeatureState,
+    state => state.playingSong
 )

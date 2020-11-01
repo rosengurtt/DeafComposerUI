@@ -3,12 +3,15 @@ import { SongPanelPageActions } from './actions'
 import { SongPanelState } from './index'
 import * as cloneDeep from 'lodash/cloneDeep'
 import { StringifiedMap } from 'src/app/core/utilities/stringified-map'
+import { Coordenadas } from 'src/app/core/models/coordenadas'
+import { PlayingSong } from 'src/app/core/models/playing-song'
 
 
 const initialState: SongPanelState = {
     songsUnderAnalysis: [],
-    xDisplacement: null,
-    xScale: null,
+    displacement: null,
+    scale: null,
+    playingSong: null,
     error: ''
 }
 export class reduxSacamela {
@@ -26,29 +29,54 @@ export const songPanelReducer = createReducer<SongPanelState>(
     on(SongPanelPageActions.addSong, (state, action): SongPanelState => {
         let newState = cloneDeep(state)
         newState.songsUnderAnalysis = [...state.songsUnderAnalysis, action.song]
-        newState.xDisplacement = StringifiedMap.set(state.xDisplacement, action.song.id, 0)
-        newState.xScale = StringifiedMap.set(state.xScale, action.song.id, 1)
+        newState.displacement = StringifiedMap.set(state.displacement, action.song.id, new Coordenadas(0, 0))
+        newState.scale = StringifiedMap.set(state.scale, action.song.id, 1)
         return newState
     }),
     on(SongPanelPageActions.removeSong, (state, action): SongPanelState => {
         let newState = cloneDeep(state)
         newState.songsUnderAnalysis = state.songsUnderAnalysis.filter(song => song.id !== action.song.id)
-        newState.xScale = StringifiedMap.set(state.xScale, action.song.id, 1)
         return newState
     }),
 
-    on(SongPanelPageActions.xDisplacementChange, (state, action): SongPanelState => {
+    on(SongPanelPageActions.displacementChange, (state, action): SongPanelState => {
         let newState = cloneDeep(state)
-        newState.xDisplacement = StringifiedMap.set(state.xDisplacement, action.songId, action.displacement)
+        newState.displacement = StringifiedMap.set(state.displacement, action.songId, action.displacement)
         return newState
     }),
 
-    on(SongPanelPageActions.xScaleChange, (state, action): SongPanelState => {
+    on(SongPanelPageActions.scaleChange, (state, action): SongPanelState => {
         let newState = cloneDeep(state)
-        newState.xScale = StringifiedMap.set(state.xScale, action.songId, action.scale)
+        newState.scale = StringifiedMap.set(state.scale, action.songId, action.scale)
         return newState
     }),
-
-
+    on(SongPanelPageActions.startPlayingSong, (state, action): SongPanelState => {
+        let newState = cloneDeep(state)
+        newState.playingSong = action.playingSong
+        return newState
+    }),
+    on(SongPanelPageActions.elapsedSecondPlayingSong, (state, action): SongPanelState => {
+        let newState = cloneDeep(state)
+        if (action.seconds >= state.playingSong.durationInSeconds)
+            newState.playingSong = null
+        else
+            newState.playingSong.elapsedSeconds = action.seconds
+        return newState
+    }),
+    on(SongPanelPageActions.stopPlayingSong, (state, action): SongPanelState => {
+        let newState = cloneDeep(state)
+        newState.playingSong = null
+        return newState
+    }),
+    on(SongPanelPageActions.pausePlayingSong, (state, action): SongPanelState => {
+        let newState = cloneDeep(state)
+        newState.playingSong.isPaused = true
+        return newState
+    }),
+    on(SongPanelPageActions.resumePlayingSong, (state, action): SongPanelState => {
+        let newState = cloneDeep(state)
+        newState.playingSong.isPaused = false
+        return newState
+    }),
 );
 

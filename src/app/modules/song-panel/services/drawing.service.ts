@@ -102,12 +102,11 @@ export class DrawingService {
         svgBoxId: string): any {
         const svgBox = document.getElementById(svgBoxId)
         const line: any = document.createElementNS(this.svgns, 'line')
-        line.setAttributeNS(null, 'width', 1)
         line.setAttributeNS(null, 'x1', x)
         line.setAttributeNS(null, 'x2', x + l)
         line.setAttributeNS(null, 'y1', y)
         line.setAttributeNS(null, 'y2', y)
-        line.setAttributeNS(null, 'style', `stroke: ${color}`)
+        line.setAttributeNS(null, 'style', `stroke: ${color};stroke-width:0.8`)
         svgBox.appendChild(line)
         return line
     }
@@ -206,12 +205,11 @@ export class DrawingService {
         trackNumber: number,
         svgBoxId: string,
         color: string) {
-        const totalHeight = 128
         const simplif = new SongSimplification(song.songSimplifications[simplificationNo])
         const notes = trackNumber === null ? simplif.notes : simplif.getNotesOfVoice(trackNumber)
         for (const note of notes) {
             const cx: number = note.startSinceBeginningOfSongInTicks
-            const cy: number = totalHeight - note.pitch
+            const cy: number = note.pitch
             this.createNote(cx, cy, note.durationInTicks, color, svgBoxId)
         }
     }

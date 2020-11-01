@@ -15,25 +15,30 @@
       <button mat-fab color="warn" aria-label="Zoom in" (click)="reset()">
         Reset
       </button>
-      <button mat-fab color="warn" aria-label="Zoom in" (click)="play()">
+      <button mat-fab color="warn" aria-label="Zoom in" (click)="play()" [disabled]="playingSong !== null && playingSong.isPaused===false  ">
         <mat-icon>play_circle_filled</mat-icon>
       </button>
 
-      <button mat-fab color="warn" aria-label="Zoom in" (click)="stop()">
+      <button mat-fab color="warn" aria-label="Zoom in" (click)="pause()" [disabled]="playingSong === null">
         <mat-icon>pause_circle_filled</mat-icon>
+      </button>
+      
+      <button mat-fab color="warn" aria-label="Zoom in" (click)="stop()" [disabled]="playingSong === null">
+        <mat-icon>stop</mat-icon>
       </button>
     </div>
     
-    <mat-slider #slider min="0" [attr.max]="sliderMax" [attr.step]="sliderStep" value="50" class="sliderHoriz"
-      (input)="moveHorizontal($event)"></mat-slider>
+    <mat-slider #slider min="0" [attr.max]="sliderMax" [attr.step]="sliderStep" value="0" class="sliderHoriz"
+      ></mat-slider>
   
   </div>
 </div>
 <div *ngFor="let track of tracks">
   <dc-track [svgBoxIdPrefix]="svgBoxIdPrefix" [progressBarIdPrefix]="progressBarIdPrefix" [song]="song"
-    [songId]="songId" [trackId]="track" [xScale]="xScale" [sliderMax]="sliderMax" [sliderStep]="sliderStep"
-    [sliderDefaultValue]="sliderDefaultValue" [xDisplacement]="xDisplacement" [svgBoxWidth]="svgBoxWidth"
-    [svgBoxHeight]="svgBoxHeight" [simplification]="simplification"></dc-track>
+    [songId]="songId" [trackId]="track" [scale]="scale" [sliderMax]="sliderMax" [sliderStep]="sliderStep"
+     [displacement]="displacement" [svgBoxWidth]="svgBoxWidth"
+    [svgBoxHeight]="svgBoxHeight" [simplification]="simplification"
+    (displaceChange)="displaceChange($any($event))"></dc-track>
 </div>
 
 
