@@ -1,10 +1,10 @@
-import { Component, OnChanges, SimpleChange, OnInit, Input, Output, EventEmitter, ViewChildren, QueryList, ViewChild, SimpleChanges } from '@angular/core'
+import { Component, OnChanges, SimpleChange, OnInit, Input, Output, EventEmitter, ViewChildren, QueryList, ViewChild, SimpleChanges, OnDestroy } from '@angular/core'
 import { Song } from 'src/app/core/models/song'
 import { SongSimplification } from 'src/app/core/models/song-simplification'
 import { TrackComponent } from './track/track.component'
 import { Coordenadas } from 'src/app/core/models/coordenadas'
-import { matExpansionAnimations } from '@angular/material/expansion'
 import { PlayingSong } from 'src/app/core/models/playing-song'
+import { MatSliderChange } from '@angular/material/slider'
 
 declare var MIDIjs: any
 
@@ -13,7 +13,8 @@ declare var MIDIjs: any
   templateUrl: './song-panel.component.html',
   styleUrls: ['./song-panel.component.scss']
 })
-export class SongPanelComponent implements OnInit, OnChanges {
+export class SongPanelComponent implements OnInit, OnChanges, OnDestroy {
+
   @Input() songId: number
   @Input() song: Song
   @Input() displacement: Coordenadas
@@ -32,6 +33,7 @@ export class SongPanelComponent implements OnInit, OnChanges {
   tracks: number[]
   sliderMax: number
   sliderStep = 1
+  sliderHasBeenMoved = false
 
   svgBoxWidth = 1200
   svgBoxHeight = 200
@@ -42,10 +44,13 @@ export class SongPanelComponent implements OnInit, OnChanges {
   @ViewChild('slider') slider
 
   ngOnInit() {
+    MIDIjs.stop()
     this.setTracks()
     this.sliderMax = this.song.songStats.durationInSeconds
   }
-
+  ngOnDestroy(): void {
+    this.stop()
+   }
   setTracks(): void {
     let typescriptSacamela = new SongSimplification(this.song.songSimplifications[0])
     this.tracks = typescriptSacamela.voicesWithNotes
@@ -69,14 +74,17 @@ export class SongPanelComponent implements OnInit, OnChanges {
   }
 
   play(): void {
-    if (this.playingSong && this.playingSong.isPaused) {
+    
+    if (this.playingSong && this.playingSong.isPaused && !this.sliderHasBeenMoved) {    
       MIDIjs.resume()
       this.songResumed.emit()
     }
     else {
-      MIDIjs.play(`https://localhost:9001/api/song/${this.song.id}/midi`)
+      MIDIjs.play(`https://localhost:9001/api/song/${this.song.id}/midi?startInSeconds=${this.slider.value}`)
       MIDIjs.message_callback = this.getPlayingStatus.bind(this)
     }
+    // reset this flag
+    this.sliderHasBeenMoved = false
   }
   pause(): void {
     MIDIjs.pause()
@@ -87,16 +95,19 @@ export class SongPanelComponent implements OnInit, OnChanges {
     MIDIjs.stop()
     this.songStoppedPlaying.emit()
   }
+  // This is used for moving the image inside the svg boxes
   displaceChange(value: Coordenadas) {
     this.displacementChanged.emit(new Coordenadas(-value.x * 50 + this.displacement.x, -value.y + this.displacement.y))
   }
   // This is called by midijs when the song starts to play
   getPlayingStatus(mes) {
     if (mes.includes('Playing')) {
-      let playingSong = new PlayingSong(this.songId, 0, this.song.songStats.durationInSeconds)
+      let playingSong = new PlayingSong(this.songId, this.slider.value, this.song.songStats.durationInSeconds)
       this.songStartedPlaying.emit(playingSong)
     }
   };
-
+  sliderMoved(event: MatSliderChange): void {
+    this.sliderHasBeenMoved = true
+  }
 }
 

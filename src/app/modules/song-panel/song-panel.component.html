@@ -29,6 +29,7 @@
     </div>
     
     <mat-slider #slider min="0" [attr.max]="sliderMax" [attr.step]="sliderStep" value="0" class="sliderHoriz"
+    (input)="sliderMoved($event)"
       ></mat-slider>
   
   </div>

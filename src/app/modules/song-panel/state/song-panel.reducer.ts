@@ -53,14 +53,14 @@ export const songPanelReducer = createReducer<SongPanelState>(
     on(SongPanelPageActions.startPlayingSong, (state, action): SongPanelState => {
         let newState = cloneDeep(state)
         newState.playingSong = action.playingSong
-        return newState
+         return newState
     }),
     on(SongPanelPageActions.elapsedSecondPlayingSong, (state, action): SongPanelState => {
         let newState = cloneDeep(state)
-        if (action.seconds >= state.playingSong.durationInSeconds)
+        if (state.playingSong.elapsedSeconds + 1 >= state.playingSong.durationInSeconds)
             newState.playingSong = null
         else
-            newState.playingSong.elapsedSeconds = action.seconds
+            newState.playingSong.elapsedSeconds = state.playingSong.elapsedSeconds + 1
         return newState
     }),
     on(SongPanelPageActions.stopPlayingSong, (state, action): SongPanelState => {

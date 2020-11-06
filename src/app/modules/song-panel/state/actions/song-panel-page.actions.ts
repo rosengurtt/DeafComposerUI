@@ -27,8 +27,7 @@ export const startPlayingSong = createAction(
   props<{ playingSong: PlayingSong }>()
 )
 export const elapsedSecondPlayingSong = createAction(
-  '[Songs-Panel Page] Elapsed second playing song',
-  props<{ seconds: number }>()
+  '[Songs-Panel Page] Elapsed second playing song'
 )
 export const stopPlayingSong = createAction(
   '[Songs-Panel Page] Stop playing song'

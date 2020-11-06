@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core'
+import { Component, OnDestroy, OnInit } from '@angular/core'
 import { ActivatedRoute, Router } from '@angular/router'
 import { Song } from '../../core/models/song'
 import { Store } from '@ngrx/store'
@@ -47,7 +47,7 @@ export class SongPanelShellComponent implements OnInit {
     songStartedPlaying(songStarted: PlayingSong) {
         this.mainStore.dispatch(SongPanelPageActions.startPlayingSong({ playingSong: songStarted }))
         this.songTimer$ = timer(0, 1000)
-        this.timerSubscription = this.songTimer$.subscribe(x => { this.mainStore.dispatch(SongPanelPageActions.elapsedSecondPlayingSong({ seconds: x})) })
+        this.timerSubscription = this.songTimer$.subscribe(x => { this.mainStore.dispatch(SongPanelPageActions.elapsedSecondPlayingSong()) })
     }
     songStoppedPlaying() {
         this.mainStore.dispatch(SongPanelPageActions.stopPlayingSong())
@@ -59,6 +59,7 @@ export class SongPanelShellComponent implements OnInit {
     }
     songResumed(){
         this.mainStore.dispatch(SongPanelPageActions.resumePlayingSong())
-        this.timerSubscription = this.songTimer$.subscribe(x => { this.mainStore.dispatch(SongPanelPageActions.elapsedSecondPlayingSong({ seconds: x})) })
+        this.timerSubscription = this.songTimer$.subscribe(x => { this.mainStore.dispatch(SongPanelPageActions.elapsedSecondPlayingSong()) })
     }
+
 }
