@@ -1,12 +1,11 @@
 import { Component, OnInit, Input, OnChanges, SimpleChanges, AfterViewInit, ViewChild, Output, EventEmitter } from '@angular/core'
-import { MatSliderChange } from '@angular/material/slider'
+import { Observable, Subscription } from 'rxjs'
 import { Coordenadas } from 'src/app/core/models/coordenadas'
 import { Instrument } from 'src/app/core/models/midi/midi-codes/instrument.enum'
 import { Song } from 'src/app/core/models/song'
 import { SongSimplification } from 'src/app/core/models/song-simplification'
 import { DrawingService } from '../services/drawing.service'
 
-declare var MIDIjs: any
 
 @Component({
   selector: 'dc-track',
@@ -28,25 +27,32 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
   @Input() sliderStep: number
   @Input() sliderDefaultValue: number
   @Input() simplification: number
+  @Input() resetEvent: Observable<void>
+  @Input() moveProgressBarEvent: Observable<number>
   @Output() displaceChange = new EventEmitter<Coordenadas>()
+  @Output() muteStatusChange = new EventEmitter<{ track: number, status: boolean }>()
 
+  resetEventSubscritpion: Subscription
+  moveProgressBarEventSubscritpion: Subscription
   viewBox: string
   svgBox: any
   instrument: string
   isDragActive = false
   lastXrecorded: number | null
   lastYrecorded: number | null
+  muteIcon = "volume_up"
 
   constructor(private drawingService: DrawingService) {
 
   }
   ngAfterViewInit(): void {
     const svgBoxId = `${this.svgBoxIdPrefix}_${this.songId}_${this.trackId}`
-    const progressBarId = this.progressBarIdPrefix + this.trackId;
+    const progressBarId = `${this.progressBarIdPrefix}${this.songId}_${this.trackId}`
     const simplification = 0
     const songIsPlaying = false
     this.drawingService.drawTrackGraphic(this.trackId, svgBoxId, this.song, simplification, songIsPlaying, progressBarId);
-
+    this.resetEventSubscritpion = this.resetEvent.subscribe(() => this.reset())
+    this.moveProgressBarEventSubscritpion = this.moveProgressBarEvent.subscribe(x => this.moveProgressBar(x))
   }
 
   ngOnInit() {
@@ -71,19 +77,20 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
   }
 
 
-  reset() {
+  reset(): void {
+    this.muteIcon = "volume_up"
     this.redrawSvgBox()
   }
-  dragStarted(event) {
+  dragStarted(event): void {
     this.isDragActive = true
     this.lastXrecorded = event.offsetX
     this.lastYrecorded = event.offsetY
   }
-  dragFinished() {
+  dragFinished(): void {
     this.isDragActive = false
   }
 
-  drag(event) {    
+  drag(event): void {
     if (this.isDragActive && this.lastXrecorded) {
       let coor = new Coordenadas(event.offsetX - this.lastXrecorded, event.offsetY - this.lastYrecorded)
       this.displaceChange.emit(coor)
@@ -91,8 +98,29 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
       this.lastYrecorded = event.offsetY
     }
   }
+  changeMuteStatus(): void {
+    if (this.muteIcon === "volume_up") {
+      this.muteIcon = "volume_off"
+      this.muteStatusChange.emit({ track: this.trackId, status: false })
+    }
+    else {
+      this.muteIcon = "volume_up"
+      this.muteStatusChange.emit({ track: this.trackId, status: true })
+    }
+  }
 
-
+  moveProgressBar(secondsElapsed: number): void {
+    const svgBoxId = `${this.svgBoxIdPrefix}_${this.songId}_${this.trackId}`
+    let numberOfTicks: number
+    if (secondsElapsed)
+      numberOfTicks = (secondsElapsed * this.song.songStats.numberOfTicks) / this.song.songStats.durationInSeconds
+    else
+      numberOfTicks = null
+    const progressBarId = `${this.progressBarIdPrefix}${this.songId}_${this.trackId}`
+    console.log("estoy en el track y llamo a drawing")
+    console.log(`${svgBoxId}, ${progressBarId}, ${numberOfTicks}`)
+    this.drawingService.createProgressBar(svgBoxId, progressBarId, numberOfTicks)
+  }
 }
 
 

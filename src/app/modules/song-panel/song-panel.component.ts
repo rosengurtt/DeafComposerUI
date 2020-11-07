@@ -5,6 +5,7 @@ import { TrackComponent } from './track/track.component'
 import { Coordenadas } from 'src/app/core/models/coordenadas'
 import { PlayingSong } from 'src/app/core/models/playing-song'
 import { MatSliderChange } from '@angular/material/slider'
+import { Subject } from 'rxjs'
 
 declare var MIDIjs: any
 
@@ -20,8 +21,7 @@ export class SongPanelComponent implements OnInit, OnChanges, OnDestroy {
   @Input() displacement: Coordenadas
   @Input() scale
   @Input() playingSong: PlayingSong
-
-
+  @Input() mutedTracks: number[]
 
   @Output() displacementChanged = new EventEmitter<Coordenadas>()
   @Output() scaleChanged = new EventEmitter<number>()
@@ -29,7 +29,11 @@ export class SongPanelComponent implements OnInit, OnChanges, OnDestroy {
   @Output() songStoppedPlaying = new EventEmitter()
   @Output() songPaused = new EventEmitter()
   @Output() songResumed = new EventEmitter()
+  @Output() muteStatusChanged = new EventEmitter<{ track: number, status: boolean }>()
+  @Output() unmuteAllTracks = new EventEmitter()
 
+  resetEventSubject: Subject<void> = new Subject<void>()
+  moveProgressBarSubject: Subject<number> = new Subject<number>()
   tracks: number[]
   sliderMax: number
   sliderStep = 1
@@ -50,7 +54,7 @@ export class SongPanelComponent implements OnInit, OnChanges, OnDestroy {
   }
   ngOnDestroy(): void {
     this.stop()
-   }
+  }
   setTracks(): void {
     let typescriptSacamela = new SongSimplification(this.song.songSimplifications[0])
     this.tracks = typescriptSacamela.voicesWithNotes
@@ -59,7 +63,12 @@ export class SongPanelComponent implements OnInit, OnChanges, OnDestroy {
   ngOnChanges(changes: SimpleChanges): void {
     for (const propName in changes) {
       if (propName == "song") this.setTracks()
-      if (propName == "playingSong" && this.slider) this.slider.value = this.playingSong?.elapsedSeconds
+      if (propName == "playingSong" && this.slider){
+         this.slider.value = this.playingSong?.elapsedSeconds
+         console.log("voy a emitir el evento con value="+ this.playingSong?.elapsedSeconds)
+         console.log("la duracion de la song is "+ this.song.songStats.durationInSeconds)
+         this.moveProgressBarSubject.next(this.playingSong?.elapsedSeconds)
+      }
     }
   }
   changeScale(value: number): void {
@@ -68,19 +77,23 @@ export class SongPanelComponent implements OnInit, OnChanges, OnDestroy {
 
 
   reset() {
+    MIDIjs.stop()
     this.scaleChanged.emit(1)
     this.displacementChanged.emit(new Coordenadas(0, 0))
+    this.unmuteAllTracks.emit()
+    this.songStoppedPlaying.emit()
+    this.resetEventSubject.next()
     this.slider.value = 0
   }
 
   play(): void {
-    
-    if (this.playingSong && this.playingSong.isPaused && !this.sliderHasBeenMoved) {    
+    if (this.playingSong && this.playingSong.isPaused && !this.sliderHasBeenMoved) {
       MIDIjs.resume()
       this.songResumed.emit()
     }
     else {
-      MIDIjs.play(`https://localhost:9001/api/song/${this.song.id}/midi?startInSeconds=${this.slider.value}`)
+      let mutedTracksParam = this.mutedTracks.length > 0 ? `&mutedTracks=${this.mutedTracks.join(",")}` : ""
+      MIDIjs.play(`https://localhost:9001/api/song/${this.song.id}/midi?startInSeconds=${this.slider.value}${mutedTracksParam}`)
       MIDIjs.message_callback = this.getPlayingStatus.bind(this)
     }
     // reset this flag
@@ -108,6 +121,10 @@ export class SongPanelComponent implements OnInit, OnChanges, OnDestroy {
   };
   sliderMoved(event: MatSliderChange): void {
     this.sliderHasBeenMoved = true
+  }
+  muteStatusChange(muteChange) {
+    this.reset()
+    this.muteStatusChanged.emit(muteChange)
   }
 }
 

@@ -11,7 +11,7 @@ import { SongStats } from 'src/app/core/models/song-stats'
 export class DrawingService {
     svgns = 'http://www.w3.org/2000/svg'
     colorMusicBar = 'rgb(250,200,190)'
-    colorProgressBar = 'rgb(200,0,0)'
+    colorProgressBar = 'rgb(255,190,190)'
     // keyboards are blue
     colorKeyboard = 'rgb(100,100,224)'
     // bass is violet
@@ -42,17 +42,15 @@ export class DrawingService {
     public createProgressBar(
         svgBoxId: string,
         progressBarId: string,
-        progress: number): any {
+        ticks: number | null): any {
         let progressBar = document.getElementById(progressBarId)
         const svgBox = document.getElementById(svgBoxId)
         if (svgBox) {
-            const svgBoxWidth = svgBox.clientWidth
-            const x = progress * svgBoxWidth
             this.deleteProgressBar(svgBoxId, progressBarId)
-            if (x > 0 && x < svgBoxWidth) {
-                progressBar = this.createLine(x, x, 0, svgBox.clientHeight, 2,
+            if (ticks){
+                progressBar = this.createLine(ticks, ticks, 0, 128, 8,
                     this.colorProgressBar, 0, progressBarId, svgBox)
-            }
+                }
         }
     }
 

@@ -4,6 +4,7 @@
     [displacement]="displacement$ | async"
     [scale]="scale$ | async"
     [playingSong]="playingSong$ | async"
+    [mutedTracks]="mutedTracks$ | async"
 
     
     (displacementChanged) = "displacementChanged($any($event))"
@@ -12,5 +13,7 @@
     (songStoppedPlaying) = "songStoppedPlaying()"
     (songPaused) = "songPaused()"
     (songResumed) = "songResumed()"
+    (muteStatusChanged) = "muteStatusChanged($any($event))"
+    (unmuteAllTracks) = "unmuteAllTracks()"
     >
 </dc-song-panel>

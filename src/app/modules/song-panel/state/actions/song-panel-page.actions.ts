@@ -38,3 +38,11 @@ export const pausePlayingSong = createAction(
 export const resumePlayingSong = createAction(
   '[Songs-Panel Page] Resume playing song'
 )
+export const trackMutedStatusChange = createAction(
+  '[Songs-Panel Page] Track muted',
+  props<{ track: number, status: boolean }>()
+)
+export const unmuteAllTracks = createAction(
+  '[Songs-Panel Page] Unmute all tracks'
+)
+

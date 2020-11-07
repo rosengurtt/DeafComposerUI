@@ -4,7 +4,6 @@ import { SongPanelState } from './index'
 import * as cloneDeep from 'lodash/cloneDeep'
 import { StringifiedMap } from 'src/app/core/utilities/stringified-map'
 import { Coordenadas } from 'src/app/core/models/coordenadas'
-import { PlayingSong } from 'src/app/core/models/playing-song'
 
 
 const initialState: SongPanelState = {
@@ -12,6 +11,7 @@ const initialState: SongPanelState = {
     displacement: null,
     scale: null,
     playingSong: null,
+    tracksMuted: [],
     error: ''
 }
 export class reduxSacamela {
@@ -53,7 +53,7 @@ export const songPanelReducer = createReducer<SongPanelState>(
     on(SongPanelPageActions.startPlayingSong, (state, action): SongPanelState => {
         let newState = cloneDeep(state)
         newState.playingSong = action.playingSong
-         return newState
+        return newState
     }),
     on(SongPanelPageActions.elapsedSecondPlayingSong, (state, action): SongPanelState => {
         let newState = cloneDeep(state)
@@ -76,6 +76,24 @@ export const songPanelReducer = createReducer<SongPanelState>(
     on(SongPanelPageActions.resumePlayingSong, (state, action): SongPanelState => {
         let newState = cloneDeep(state)
         newState.playingSong.isPaused = false
+        return newState
+    }),
+    on(SongPanelPageActions.trackMutedStatusChange, (state, action): SongPanelState => {
+        let newState = cloneDeep(state)
+        let currentMutedTracks = cloneDeep(state.tracksMuted)
+        // If track was in list of muted tracks and now is not muted, remove it
+        if (currentMutedTracks.includes(action.track) && action.status === true)
+            currentMutedTracks = currentMutedTracks.filter(x => x !== action.track)
+        // If track was not in the list of muted tracks and now is muted, add it
+        if (!currentMutedTracks.includes(action.track) && action.status === false)
+            currentMutedTracks.push(action.track)
+        newState.tracksMuted = currentMutedTracks
+
+        return newState
+    }),
+    on(SongPanelPageActions.unmuteAllTracks, (state, action): SongPanelState => {
+        let newState = cloneDeep(state)
+        newState.tracksMuted = []
         return newState
     }),
 );

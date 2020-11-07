@@ -9,7 +9,8 @@ export interface SongPanelState {
     songsUnderAnalysis: Song[]
     displacement: string
     scale: string
-    playingSong: PlayingSong
+    playingSong: PlayingSong    
+    tracksMuted: number[]
     error: string
 }
 
@@ -46,4 +47,9 @@ export const getScaleBySongId = createSelector(
 export const getPlayingSong = createSelector(
     getSongPanelFeatureState,
     state => state.playingSong
+)
+
+export const getMutedTracks = createSelector(
+    getSongPanelFeatureState,
+    state => state.tracksMuted
 )

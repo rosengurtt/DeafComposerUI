@@ -3,7 +3,9 @@
      {{instrument | splitCamelCase}}
   </div>
   <div class="controls">
-
+    <button mat-mini-fab color="primary" aria-label="Mute/Unmute track" (click)="changeMuteStatus()">
+      <mat-icon>{{muteIcon}}</mat-icon>
+    </button>
   </div>
   
     <svg class="canvas" preserveAspectRatio="none"

@@ -3,7 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router'
 import { Song } from '../../core/models/song'
 import { Store } from '@ngrx/store'
 import { State } from '../../core/state/app.state'
-import { getDisplacementBySongId, getPlayingSong, getScaleBySongId, getSongUnderAnalysisById } from './state'
+import { getDisplacementBySongId, getMutedTracks, getPlayingSong, getScaleBySongId, getSongUnderAnalysisById } from './state'
 import { Observable, Subscription, timer } from 'rxjs'
 import { SongPanelPageActions } from './state/actions'
 import { Coordenadas } from 'src/app/core/models/coordenadas'
@@ -20,6 +20,7 @@ export class SongPanelShellComponent implements OnInit {
     songTimer$: Observable<number>
     playingSong$: Observable<PlayingSong>
     timerSubscription: Subscription
+    mutedTracks$: Observable<number[]>
 
     constructor(
         private mainStore: Store<State>,
@@ -34,6 +35,7 @@ export class SongPanelShellComponent implements OnInit {
             this.displacement$ = this.mainStore.select(getDisplacementBySongId, { id: this.songId })
             this.scale$ = this.mainStore.select(getScaleBySongId, { id: this.songId })
             this.playingSong$ = this.mainStore.select(getPlayingSong)
+            this.mutedTracks$ = this.mainStore.select(getMutedTracks)
         })
     }
     displacementChanged(value: Coordenadas): void {
@@ -51,15 +53,20 @@ export class SongPanelShellComponent implements OnInit {
     }
     songStoppedPlaying() {
         this.mainStore.dispatch(SongPanelPageActions.stopPlayingSong())
-        this.timerSubscription.unsubscribe()
+        this.timerSubscription?.unsubscribe()
     }
     songPaused(){
         this.mainStore.dispatch(SongPanelPageActions.pausePlayingSong())
-        this.timerSubscription.unsubscribe()
+        this.timerSubscription?.unsubscribe()
     }
     songResumed(){
         this.mainStore.dispatch(SongPanelPageActions.resumePlayingSong())
         this.timerSubscription = this.songTimer$.subscribe(x => { this.mainStore.dispatch(SongPanelPageActions.elapsedSecondPlayingSong()) })
     }
-
+    muteStatusChanged(trackMuteStatus){
+        this.mainStore.dispatch(SongPanelPageActions.trackMutedStatusChange(trackMuteStatus))
+    }
+    unmuteAllTracks(){
+        this.mainStore.dispatch(SongPanelPageActions.unmuteAllTracks())
+    }
 }
