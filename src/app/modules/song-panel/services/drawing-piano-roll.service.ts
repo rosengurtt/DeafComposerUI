@@ -8,7 +8,7 @@ import { SongStats } from 'src/app/core/models/song-stats'
 
 
 @Injectable()
-export class DrawingService {
+export class DrawingPianoRollService {
     svgns = 'http://www.w3.org/2000/svg'
     colorMusicBar = 'rgb(250,200,190)'
     colorProgressBar = 'rgb(255,190,190)'
@@ -47,10 +47,10 @@ export class DrawingService {
         const svgBox = document.getElementById(svgBoxId)
         if (svgBox) {
             this.deleteProgressBar(svgBoxId, progressBarId)
-            if (ticks){
+            if (ticks) {
                 progressBar = this.createLine(ticks, ticks, 0, 128, 8,
                     this.colorProgressBar, 0, progressBarId, svgBox)
-                }
+            }
         }
     }
 
@@ -150,32 +150,30 @@ export class DrawingService {
         trackNumber: number,
         svgBoxId: string,
         song: Song,
-        simplificationNo: number,
-        createProgressBar: boolean,
-        progressBarId?: string): string {
+        simplificationNo: number): string {
         const svgBox = document.getElementById(svgBoxId)
-        if (!svgBox) {
-            return
-        }
+        if (!svgBox) return
+        this.removeChildren(svgBox)
 
         const simplif = new SongSimplification(song.songSimplifications[simplificationNo])
-        const notes = simplif.getNotesOfVoice(trackNumber)
 
         const instrument = simplif.getInstrumentOfVoice(trackNumber)
         const isPercusion = simplif.isVoicePercusion(trackNumber)
         const color = this.getColor(instrument, isPercusion)
-
 
         this.paintNotesTrack(song, simplificationNo, trackNumber, svgBoxId, color)
 
         this.createStaffBars(svgBoxId, song)
 
         this.createHorizontalLinesAtCnotes(svgBoxId, song)
-        // if (createProgressBar) {
-        //     this.createProgressBar(svgBoxId, progressBarId, 0)
-        // }
+
     }
 
+    private removeChildren(svgBox: HTMLElement){
+        while (svgBox.firstChild){
+            svgBox.removeChild(svgBox.firstChild)
+        }
+    }
     // Draws in one canvas all tracks mixed together
     public drawTracksCollapsedGraphic(
         svgBoxId: string,

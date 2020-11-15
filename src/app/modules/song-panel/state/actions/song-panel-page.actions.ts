@@ -1,6 +1,7 @@
 import { createAction, props } from '@ngrx/store'
 import { Coordenadas } from 'src/app/core/models/coordenadas'
 import { PlayingSong } from 'src/app/core/models/playing-song'
+import { SongViewType } from 'src/app/core/models/SongViewTypes.enum'
 import { Song } from '../../../../core/models/song'
 
 export const addSong = createAction(
@@ -44,5 +45,9 @@ export const trackMutedStatusChange = createAction(
 )
 export const unmuteAllTracks = createAction(
   '[Songs-Panel Page] Unmute all tracks'
+)
+export const ChangeViewType= createAction(
+  '[Songs-Panel Page] Change View Type',
+  props<{ viewType: SongViewType }>()
 )
 

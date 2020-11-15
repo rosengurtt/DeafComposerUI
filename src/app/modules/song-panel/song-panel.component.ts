@@ -1,4 +1,4 @@
-import { Component, OnChanges, SimpleChange, OnInit, Input, Output, EventEmitter, ViewChildren, QueryList, ViewChild, SimpleChanges, OnDestroy } from '@angular/core'
+import { Component, OnChanges, SimpleChange, OnInit, Input, Output, EventEmitter, ViewChildren, QueryList, ViewChild, SimpleChanges, OnDestroy, AfterViewInit, ChangeDetectorRef } from '@angular/core'
 import { Song } from 'src/app/core/models/song'
 import { SongSimplification } from 'src/app/core/models/song-simplification'
 import { TrackComponent } from './track/track.component'
@@ -6,6 +6,10 @@ import { Coordenadas } from 'src/app/core/models/coordenadas'
 import { PlayingSong } from 'src/app/core/models/playing-song'
 import { MatSliderChange } from '@angular/material/slider'
 import { Subject } from 'rxjs'
+import { Router } from '@angular/router'
+import { SongViewType } from 'src/app/core/models/SongViewTypes.enum'
+import { MatIconRegistry } from '@angular/material/icon'
+import { DomSanitizer } from '@angular/platform-browser'
 
 declare var MIDIjs: any
 
@@ -14,7 +18,8 @@ declare var MIDIjs: any
   templateUrl: './song-panel.component.html',
   styleUrls: ['./song-panel.component.scss']
 })
-export class SongPanelComponent implements OnInit, OnChanges, OnDestroy {
+export class SongPanelComponent implements OnInit, OnChanges, OnDestroy, AfterViewInit {
+
 
   @Input() songId: number
   @Input() song: Song
@@ -22,7 +27,9 @@ export class SongPanelComponent implements OnInit, OnChanges, OnDestroy {
   @Input() scale
   @Input() playingSong: PlayingSong
   @Input() mutedTracks: number[]
+  @Input() viewType: SongViewType
 
+  @Output() closePage = new EventEmitter<Song>()
   @Output() displacementChanged = new EventEmitter<Coordenadas>()
   @Output() scaleChanged = new EventEmitter<number>()
   @Output() songStartedPlaying = new EventEmitter<PlayingSong>()
@@ -31,13 +38,15 @@ export class SongPanelComponent implements OnInit, OnChanges, OnDestroy {
   @Output() songResumed = new EventEmitter()
   @Output() muteStatusChanged = new EventEmitter<{ track: number, status: boolean }>()
   @Output() unmuteAllTracks = new EventEmitter()
+  @Output() songViewTypeChanged = new EventEmitter<SongViewType>()
 
-  resetEventSubject: Subject<void> = new Subject<void>()
+  resetEventSubject: Subject<boolean> = new Subject<boolean>()
   moveProgressBarSubject: Subject<number> = new Subject<number>()
   tracks: number[]
   sliderMax: number
   sliderStep = 1
   sliderHasBeenMoved = false
+  songViewType: typeof SongViewType = SongViewType
 
   svgBoxWidth = 1200
   svgBoxHeight = 200
@@ -47,10 +56,20 @@ export class SongPanelComponent implements OnInit, OnChanges, OnDestroy {
   @ViewChildren(TrackComponent) childrenTracks: QueryList<TrackComponent>
   @ViewChild('slider') slider
 
+  constructor(private cdr: ChangeDetectorRef,
+    private router: Router,
+    iconRegistry: MatIconRegistry,
+    sanitizer: DomSanitizer) {
+    iconRegistry.addSvgIcon('piano', sanitizer.bypassSecurityTrustResourceUrl('assets/images/piano.svg'))
+  }
+
   ngOnInit() {
     MIDIjs.stop()
     this.setTracks()
-    this.sliderMax = this.song.songStats.durationInSeconds
+  }
+  ngAfterViewInit(): void {
+    this.slider.max = this.song.songStats.durationInSeconds
+    this.cdr.detectChanges();
   }
   ngOnDestroy(): void {
     this.stop()
@@ -63,11 +82,9 @@ export class SongPanelComponent implements OnInit, OnChanges, OnDestroy {
   ngOnChanges(changes: SimpleChanges): void {
     for (const propName in changes) {
       if (propName == "song") this.setTracks()
-      if (propName == "playingSong" && this.slider){
-         this.slider.value = this.playingSong?.elapsedSeconds
-         console.log("voy a emitir el evento con value="+ this.playingSong?.elapsedSeconds)
-         console.log("la duracion de la song is "+ this.song.songStats.durationInSeconds)
-         this.moveProgressBarSubject.next(this.playingSong?.elapsedSeconds)
+      if (propName == "playingSong" && this.slider) {
+        this.slider.value = this.playingSong?.elapsedSeconds
+        this.moveProgressBarSubject.next(this.playingSong?.elapsedSeconds)
       }
     }
   }
@@ -76,13 +93,13 @@ export class SongPanelComponent implements OnInit, OnChanges, OnDestroy {
   }
 
 
-  reset() {
+  reset(unmuteAlltracks = true) {
     MIDIjs.stop()
     this.scaleChanged.emit(1)
     this.displacementChanged.emit(new Coordenadas(0, 0))
-    this.unmuteAllTracks.emit()
+    if (unmuteAlltracks) this.unmuteAllTracks.emit()
     this.songStoppedPlaying.emit()
-    this.resetEventSubject.next()
+    this.resetEventSubject.next(unmuteAlltracks)
     this.slider.value = 0
   }
 
@@ -123,8 +140,16 @@ export class SongPanelComponent implements OnInit, OnChanges, OnDestroy {
     this.sliderHasBeenMoved = true
   }
   muteStatusChange(muteChange) {
-    this.reset()
+    this.reset(false)
     this.muteStatusChanged.emit(muteChange)
+  }
+  closePanel() {
+    this.closePage.emit(this.song)
+    this.router.navigate(['songs-library'])
+  }
+
+  switchViewType(type: SongViewType) {
+    this.songViewTypeChanged.emit(type)
   }
 }
 

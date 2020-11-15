@@ -6,9 +6,15 @@
 .sliderVert {
     height: 120px;
 }
-.canvas {
+.canvasDark {
     grid-area: canvas;
-    border:1px solid white;
+    border:1px solid rgb(192, 194, 112);
+    background-color: black;
+}
+.canvasLight {
+    grid-area: canvas;
+    border:1px solid rgb(78, 78, 47);
+    background-color: white;
 }
 
 .trackInfo {

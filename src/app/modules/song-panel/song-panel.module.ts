@@ -12,8 +12,9 @@ import { StoreModule } from '@ngrx/store'
 import { songsPanelFeatureKey } from './state'
 import { songPanelReducer } from './state/song-panel.reducer';
 import { TrackComponent } from './track/track.component'
-import { DrawingService } from './services/drawing.service'
+import { DrawingPianoRollService } from './services/drawing-piano-roll.service'
 import { SplitCamelCasePipe } from 'src/app/core/pipes/split-camel-case.pipe'
+import { DrawingRythmService } from './services/drawing-rythm.service'
 
 @NgModule({
     declarations: [
@@ -34,7 +35,8 @@ import { SplitCamelCasePipe } from 'src/app/core/pipes/split-camel-case.pipe'
     ],
     providers: [
       SongsRepositoryService,
-      DrawingService
+      DrawingPianoRollService,
+      DrawingRythmService
     ],
     schemas: [CUSTOM_ELEMENTS_SCHEMA]
   })

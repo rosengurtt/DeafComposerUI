@@ -4,6 +4,7 @@ import { SongPanelState } from './index'
 import * as cloneDeep from 'lodash/cloneDeep'
 import { StringifiedMap } from 'src/app/core/utilities/stringified-map'
 import { Coordenadas } from 'src/app/core/models/coordenadas'
+import { SongViewType } from 'src/app/core/models/SongViewTypes.enum'
 
 
 const initialState: SongPanelState = {
@@ -12,6 +13,7 @@ const initialState: SongPanelState = {
     scale: null,
     playingSong: null,
     tracksMuted: [],
+    viewType: SongViewType.pianoRoll,
     error: ''
 }
 export class reduxSacamela {
@@ -94,6 +96,11 @@ export const songPanelReducer = createReducer<SongPanelState>(
     on(SongPanelPageActions.unmuteAllTracks, (state, action): SongPanelState => {
         let newState = cloneDeep(state)
         newState.tracksMuted = []
+        return newState
+    }),
+    on(SongPanelPageActions.ChangeViewType, (state, action): SongPanelState => {
+        let newState = cloneDeep(state)
+        newState.viewType = action.viewType
         return newState
     }),
 );

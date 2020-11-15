@@ -4,7 +4,9 @@ import { Coordenadas } from 'src/app/core/models/coordenadas'
 import { Instrument } from 'src/app/core/models/midi/midi-codes/instrument.enum'
 import { Song } from 'src/app/core/models/song'
 import { SongSimplification } from 'src/app/core/models/song-simplification'
-import { DrawingService } from '../services/drawing.service'
+import { SongViewType } from 'src/app/core/models/SongViewTypes.enum'
+import { DrawingPianoRollService } from '../services/drawing-piano-roll.service'
+import { DrawingRythmService } from '../services/drawing-rythm.service'
 
 
 @Component({
@@ -19,6 +21,7 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
   @Input() songId: number
   @Input() trackId: number
   @Input() song: Song
+  @Input() viewType: SongViewType
   @Input() scale: number
   @Input() displacement: Coordenadas
   @Input() svgBoxWidth: number
@@ -27,7 +30,7 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
   @Input() sliderStep: number
   @Input() sliderDefaultValue: number
   @Input() simplification: number
-  @Input() resetEvent: Observable<void>
+  @Input() resetEvent: Observable<boolean>
   @Input() moveProgressBarEvent: Observable<number>
   @Output() displaceChange = new EventEmitter<Coordenadas>()
   @Output() muteStatusChange = new EventEmitter<{ track: number, status: boolean }>()
@@ -41,22 +44,23 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
   lastXrecorded: number | null
   lastYrecorded: number | null
   muteIcon = "volume_up"
+  songViewType: typeof SongViewType = SongViewType
 
-  constructor(private drawingService: DrawingService) {
+  constructor(private drawingService: DrawingPianoRollService,
+    private drawingRythmService: DrawingRythmService) {
 
   }
   ngAfterViewInit(): void {
+
     const svgBoxId = `${this.svgBoxIdPrefix}_${this.songId}_${this.trackId}`
-    const progressBarId = `${this.progressBarIdPrefix}${this.songId}_${this.trackId}`
     const simplification = 0
-    const songIsPlaying = false
-    this.drawingService.drawTrackGraphic(this.trackId, svgBoxId, this.song, simplification, songIsPlaying, progressBarId);
-    this.resetEventSubscritpion = this.resetEvent.subscribe(() => this.reset())
+    this.drawingService.drawTrackGraphic(this.trackId, svgBoxId, this.song, simplification);
+    this.updateSvgBox()
+    this.resetEventSubscritpion = this.resetEvent.subscribe(x => this.reset(x))
     this.moveProgressBarEventSubscritpion = this.moveProgressBarEvent.subscribe(x => this.moveProgressBar(x))
   }
 
   ngOnInit() {
-    this.redrawSvgBox()
     let typescriptSacamela = new SongSimplification(this.song.songSimplifications[0])
     let instrumentCode = typescriptSacamela.getInstrumentOfVoice(this.trackId)
     this.instrument = Instrument[instrumentCode]
@@ -66,22 +70,65 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
 
 
   ngOnChanges(changes: SimpleChanges): void {
-    this.redrawSvgBox()
+    var redrawSvgBox = false
+
+    for (const propName in changes) {
+      if (propName == "viewType") {
+        const svgBoxId = `${this.svgBoxIdPrefix}_${this.songId}_${this.trackId}`
+        const simplification = 0
+        if (this.viewType == SongViewType.pianoRoll) {
+          this.drawingService.drawTrackGraphic(this.trackId, svgBoxId, this.song, simplification);
+        }
+        else
+          this.drawingRythmService.drawTrackGraphic(this.trackId, svgBoxId, this.song, simplification);
+      }
+      switch (propName) {
+        case 'displacement':
+        case 'scale':
+        case 'songId':
+        case 'viewType':
+          var redrawSvgBox = true
+      }
+    }
+    if (redrawSvgBox)
+      this.updateSvgBox()
   }
 
 
-  redrawSvgBox(): void {
-    const scaleFactorX = this.scale * this.song.songStats.numberOfTicks
-    const scaleFactorY = this.scale * 128
-    this.viewBox = `${this.displacement.x} ${this.displacement.y} ${scaleFactorX} ${scaleFactorY}`
+  updateSvgBox(): void {
+    const svgBoxId = `${this.svgBoxIdPrefix}_${this.songId}_${this.trackId}`
+    const svgBox = document.getElementById(svgBoxId)
+    if (!svgBox) return
+    let minX: number
+    let minY: number
+    let width: number
+    let height: number
+    let style: string
+    switch (this.viewType) {
+      case SongViewType.pianoRoll:
+        minX = this.displacement.x
+        minY = this.displacement.y
+        width = this.scale * this.song.songStats.numberOfTicks
+        height = this.scale * 128
+        break;
+      case SongViewType.rythmMusicNotation:
+        minX = 0
+        minY = 0
+        width = 1200
+        height = 128
+        break;
+    }
+    this.viewBox = `${minX} ${minY} ${width} ${height}`
+
   }
 
 
-  reset(): void {
-    this.muteIcon = "volume_up"
-    this.redrawSvgBox()
+  reset(unmuteAllTracks: boolean): void {
+    if (unmuteAllTracks) this.muteIcon = "volume_up"
+    this.updateSvgBox()
   }
   dragStarted(event): void {
+    console.log("estoy en dragStarted")
     this.isDragActive = true
     this.lastXrecorded = event.offsetX
     this.lastYrecorded = event.offsetY
@@ -101,7 +148,9 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
   changeMuteStatus(): void {
     if (this.muteIcon === "volume_up") {
       this.muteIcon = "volume_off"
+      console.log(this.muteIcon)
       this.muteStatusChange.emit({ track: this.trackId, status: false })
+      console.log(this.muteIcon)
     }
     else {
       this.muteIcon = "volume_up"
@@ -117,10 +166,10 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
     else
       numberOfTicks = null
     const progressBarId = `${this.progressBarIdPrefix}${this.songId}_${this.trackId}`
-    console.log("estoy en el track y llamo a drawing")
-    console.log(`${svgBoxId}, ${progressBarId}, ${numberOfTicks}`)
     this.drawingService.createProgressBar(svgBoxId, progressBarId, numberOfTicks)
   }
+
+
 }
 
 

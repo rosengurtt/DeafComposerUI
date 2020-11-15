@@ -14,14 +14,22 @@
 .panelControl{
     grid-area: panelControl;
     display: grid;
-    grid-template-columns: 100px 100px 100px 100px 100px 100px;
+    grid-template-columns: 80px 80px 80px 80px 80px 80px 80px 80px;
 }
 
 .container{
     display: grid;
     grid-template-columns: 150px auto;
 }
-
-h1 {
-    padding: 22px;
+.header {
+    display: grid;
+    grid-template-columns: auto 50px;
+    padding: 17px;
+}
+span {
+    font-size: 1.8em;
+}
+.colored{
+    font-size: 1.8em;
+    color: rgb(182, 127, 127)
 }

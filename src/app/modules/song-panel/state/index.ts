@@ -3,6 +3,7 @@ import { createFeatureSelector, createSelector } from '@ngrx/store'
 import { Song } from 'src/app/core/models/song'
 import { StringifiedMap } from 'src/app/core/utilities/stringified-map'
 import {PlayingSong} from 'src/app/core/models/playing-song'
+import {SongViewType} from 'src/app/core/models/SongViewTypes.enum'
 
 // State for this feature (Product)
 export interface SongPanelState {
@@ -11,6 +12,7 @@ export interface SongPanelState {
     scale: string
     playingSong: PlayingSong    
     tracksMuted: number[]
+    viewType: SongViewType
     error: string
 }
 
@@ -52,4 +54,9 @@ export const getPlayingSong = createSelector(
 export const getMutedTracks = createSelector(
     getSongPanelFeatureState,
     state => state.tracksMuted
+)
+
+export const getSongViewType = createSelector(
+    getSongPanelFeatureState,
+    state => state.viewType
 )
