@@ -49,7 +49,7 @@ export class SongPanelComponent implements OnInit, OnChanges, OnDestroy, AfterVi
   songViewType: typeof SongViewType = SongViewType
 
   svgBoxWidth = 1200
-  svgBoxHeight = 200
+  svgBoxHeight = 128
   simplification = 0
   svgBoxIdPrefix = "svgTrack"
   progressBarIdPrefix = "progBarTrack"
