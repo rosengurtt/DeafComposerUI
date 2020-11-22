@@ -5,10 +5,12 @@ import { Song } from '../../../core/models/song'
 import { Note } from '../../../core/models/note'
 import { NoteDuration } from 'src/app/core/models/note-duration'
 import { noMonitor } from '@ngrx/store-devtools/src/config'
+import { TimeSignature } from 'src/app/core/models/time-signature'
 
 @Injectable()
 export class DrawingRythmService {
     svgns = 'http://www.w3.org/2000/svg'
+    separation = 50
 
     // We assign to each quarter, eightth, sixteenth or whatever a total of 50 px width
     // The height is always 50 px
@@ -20,84 +22,124 @@ export class DrawingRythmService {
         trackNumber: number,
         svgBoxId: string,
         song: Song,
-        simplificationNo: number): string {
+        simplificationNo: number,
+        fromBar: number,
+        toBar: number): string {
         const svgBox = document.getElementById(svgBoxId)
         if (!svgBox) {
             return
         }
-        this.removeChildren(svgBox)
+        this.clearSVGbox(svgBox)
         const simplif = new SongSimplification(song.songSimplifications[simplificationNo])
 
         const instrument = simplif.getInstrumentOfVoice(trackNumber)
         const isPercusion = simplif.isVoicePercusion(trackNumber)
 
-        this.drawNotes(trackNumber, svgBox, song, simplificationNo, null)
+        const notes = simplif.getNotesOfVoice(trackNumber, song, fromBar, toBar)
+
+        this.drawNotes(svgBox, notes, song.songStats.timeSignature,
+            song.bars[fromBar].ticksFromBeginningOfSong, song.bars[toBar].ticksFromBeginningOfSong)
     }
 
-    private removeChildren(svgBox: HTMLElement) {
+    private clearSVGbox(svgBox: HTMLElement) {
         while (svgBox.firstChild) {
             svgBox.removeChild(svgBox.firstChild)
         }
     }
 
 
-    private drawNotes(trackNumber: number,
-        svgBox: HTMLElement,
-        song: Song,
-        simplificationNo: number,
-        n: Note): void {
-        let x = 30
-        this.drawNote(NoteDuration.whole, svgBox, x)
-        x += 50
-        this.drawNote(NoteDuration.half, svgBox, x)
-        x += 50
-        this.drawNote(NoteDuration.quarter, svgBox, x)
-        x += 50
-        this.drawNote(NoteDuration.eight, svgBox, x)
-        x += 50
-        this.drawBarLine(svgBox, x)
-        x+=40
-        this.drawNote(NoteDuration.sixteenth, svgBox, x)
-        x += 50
-        this.drawNote(NoteDuration.thirtysecond, svgBox, x)
-        x += 50
-        this.drawNote(NoteDuration.sixtyfourth, svgBox, x)
-        x += 50
-        this.drawNote(NoteDuration.eight, svgBox, x, 2)
-        x += 70
-        this.drawNote(NoteDuration.eight, svgBox, x, 3)
-        x += 90
-        this.drawNote(NoteDuration.eight, svgBox, x, 4)
+    private drawNotes(svgBox: HTMLElement, notes: Note[], timeSignature: TimeSignature, tickStart: number, tickEnd: number): void {
+        this.drawTimeSignature(svgBox, 0, timeSignature)
+        let x = 40
+        let lastTickComputed = tickStart
+        let startOfCurrentBar = tickStart
+        const lenghtOfBarInTicks = this.getLengthOfBarInTicks(timeSignature)
+        let endOfCurrentBar = startOfCurrentBar + lenghtOfBarInTicks
+        for (let i = 0; i < notes.length; i++) {
+            if (notes[i].startSinceBeginningOfSongInTicks > lastTickComputed) {
+                const silenceLengthInTicks = notes[i].startSinceBeginningOfSongInTicks - lastTickComputed
+                if (silenceLengthInTicks > 7) {
+                    if (lastTickComputed + silenceLengthInTicks > endOfCurrentBar) {
+                        // Silence continues in the next bar, do a silence until the end of the bar
+                        this.drawSilenceFromTicks(svgBox, x, endOfCurrentBar - lastTickComputed)
+                    }
+                    else
+                        this.drawSilenceFromTicks(svgBox, x, silenceLengthInTicks)
+                }
+            }
+            else{
 
-        this.drawTie(svgBox, x+80,x+120)
-        x += 110
-        this.drawNote(NoteDuration.sixteenth, svgBox, x, 2)
-        x += 70
-        this.drawNote(NoteDuration.sixteenth, svgBox, x, 3)
-        x += 90
-        this.drawNote(NoteDuration.sixteenth, svgBox, x, 4)
-        x += 110
-        this.drawRest(NoteDuration.eight, svgBox, x)
-        x += 40
-        this.drawRest(NoteDuration.sixteenth, svgBox, x)
-        x += 40
-        this.drawRest(NoteDuration.thirtysecond, svgBox, x)
-        x += 40
-        this.drawRest(NoteDuration.sixtyfourth, svgBox, x)
-        x += 40
-        this.drawRest(NoteDuration.quarter, svgBox, x)
+            }
+
+
+        }
     }
 
-    private drawBarLine(svgBox: HTMLElement, x: number){
+    private drawSilenceFromTicks(svgBox: HTMLElement, x: number, lenghtInTicks: number) {
+        if (lenghtInTicks >= 80 && lenghtInTicks <= 110)
+            this.drawRest(svgBox, NoteDuration.quarter, x)
+        if (lenghtInTicks > 55 && lenghtInTicks < 80) {
+            this.drawRest(svgBox, NoteDuration.eight, x)
+            this.drawRest(svgBox, NoteDuration.sixteenth, x + 30)
+            this.drawTie(svgBox, x, x + 50)
+        }
+        if (lenghtInTicks >= 35 && lenghtInTicks <= 55)
+            this.drawRest(svgBox, NoteDuration.eight, x)
+        if (lenghtInTicks >= 17 && lenghtInTicks <= 34)
+            this.drawRest(svgBox, NoteDuration.sixteenth, x)
+        if (lenghtInTicks >= 10 && lenghtInTicks <= 16)
+            this.drawRest(svgBox, NoteDuration.thirtysecond, x)
+        if (lenghtInTicks <= 9)
+            this.drawRest(svgBox, NoteDuration.sixtyfourth, x)
+    }
+    private drawNoteFromTicks(svgBox: HTMLElement, x: number, lenghtInTicks: number){
+        if (lenghtInTicks >= 80 && lenghtInTicks <= 110)
+        this.drawRest(svgBox, NoteDuration.quarter, x)
+    if (lenghtInTicks > 55 && lenghtInTicks < 80) {
+        this.drawRest(svgBox, NoteDuration.eight, x)
+        this.drawRest(svgBox, NoteDuration.sixteenth, x + 30)
+        this.drawTie(svgBox, x, x + 50)
+    }
+    if (lenghtInTicks >= 35 && lenghtInTicks <= 55)
+        this.drawRest(svgBox, NoteDuration.eight, x)
+    if (lenghtInTicks >= 17 && lenghtInTicks <= 34)
+        this.drawRest(svgBox, NoteDuration.sixteenth, x)
+    if (lenghtInTicks >= 10 && lenghtInTicks <= 16)
+        this.drawRest(svgBox, NoteDuration.thirtysecond, x)
+    if (lenghtInTicks <= 9)
+        this.drawRest(svgBox, NoteDuration.sixtyfourth, x)
+    }
+
+    private getLengthOfBarInTicks(timeSignature: TimeSignature) {
+        const ticksPerQuarterNote = 96
+        switch (timeSignature.denominator) {
+            case 2:
+                return ticksPerQuarterNote * 2 * timeSignature.numerator
+            case 4:
+                return ticksPerQuarterNote * timeSignature.numerator
+            case 8:
+                return ticksPerQuarterNote / 2 * timeSignature.numerator
+            case 16:
+                return ticksPerQuarterNote / 4 * timeSignature.numerator
+        }
+    }
+
+    private drawTimeSignature(svgBox: HTMLElement, x: number, timeSignature: TimeSignature) {
+        this.createText(svgBox, timeSignature.numerator.toString(), x + 10, 40, 20, 'black')
+        this.createText(svgBox, timeSignature.denominator.toString(), x + 10, 80, 20, 'black')
+    }
+
+    private drawBarLine(svgBox: HTMLElement, x: number) {
         this.drawPath(svgBox, 'black', 2, `M ${x + 10},20 V 100 z`)
     }
 
-    private drawTie(svgBox: HTMLElement, x1: number, x2:number){
-        this.drawPath(svgBox, 'black', 2, `M ${x1},95 Q ${(x1+x2)/2},110 ${x2},95 z`)
-        this.drawPath(svgBox, 'white', 7, `M ${x1},92 Q ${(x1+x2)/2},100 ${x2},92 z`)
+    private drawTie(svgBox: HTMLElement, x1: number, x2: number) {
+        this.drawPath(svgBox, 'black', 2, `M ${x1},95 Q ${(x1 + x2) / 2},110 ${x2},95 z`)
+        this.drawPath(svgBox, 'white', 7, `M ${x1},92 Q ${(x1 + x2) / 2},100 ${x2},92 z`)
     }
 
-    private drawNote(type: NoteDuration, svgBox: HTMLElement, x: number, qty: number = 1): Element {
+
+    private drawNote(svgBox: HTMLElement, type: NoteDuration, x: number, qty: number = 1): Element {
         let group = document.createElementNS(this.svgns, 'g')
         svgBox.appendChild(group)
         for (let i = 0; i < qty; i++) {
@@ -133,7 +175,7 @@ export class DrawingRythmService {
         return group
     }
 
-    private drawRest(type: NoteDuration, svgBox: HTMLElement, x: number) {
+    private drawRest(svgBox: HTMLElement, type: NoteDuration, x: number) {
         let group = document.createElementNS(this.svgns, 'g')
         svgBox.appendChild(group)
         if (type == NoteDuration.quarter)
@@ -177,40 +219,17 @@ export class DrawingRythmService {
         }
     }
     private drawQuarterRest(g: Element, x: number) {
-       this.drawPath(g, 'black', 12, `M ${8+x},40 V 79 z`)
-       this.drawPath(g, 'white', 5, `M ${x+4},40 Q ${x+8},50 ${x+4},54 z`)
-       this.drawPath(g, 'white', 6, `M ${x+10},40  ${x+18},52  z`)
-       this.drawPath(g, 'white', 6, `M ${x+16},54 Q ${x+8},60 ${x+18},70  z`)
-       this.drawPath(g, 'white', 10, `M ${x-4},54  ${x+6},70  z`)
-       this.drawPath(g, 'white', 6, `M ${x+4},66  ${x+4},80  z`)
-       this.drawPath(g, 'black', 4, `M ${x+14},72 Q ${x-2},62 ${x+10},80  z`)
-       this.drawPath(g, 'white', 4, `M ${x+14},75 Q ${x+6},70 ${x+12},79  z`)
-       this.drawPath(g, 'white', 4, `M ${x+16},66 V 80  z`)
-      
-    }
+        this.drawPath(g, 'black', 12, `M ${8 + x},40 V 79 z`)
+        this.drawPath(g, 'white', 5, `M ${x + 4},40 Q ${x + 8},50 ${x + 4},54 z`)
+        this.drawPath(g, 'white', 6, `M ${x + 10},40  ${x + 18},52  z`)
+        this.drawPath(g, 'white', 6, `M ${x + 16},54 Q ${x + 8},60 ${x + 18},70  z`)
+        this.drawPath(g, 'white', 10, `M ${x - 4},54  ${x + 6},70  z`)
+        this.drawPath(g, 'white', 6, `M ${x + 4},66  ${x + 4},80  z`)
+        this.drawPath(g, 'black', 4, `M ${x + 14},72 Q ${x - 2},62 ${x + 10},80  z`)
+        this.drawPath(g, 'white', 4, `M ${x + 14},75 Q ${x + 6},70 ${x + 12},79  z`)
+        this.drawPath(g, 'white', 4, `M ${x + 16},66 V 80  z`)
 
-    private drawPath(g: Element, color: string, strokeWidth: number, path: string) {
-        const arc = document.createElementNS(this.svgns, 'path')
-        arc.setAttributeNS(null, 'stroke', color)
-        arc.setAttributeNS(null, 'stroke-width', strokeWidth.toString())
-        arc.setAttributeNS(null, 'd', path)
-        g.appendChild(arc)
     }
-    private drawEllipse(g: Element, cx: number, cy: number, rx: number, ry: number, color: string,
-        strokeWidth: number, transform: string, isFilled: boolean) {
-        const ellipse = document.createElementNS(this.svgns, 'ellipse')
-        ellipse.setAttributeNS(null, 'cx', cx.toString())
-        ellipse.setAttributeNS(null, 'cy', cy.toString())
-        ellipse.setAttributeNS(null, 'rx', rx.toString())
-        ellipse.setAttributeNS(null, 'ry', ry.toString())
-        ellipse.setAttributeNS(null, 'stroke-width', strokeWidth.toString())
-        ellipse.setAttributeNS(null, 'stroke', color)
-        if (!isFilled) ellipse.setAttributeNS(null, 'fill', 'none')
-        if (transform)
-            ellipse.setAttributeNS(null, 'transform', transform)
-        g.appendChild(ellipse)
-    }
-
 
     private drawRestCircle(g: Element, x: number, y: number) {
         this.drawEllipse(g, x, y, 4, 4, 'black', 0, '', true)
@@ -235,14 +254,55 @@ export class DrawingRythmService {
     private drawSubStems(g: Element, x: number, qtySubstems: number, qtyNotes: number) {
         if (qtyNotes == 1) {
             for (let i = 0; i < qtySubstems; i++) {
-                this.drawPath(g, 'black', 1,  `M${x + 10},${44 + 6 * i} Q ${x + 14},${47 + 6 * i} ${x + 19},${40 + 6 * i} z`)
+                this.drawPath(g, 'black', 1, `M${x + 10},${44 + 6 * i} Q ${x + 14},${47 + 6 * i} ${x + 19},${40 + 6 * i} z`)
             }
         }
         for (let i = 0; i < qtySubstems; i++) {
-            this.drawPath(g, 'black', 2,  `M${x + 19},${40 + 4 * i} L ${x + qtyNotes * 20},${40 + 4 * i} z`)
+            this.drawPath(g, 'black', 2, `M${x + 19},${40 + 4 * i} L ${x + qtyNotes * 20},${40 + 4 * i} z`)
         }
     }
 
+    private drawPath(g: Element, color: string, strokeWidth: number, path: string) {
+        const arc = document.createElementNS(this.svgns, 'path')
+        arc.setAttributeNS(null, 'stroke', color)
+        arc.setAttributeNS(null, 'stroke-width', strokeWidth.toString())
+        arc.setAttributeNS(null, 'd', path)
+        g.appendChild(arc)
+    }
+    private drawEllipse(g: Element, cx: number, cy: number, rx: number, ry: number, color: string,
+        strokeWidth: number, transform: string, isFilled: boolean) {
+        const ellipse = document.createElementNS(this.svgns, 'ellipse')
+        ellipse.setAttributeNS(null, 'cx', cx.toString())
+        ellipse.setAttributeNS(null, 'cy', cy.toString())
+        ellipse.setAttributeNS(null, 'rx', rx.toString())
+        ellipse.setAttributeNS(null, 'ry', ry.toString())
+        ellipse.setAttributeNS(null, 'stroke-width', strokeWidth.toString())
+        ellipse.setAttributeNS(null, 'stroke', color)
+        if (!isFilled) ellipse.setAttributeNS(null, 'fill', 'none')
+        if (transform)
+            ellipse.setAttributeNS(null, 'transform', transform)
+        g.appendChild(ellipse)
+    }
+    private createText(
+        g: Element,
+        text: string,
+        x: number,
+        y: number,
+        fontSize: number,
+        color: string,
+        textLength: number | null = null) {
+        const textElement: any = document.createElementNS(this.svgns, 'text')
+        const textNode = document.createTextNode(text)
+        textElement.appendChild(textNode)
+        textElement.setAttributeNS(null, 'x', x)
+        textElement.setAttributeNS(null, 'y', y)
+        textElement.setAttributeNS(null, 'font-size', fontSize.toString())
+        if (textLength)
+            textElement.setAttributeNS(null, 'textLength', textLength.toString())
+        textElement.setAttributeNS(null, 'lengthAdjust', 'spacingAndGlyphs')
+        textElement.setAttributeNS(null, 'fill', color)
+        g.appendChild(textElement)
+    }
 
 
 }

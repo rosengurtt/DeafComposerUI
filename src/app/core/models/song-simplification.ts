@@ -1,4 +1,5 @@
 import { Note } from './note'
+import { Song } from './song'
 
 export class SongSimplification {
     id: number
@@ -23,9 +24,15 @@ export class SongSimplification {
         return Array.from(voices.values())
     }
 
-    public getNotesOfVoice(voice: number): Note[] {
+    public getNotesOfVoice(voice: number, song: Song = null, fromBar: number | null = null, toBar: number | null = null): Note[] {
+        let startTick = 0
+        let endTick = 10000000
+        if (song && fromBar) startTick = song.bars[fromBar].ticksFromBeginningOfSong
+        if (song && toBar) endTick = song.bars[toBar + 1].ticksFromBeginningOfSong
         if (this.notes && this.notes.length > 0) {
-            return this.notes.filter(note => note.voice === voice)
+            return this.notes
+                .filter(note => note.voice === voice && note.startSinceBeginningOfSongInTicks>=startTick &&
+                    note.startSinceBeginningOfSongInTicks<= endTick )
                 .sort(
                     (a, b) => (a.startSinceBeginningOfSongInTicks < b.startSinceBeginningOfSongInTicks ? -1 : 1)
                 )
@@ -50,4 +57,5 @@ export class SongSimplification {
         }
         return false
     }
+
 }

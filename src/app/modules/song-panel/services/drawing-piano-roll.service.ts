@@ -132,7 +132,7 @@ export class DrawingPianoRollService {
         y: number,
         fontSize: number,
         textLength,
-        svgBox: any) {
+        svgBox: HTMLElement) {
         const textElement: any = document.createElementNS(this.svgns, 'text')
         const textNode = document.createTextNode(text)
         textElement.appendChild(textNode)
@@ -153,7 +153,7 @@ export class DrawingPianoRollService {
         simplificationNo: number): string {
         const svgBox = document.getElementById(svgBoxId)
         if (!svgBox) return
-        this.removeChildren(svgBox)
+        this.clearSVGbox(svgBox)
 
         const simplif = new SongSimplification(song.songSimplifications[simplificationNo])
 
@@ -169,7 +169,7 @@ export class DrawingPianoRollService {
 
     }
 
-    private removeChildren(svgBox: HTMLElement){
+    private clearSVGbox(svgBox: HTMLElement){
         while (svgBox.firstChild){
             svgBox.removeChild(svgBox.firstChild)
         }
