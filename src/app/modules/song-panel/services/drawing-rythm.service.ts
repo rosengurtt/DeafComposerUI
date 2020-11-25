@@ -1,11 +1,12 @@
 import { Injectable } from '@angular/core'
-import { Instrument } from '../../../core/models/midi/midi-codes/instrument.enum'
-import { SongSimplification } from '../../../core/models/song-simplification'
-import { Song } from '../../../core/models/song'
-import { Note } from '../../../core/models/note'
+import { SongSimplification } from 'src/app/core/models/song-simplification'
+import { Song } from 'src/app/core/models/song'
+import { Note } from 'src/app/core/models/note'
 import { NoteDuration } from 'src/app/core/models/note-duration'
-import { noMonitor } from '@ngrx/store-devtools/src/config'
+import { SoundEvent } from 'src/app/core/models/sound-event'
 import { TimeSignature } from 'src/app/core/models/time-signature'
+import { SoundEventType } from 'src/app/core/models/sound-event-type.enum'
+import { reportInvalidActions } from '@ngrx/effects/src/effect_notification'
 
 @Injectable()
 export class DrawingRythmService {
@@ -19,7 +20,7 @@ export class DrawingRythmService {
     // that consists mostly of quarter notes will occupy less space per bar than a song
     // that consists of sixteenths
     public drawTrackGraphic(
-        trackNumber: number,
+        voice: number,
         svgBoxId: string,
         song: Song,
         simplificationNo: number,
@@ -32,13 +33,11 @@ export class DrawingRythmService {
         this.clearSVGbox(svgBox)
         const simplif = new SongSimplification(song.songSimplifications[simplificationNo])
 
-        const instrument = simplif.getInstrumentOfVoice(trackNumber)
-        const isPercusion = simplif.isVoicePercusion(trackNumber)
+        const isPercusion = simplif.isVoicePercusion(voice)
 
-        const notes = simplif.getNotesOfVoice(trackNumber, song, fromBar, toBar)
+        const notes = simplif.getNotesOfVoice(voice, song, fromBar, toBar)
 
-        this.drawNotes(svgBox, notes, song.songStats.timeSignature,
-            song.bars[fromBar].ticksFromBeginningOfSong, song.bars[toBar].ticksFromBeginningOfSong)
+        this.drawNotes(svgBox, song, voice, simplificationNo, fromBar, toBar)
     }
 
     private clearSVGbox(svgBox: HTMLElement) {
@@ -48,31 +47,164 @@ export class DrawingRythmService {
     }
 
 
-    private drawNotes(svgBox: HTMLElement, notes: Note[], timeSignature: TimeSignature, tickStart: number, tickEnd: number): void {
-        this.drawTimeSignature(svgBox, 0, timeSignature)
+    private drawNotes(svgBox: HTMLElement, song: Song, voice: number, simplificationNo: number, fromBar: number, toBar: number): void {
+        this.drawTimeSignature(svgBox, 0, song.songStats.timeSignature,)
         let x = 40
-        let lastTickComputed = tickStart
-        let startOfCurrentBar = tickStart
-        const lenghtOfBarInTicks = this.getLengthOfBarInTicks(timeSignature)
-        let endOfCurrentBar = startOfCurrentBar + lenghtOfBarInTicks
-        for (let i = 0; i < notes.length; i++) {
-            if (notes[i].startSinceBeginningOfSongInTicks > lastTickComputed) {
-                const silenceLengthInTicks = notes[i].startSinceBeginningOfSongInTicks - lastTickComputed
-                if (silenceLengthInTicks > 7) {
-                    if (lastTickComputed + silenceLengthInTicks > endOfCurrentBar) {
-                        // Silence continues in the next bar, do a silence until the end of the bar
-                        this.drawSilenceFromTicks(svgBox, x, endOfCurrentBar - lastTickComputed)
-                    }
-                    else
-                        this.drawSilenceFromTicks(svgBox, x, silenceLengthInTicks)
-                }
-            }
-            else{
-
-            }
-
+        let events = this.getSequenceOfNotesAndSilences(song, simplificationNo, voice, fromBar, toBar)
+        for (let i = 0; i < events.length; i++) {
 
         }
+    }
+
+    private getDurationOfEvent(event: SoundEvent): NoteDuration {
+        if (event.duration > 96 * 4) return NoteDuration.whole
+        if (event.duration >= 80 && event.duration <= 110) return NoteDuration.quarter
+        if (event.duration > 55 && event.duration < 80) {
+            this.drawRest(svgBox, NoteDuration.eight, x)
+            this.drawRest(svgBox, NoteDuration.sixteenth, x + 30)
+            this.drawTie(svgBox, x, x + 50)
+        }
+        if (event.duration >= 35 && event.duration <= 55)
+            this.drawRest(svgBox, NoteDuration.eight, x)
+        if (event.duration >= 17 && event.duration <= 34)
+            this.drawRest(svgBox, NoteDuration.sixteenth, x)
+        if (event.duration >= 10 && event.duration <= 16)
+            this.drawRest(svgBox, NoteDuration.thirtysecond, x)
+        if (event.duration <= 9)
+            this.drawRest(svgBox, NoteDuration.sixtyfourth, x)
+
+    }
+
+    private getSequenceOfNotesAndSilences(song: Song, simplificationNo: number, voice: number, fromBar: number, toBar: number): SoundEvent[] {
+        let retObj = <SoundEvent[]>[]
+        const tolerance = 10
+        let startTick = song.bars[fromBar - 1].ticksFromBeginningOfSong
+        let endOfLastComputedNote = 0
+        const simplif = song.songSimplifications[simplificationNo]
+        // Look at end of previous bar to see if we have a note still playing from the previous bar
+        if (fromBar > 1) {
+            let latestNoteFromPreviousBar = simplif.notes
+                .filter(x => x.voice == voice && x.startSinceBeginningOfSongInTicks < startTick)
+                .sort((n1, n2) => n2.startSinceBeginningOfSongInTicks - n1.startSinceBeginningOfSongInTicks)[0]
+            if (latestNoteFromPreviousBar.endSinceBeginningOfSongInTicks > startTick + tolerance) {
+                let event = new SoundEvent(SoundEventType.note, latestNoteFromPreviousBar.startSinceBeginningOfSongInTicks,
+                    latestNoteFromPreviousBar.endSinceBeginningOfSongInTicks)
+                retObj.push(event)
+                endOfLastComputedNote = event.endTick
+            }
+        }
+        const notes = simplif.getNotesOfVoice(voice, song, fromBar, toBar)
+        for (let i = 0; i < notes.length; i++) {
+            if (endOfLastComputedNote < notes[i].startSinceBeginningOfSongInTicks - tolerance) {
+                let event = new SoundEvent(SoundEventType.silence, endOfLastComputedNote, notes[i].startSinceBeginningOfSongInTicks)
+                retObj.push(event)
+                endOfLastComputedNote = notes[i].startSinceBeginningOfSongInTicks
+            }
+            retObj.push(new SoundEvent(SoundEventType.note, notes[i].startSinceBeginningOfSongInTicks, notes[i].endSinceBeginningOfSongInTicks))
+            endOfLastComputedNote = notes[i].endSinceBeginningOfSongInTicks
+        }
+        return retObj
+    }
+
+    // A silence can be divided in a sequence of silences. For example if a silence extends to the next bar, we split it
+    // in 2, one that ends with the first bar and one that starts with the second.
+    // If a silence is a quarter and a half, we split it in one of 1 quarter and 1 eight. In this case we have to decide which
+    // one goes first. We select the option that makes the silences start in the hardest bit
+    // The same with the notes
+    private standardizeSequenceOfNotesAndSilences(input: SoundEvent[], barLength: number): SoundEvent[] {
+        let retObj = this.splitEventsThatExtendToNextBar(input, barLength)
+    }
+
+    private splitEventsThatExtendToNextBar(input: SoundEvent[], barLength: number): SoundEvent[] {
+        let retObj = <SoundEvent[]>[]
+        for (let i = 0; i < input.length; i++) {
+            const startBar = input[i].startTick / barLength
+            const endBar = input[i].endTick / barLength
+            const barDiff = endBar - startBar
+            if (barDiff > 0) {
+                let splitPoints = <number[]>[]
+                for (let i = 0; i < barDiff; i++)
+                    splitPoints.push((startBar + 1) * barLength)
+                const splitEvents = this.splitEvent(input[i], splitPoints)
+                splitEvents.forEach(e => retObj.push(e))
+            }
+            else
+                retObj.push(input[i])
+        }
+        return retObj
+    }
+
+    // If a silence is a quarter and a half, we split it in one of 1 quarter and 1 eight. In this case we have to decide which
+    // one goes first. We select the option that makes the silences start in the hardest bit
+    // The same with the notes
+    private splitEventsThatHaveOddDurations(input: SoundEvent[]): SoundEvent[] {
+        let retObj = <SoundEvent[]>[]
+        retObj = this.splitEventsLongerThanAwhole(input)
+        for (let i = 0; i < input.length; i++) {
+        }
+    }
+
+    private splitEventsLongerThanAwhole(input: SoundEvent[]): SoundEvent[] {
+        let retObj = <SoundEvent[]>[]
+        const tolerance = 10
+        for (let i = 0; i < input.length; i++) {
+            const e = input[i]
+            if (e.duration < 96 * 4 + tolerance) {
+                retObj.push(input[i])
+            }
+            else {
+                for (let j = 0; j < e.duration / (96 * 4); j++) {
+                    let endTick = Math.min(e.endTick, e.startTick + ((j + 1) * 96 * 4))
+                    const ev = new SoundEvent(e.type, e.startTick + (j * 96 * 4), endTick)
+                    retObj.push(ev)
+                }
+            }
+        }
+        return retObj
+    }
+
+    private splitEventsLongerThanAHalfShorterThanAWhole(input: SoundEvent[]): SoundEvent[] {
+        let retObj = <SoundEvent[]>[]
+        const tolerance = 10
+        for (let i = 0; i < input.length; i++) {
+            const e = input[i]
+            if (e.duration < 96 * 2 + tolerance || e.duration > 96 * 4 - tolerance) {
+                retObj.push(input[i])
+            }
+            else {
+                let splitPoints=<number[]>[]
+                splitPoints.push(this.getSplitPoint(e.startTick,e.endTick))
+                const splittedEvents = this.splitEvent(e, splitPoints)
+                retObj= retObj.concat(splittedEvents)
+            }
+        }
+        return retObj
+    }
+
+    // When we want to split a note or silence in 2, we prefer to select intervals that start and stop in 
+    // hard beats. This functions tries to find the point inside an interval where the beat is hardest
+    private getSplitPoint(start: number, end: number): number {
+        const diff = end - start
+
+        for (let n = 96 * 2; n > 3; n = n / 2) {
+            if (diff > n) {
+                const k = end % n
+                return end - k
+            }
+        }
+    }
+
+    // When we want to split a sound event in many, for ex. because the event extends from one bar to the next, we
+    // call this function and we pass the points where we want to split the event (it could for ex. extend several bars,
+    // not just 2) and it returns a sequence of events that correspond to the split points we passed
+    private splitEvent(e: SoundEvent, splitPoints: number[]) {
+        let retObj = <SoundEvent[]>[]
+        let lastStarPoint = 0
+        for (let i = 0; i < splitPoints.length; i++) {
+            retObj.push(new SoundEvent(e.type, lastStarPoint, splitPoints[i]))
+            lastStarPoint = splitPoints[i]
+        }
+        return retObj
     }
 
     private drawSilenceFromTicks(svgBox: HTMLElement, x: number, lenghtInTicks: number) {
@@ -92,22 +224,22 @@ export class DrawingRythmService {
         if (lenghtInTicks <= 9)
             this.drawRest(svgBox, NoteDuration.sixtyfourth, x)
     }
-    private drawNoteFromTicks(svgBox: HTMLElement, x: number, lenghtInTicks: number){
+    private drawNoteFromTicks(svgBox: HTMLElement, x: number, lenghtInTicks: number) {
         if (lenghtInTicks >= 80 && lenghtInTicks <= 110)
-        this.drawRest(svgBox, NoteDuration.quarter, x)
-    if (lenghtInTicks > 55 && lenghtInTicks < 80) {
-        this.drawRest(svgBox, NoteDuration.eight, x)
-        this.drawRest(svgBox, NoteDuration.sixteenth, x + 30)
-        this.drawTie(svgBox, x, x + 50)
-    }
-    if (lenghtInTicks >= 35 && lenghtInTicks <= 55)
-        this.drawRest(svgBox, NoteDuration.eight, x)
-    if (lenghtInTicks >= 17 && lenghtInTicks <= 34)
-        this.drawRest(svgBox, NoteDuration.sixteenth, x)
-    if (lenghtInTicks >= 10 && lenghtInTicks <= 16)
-        this.drawRest(svgBox, NoteDuration.thirtysecond, x)
-    if (lenghtInTicks <= 9)
-        this.drawRest(svgBox, NoteDuration.sixtyfourth, x)
+            this.drawRest(svgBox, NoteDuration.quarter, x)
+        if (lenghtInTicks > 55 && lenghtInTicks < 80) {
+            this.drawRest(svgBox, NoteDuration.eight, x)
+            this.drawRest(svgBox, NoteDuration.sixteenth, x + 30)
+            this.drawTie(svgBox, x, x + 50)
+        }
+        if (lenghtInTicks >= 35 && lenghtInTicks <= 55)
+            this.drawRest(svgBox, NoteDuration.eight, x)
+        if (lenghtInTicks >= 17 && lenghtInTicks <= 34)
+            this.drawRest(svgBox, NoteDuration.sixteenth, x)
+        if (lenghtInTicks >= 10 && lenghtInTicks <= 16)
+            this.drawRest(svgBox, NoteDuration.thirtysecond, x)
+        if (lenghtInTicks <= 9)
+            this.drawRest(svgBox, NoteDuration.sixtyfourth, x)
     }
 
     private getLengthOfBarInTicks(timeSignature: TimeSignature) {
