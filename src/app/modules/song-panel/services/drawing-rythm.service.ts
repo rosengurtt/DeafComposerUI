@@ -12,6 +12,9 @@ import { reportInvalidActions } from '@ngrx/effects/src/effect_notification'
 export class DrawingRythmService {
     svgns = 'http://www.w3.org/2000/svg'
     separation = 50
+    ticksPerQuarterNote = 96
+    tolerance = 8 // when we consider some interval to be a quarter, it could have for ex. 93 ticks intead of the 96
+    // tolerance represents the max we tolerate for a duration to differ from 96 ticks 
 
     // We assign to each quarter, eightth, sixteenth or whatever a total of 50 px width
     // The height is always 50 px
@@ -57,21 +60,9 @@ export class DrawingRythmService {
     }
 
     private getDurationOfEvent(event: SoundEvent): NoteDuration {
-        if (event.duration > 96 * 4) return NoteDuration.whole
+        if (event.duration > this.ticksPerQuarterNote * 4) return NoteDuration.whole
         if (event.duration >= 80 && event.duration <= 110) return NoteDuration.quarter
-        if (event.duration > 55 && event.duration < 80) {
-            this.drawRest(svgBox, NoteDuration.eight, x)
-            this.drawRest(svgBox, NoteDuration.sixteenth, x + 30)
-            this.drawTie(svgBox, x, x + 50)
-        }
-        if (event.duration >= 35 && event.duration <= 55)
-            this.drawRest(svgBox, NoteDuration.eight, x)
-        if (event.duration >= 17 && event.duration <= 34)
-            this.drawRest(svgBox, NoteDuration.sixteenth, x)
-        if (event.duration >= 10 && event.duration <= 16)
-            this.drawRest(svgBox, NoteDuration.thirtysecond, x)
-        if (event.duration <= 9)
-            this.drawRest(svgBox, NoteDuration.sixtyfourth, x)
+
 
     }
 
@@ -113,6 +104,7 @@ export class DrawingRythmService {
     // The same with the notes
     private standardizeSequenceOfNotesAndSilences(input: SoundEvent[], barLength: number): SoundEvent[] {
         let retObj = this.splitEventsThatExtendToNextBar(input, barLength)
+        return this.splitEventsThatHaveOddDurations(retObj)
     }
 
     private splitEventsThatExtendToNextBar(input: SoundEvent[], barLength: number): SoundEvent[] {
@@ -139,57 +131,48 @@ export class DrawingRythmService {
     // The same with the notes
     private splitEventsThatHaveOddDurations(input: SoundEvent[]): SoundEvent[] {
         let retObj = <SoundEvent[]>[]
-        retObj = this.splitEventsLongerThanAwhole(input)
         for (let i = 0; i < input.length; i++) {
+            retObj.concat(this.normalizeInterval(input[i]))
         }
+        return retObj
     }
 
-    private splitEventsLongerThanAwhole(input: SoundEvent[]): SoundEvent[] {
+
+
+    // We want all intervals of notes and silences to be a full quarter, or eight, etc and not a quarter and a half,
+    // or stil worse a quarter plus an eight plus a sixteenth
+    // This function splits a quarter and a half in 2 notes, a quarter plus an eight plus a sixteenth in 3, in such
+    // a way tat all durations returned are a full interval and not a mix of intervals
+    private normalizeInterval(e: SoundEvent): SoundEvent[] {
         let retObj = <SoundEvent[]>[]
-        const tolerance = 10
-        for (let i = 0; i < input.length; i++) {
-            const e = input[i]
-            if (e.duration < 96 * 4 + tolerance) {
-                retObj.push(input[i])
+        for (let i = 16; i > 1 / 64; i = i / 2) {
+            // if the note doesn't need to be split, return it
+            if (e.duration > (this.ticksPerQuarterNote - this.tolerance) * i &&
+                e.duration < (this.ticksPerQuarterNote + this.tolerance) * i) {
+                retObj.push(e)
+                return retObj
             }
             else {
-                for (let j = 0; j < e.duration / (96 * 4); j++) {
-                    let endTick = Math.min(e.endTick, e.startTick + ((j + 1) * 96 * 4))
-                    const ev = new SoundEvent(e.type, e.startTick + (j * 96 * 4), endTick)
-                    retObj.push(ev)
+                // if the notes has an odd interval
+                if (e.duration > (this.ticksPerQuarterNote + this.tolerance) * i / 2 &&
+                    e.duration < (this.ticksPerQuarterNote - this.tolerance) * i) {
+                    const splitPoints = [this.getSplitPoint(e)]
+                    const splittedEvent = this.splitEvent(e, splitPoints)
+                    return this.normalizeInterval(splittedEvent[0]).concat(this.normalizeInterval(splittedEvent[1]))
                 }
             }
         }
-        return retObj
-    }
 
-    private splitEventsLongerThanAHalfShorterThanAWhole(input: SoundEvent[]): SoundEvent[] {
-        let retObj = <SoundEvent[]>[]
-        const tolerance = 10
-        for (let i = 0; i < input.length; i++) {
-            const e = input[i]
-            if (e.duration < 96 * 2 + tolerance || e.duration > 96 * 4 - tolerance) {
-                retObj.push(input[i])
-            }
-            else {
-                let splitPoints=<number[]>[]
-                splitPoints.push(this.getSplitPoint(e.startTick,e.endTick))
-                const splittedEvents = this.splitEvent(e, splitPoints)
-                retObj= retObj.concat(splittedEvents)
-            }
-        }
-        return retObj
     }
 
     // When we want to split a note or silence in 2, we prefer to select intervals that start and stop in 
-    // hard beats. This functions tries to find the point inside an interval where the beat is hardest
-    private getSplitPoint(start: number, end: number): number {
-        const diff = end - start
-
-        for (let n = 96 * 2; n > 3; n = n / 2) {
-            if (diff > n) {
-                const k = end % n
-                return end - k
+    // hard beats. This functions tries to find the point inside an interval where it makes more sense to
+    // split a note
+    private getSplitPoint(e: SoundEvent): number {
+        for (let n = this.ticksPerQuarterNote * 2; n > 3; n = n / 2) {
+            if (e.duration > n) {
+                const k = e.endTick % n
+                return e.endTick - k
             }
         }
     }
@@ -243,16 +226,15 @@ export class DrawingRythmService {
     }
 
     private getLengthOfBarInTicks(timeSignature: TimeSignature) {
-        const ticksPerQuarterNote = 96
         switch (timeSignature.denominator) {
             case 2:
-                return ticksPerQuarterNote * 2 * timeSignature.numerator
+                return this.ticksPerQuarterNote * 2 * timeSignature.numerator
             case 4:
-                return ticksPerQuarterNote * timeSignature.numerator
+                return this.ticksPerQuarterNote * timeSignature.numerator
             case 8:
-                return ticksPerQuarterNote / 2 * timeSignature.numerator
+                return this.ticksPerQuarterNote / 2 * timeSignature.numerator
             case 16:
-                return ticksPerQuarterNote / 4 * timeSignature.numerator
+                return this.ticksPerQuarterNote / 4 * timeSignature.numerator
         }
     }
 
