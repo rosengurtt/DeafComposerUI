@@ -45,6 +45,7 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
   lastYrecorded: number | null
   muteIcon = "volume_up"
   songViewType: typeof SongViewType = SongViewType
+  lengthOfMusicNotationDrawing = 0
 
   constructor(private drawingService: DrawingPianoRollService,
     private drawingRythmService: DrawingRythmService) {
@@ -80,7 +81,9 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
           this.drawingService.drawTrackGraphic(this.trackId, svgBoxId, this.song, simplification);
         }
         else
-          this.drawingRythmService.drawTrackGraphic(this.trackId, svgBoxId, this.song, simplification);
+          this.lengthOfMusicNotationDrawing = 
+          this.drawingRythmService.drawTrackGraphic(this.trackId, svgBoxId, this.song, simplification, 1, 2);
+          redrawSvgBox = true
       }
       switch (propName) {
         case 'displacement':
