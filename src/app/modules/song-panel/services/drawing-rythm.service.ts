@@ -6,6 +6,8 @@ import { SoundEvent } from 'src/app/core/models/sound-event'
 import { TimeSignature } from 'src/app/core/models/time-signature'
 import { SoundEventType } from 'src/app/core/models/sound-event-type.enum'
 import { timestamp } from 'rxjs/operators'
+import { Time } from '@angular/common'
+import { NumberInput } from '@angular/cdk/coercion'
 
 @Injectable()
 export class DrawingRythmService {
@@ -14,8 +16,13 @@ export class DrawingRythmService {
     ticksPerQuarterNote = 96
     tolerance = 8   // when we consider some interval to be a quarter, it could have for ex. 93 ticks intead of the 96
     // tolerance represents the max we tolerate for a duration to differ from 96 ticks 
-    standardWidth = 40   // represents the width of a note or a silence symbol. We keep a variable that has the x coordinate
+    standardWidth: number   // represents the width of a note or a silence symbol. We keep a variable that has the x coordinate
     // where we will insert the next symbol, and we increase it by this value after inserting one
+    barSeparationInPixels: number
+    timeSignature: TimeSignature
+    barLengthInTicks: number
+
+
 
     // We assign to each quarter, eightth, sixteenth or whatever a total of 50 px width
     // The height is always 50 px
@@ -42,6 +49,11 @@ export class DrawingRythmService {
 
         const notes = simplif.getNotesOfVoice(voice, song, fromBar, toBar)
 
+        this.timeSignature = song.songStats.timeSignature
+        this.barLengthInTicks = this.ticksPerQuarterNote * this.timeSignature.numerator * 4 / this.timeSignature.denominator
+        this.barSeparationInPixels= this.ticksPerQuarterNote * 1.3 * this.timeSignature.numerator
+        this.standardWidth = this.barLengthInTicks / 12
+
         return this.drawNotes(svgBox, song, voice, simplificationNo, fromBar, toBar)
     }
 
@@ -53,19 +65,23 @@ export class DrawingRythmService {
 
 
     private drawNotes(svgBox: HTMLElement, song: Song, voice: number, simplificationNo: number, fromBar: number, toBar: number): number {
-        this.drawTimeSignature(svgBox, 0, song.songStats.timeSignature)
-        const ticksPerBar = this.getBarLengthInTicks(song)
+        let x = 0
+        x += this.drawTimeSignature(svgBox, 0, song.songStats.timeSignature)
 
         console.log(`voice: ${voice}`)
-        let x = 40
         let events = this.getSequenceOfNotesAndSilences(song, simplificationNo, voice, fromBar, toBar)
-        console.log(events)
         let index = 0
+        let barLine = 0
         while (index < events.length) {
-            let eventsToDrawTogether = this.getNextGroupToDrawTogehter(events, index, ticksPerBar)
-            console.log(eventsToDrawTogether)
+            let eventsToDrawTogether = this.getNextGroupToDrawTogehter(events, index, this.barLengthInTicks)
             x += this.drawEvents(svgBox, x, eventsToDrawTogether)
             index += eventsToDrawTogether.length
+            const lastTick = eventsToDrawTogether.sort((a, b) => b.endTick - a.endTick)[0].endTick
+            if (lastTick % this.barLengthInTicks == 0) {
+                barLine += 1
+                this.drawBarLine(svgBox, barLine * this.barSeparationInPixels)
+                x = barLine * this.barSeparationInPixels + this.standardWidth
+            }
         }
         return x
     }
@@ -94,10 +110,7 @@ export class DrawingRythmService {
         return new Array(events[eventStart])
     }
 
-    private getBarLengthInTicks(song: Song) {
-        const timeSignature = song.songStats.timeSignature
-        return this.ticksPerQuarterNote * timeSignature.numerator * 4 / timeSignature.denominator
-    }
+
 
 
     private getSequenceOfNotesAndSilences(song: Song, simplificationNo: number, voice: number, fromBar: number, toBar: number): SoundEvent[] {
@@ -119,7 +132,6 @@ export class DrawingRythmService {
             }
         }
         const notes = simplif.getNotesOfVoice(voice, song, fromBar, toBar)
-        console.log(notes)
         for (let i = 0; i < notes.length; i++) {
             if (endOfLastComputedNote < notes[i].startSinceBeginningOfSongInTicks - tolerance) {
                 let event = new SoundEvent(SoundEventType.silence, endOfLastComputedNote, notes[i].startSinceBeginningOfSongInTicks)
@@ -129,7 +141,7 @@ export class DrawingRythmService {
             retObj.push(new SoundEvent(SoundEventType.note, notes[i].startSinceBeginningOfSongInTicks, notes[i].endSinceBeginningOfSongInTicks))
             endOfLastComputedNote = notes[i].endSinceBeginningOfSongInTicks
         }
-        return this.standardizeSequenceOfNotesAndSilences(retObj, this.getBarLengthInTicks(song))
+        return this.standardizeSequenceOfNotesAndSilences(retObj, this.barLengthInTicks)
     }
 
     // A silence can be divided in a sequence of silences. For example if a silence extends to the next bar, we split it
@@ -241,22 +253,22 @@ export class DrawingRythmService {
     // events of type silence, and 2 symbols connected with a tie
     private drawEvents(svgBox: HTMLElement, x: number, events: SoundEvent[]): number {
         const type = events[0].type
+        let deltaX = 0
         if (type == SoundEventType.note) {
             if (this.areNotesTied(events)) {
-                let newX = x
+
                 for (let i = 0; i < events.length; i++)
-                    newX = this.drawNote(svgBox, events[i].standardizedDuration, 1)
-                this.drawTie(svgBox, x, newX - 20)
-                return newX
+                    deltaX += this.drawNote(svgBox, events[i].standardizedDuration, x + deltaX, 1)
+                this.drawTie(svgBox, x, x + deltaX - 20)
+                return deltaX
             }
             else
                 return this.drawNote(svgBox, events[0].standardizedDuration, x, events.length)
         }
-        let newX = x
         for (let i = 0; i < events.length; i++) {
-            newX += this.drawRest(svgBox, events[i].standardizedDuration, newX)
+            deltaX += this.drawRest(svgBox, events[i].standardizedDuration, x + deltaX)
         }
-        return newX
+        return deltaX
     }
 
     // When we have consecutive notes to draw together there are 2 possibilites:
@@ -264,74 +276,22 @@ export class DrawingRythmService {
     // - they represent one note that is drawed as different symbols with a tie, like a quarter and an eight with a tie
     // This function is used to differentiate between these 2 cases
     private areNotesTied(events: SoundEvent[]): boolean {
+        if (events.length == 1) return false
         for (let i = 1; i < events.length; i++) {
             if (!events[i].isTiedToPrevious) return false
         }
         return true
     }
 
-    // private drawSilenceFromTicks(svgBox: HTMLElement, x: number, lenghtInTicks: number): number {
-    //     if (lenghtInTicks >= this.ticksPerQuarterNote - this.tolerance &&
-    //         lenghtInTicks <= this.ticksPerQuarterNote + this.tolerance) {
-    //         this.drawRest(svgBox, NoteDuration.quarter, x)
-    //         return x + this.standardWidth
-    //     }
-    //     if (lenghtInTicks > 55 && lenghtInTicks < 80) {
-    //         this.drawRest(svgBox, NoteDuration.eight, x)
-    //         this.drawRest(svgBox, NoteDuration.sixteenth, x + 30)
-    //         this.drawTie(svgBox, x, x + 50)
-    //         return x + 50 + this.standardWidth
-    //     }
-    //     if (lenghtInTicks >= 35 && lenghtInTicks <= 55)
-    //         this.drawRest(svgBox, NoteDuration.eight, x)
-    //     if (lenghtInTicks >= 17 && lenghtInTicks <= 34)
-    //         this.drawRest(svgBox, NoteDuration.sixteenth, x)
-    //     if (lenghtInTicks >= 10 && lenghtInTicks <= 16)
-    //         this.drawRest(svgBox, NoteDuration.thirtysecond, x)
-    //     if (lenghtInTicks <= 9)
-    //         this.drawRest(svgBox, NoteDuration.sixtyfourth, x)
-    //     return x + this.standardWidth
-    // }
-    // private drawNoteFromTicks(svgBox: HTMLElement, x: number, lenghtInTicks: number) {
-    //     if (lenghtInTicks >= 80 && lenghtInTicks <= 110) {
-    //         this.drawRest(svgBox, NoteDuration.quarter, x)
-    //         return x + this.standardWidth
-    //     }
-    //     if (lenghtInTicks > 55 && lenghtInTicks < 80) {
-    //         this.drawRest(svgBox, NoteDuration.eight, x)
-    //         this.drawRest(svgBox, NoteDuration.sixteenth, x + 30)
-    //         this.drawTie(svgBox, x, x + 50)
-    //     }
-    //     if (lenghtInTicks >= 35 && lenghtInTicks <= 55)
-    //         this.drawRest(svgBox, NoteDuration.eight, x)
-    //     if (lenghtInTicks >= 17 && lenghtInTicks <= 34)
-    //         this.drawRest(svgBox, NoteDuration.sixteenth, x)
-    //     if (lenghtInTicks >= 10 && lenghtInTicks <= 16)
-    //         this.drawRest(svgBox, NoteDuration.thirtysecond, x)
-    //     if (lenghtInTicks <= 9)
-    //         this.drawRest(svgBox, NoteDuration.sixtyfourth, x)
-    // }
-
-    private getLengthOfBarInTicks(timeSignature: TimeSignature) {
-        switch (timeSignature.denominator) {
-            case 2:
-                return this.ticksPerQuarterNote * 2 * timeSignature.numerator
-            case 4:
-                return this.ticksPerQuarterNote * timeSignature.numerator
-            case 8:
-                return this.ticksPerQuarterNote / 2 * timeSignature.numerator
-            case 16:
-                return this.ticksPerQuarterNote / 4 * timeSignature.numerator
-        }
-    }
-
-    private drawTimeSignature(svgBox: HTMLElement, x: number, timeSignature: TimeSignature) {
+    private drawTimeSignature(svgBox: HTMLElement, x: number, timeSignature: TimeSignature): number {
         this.createText(svgBox, timeSignature.numerator.toString(), x + 10, 40, 20, 'black')
         this.createText(svgBox, timeSignature.denominator.toString(), x + 10, 80, 20, 'black')
+        return 50
     }
 
-    private drawBarLine(svgBox: HTMLElement, x: number) {
+    private drawBarLine(svgBox: HTMLElement, x: number): number {
         this.drawPath(svgBox, 'black', 2, `M ${x + 10},20 V 100 z`)
+        return 50
     }
 
     private drawTie(svgBox: HTMLElement, x1: number, x2: number) {
@@ -372,12 +332,22 @@ export class DrawingRythmService {
                     break;
             }
         }
-        return this.standardWidth + (qty - 1) * 30 
+        return this.standardWidth + (qty - 1) * 30
     }
 
     private drawRest(svgBox: HTMLElement, type: NoteDuration, x: number): number {
         let group = document.createElementNS(this.svgns, 'g')
         svgBox.appendChild(group)
+        if (type == NoteDuration.whole) {
+            for (let i = 0; i < 4; i++)
+                this.drawQuarterRest(group, x + i * this.standardWidth)
+            return 4 * this.standardWidth
+        }
+        if (type == NoteDuration.half) {
+            this.drawQuarterRest(group, x)
+            this.drawQuarterRest(group, x + this.standardWidth)
+            return 2 * this.standardWidth
+        }
         if (type == NoteDuration.quarter)
             this.drawQuarterRest(group, x)
         else {

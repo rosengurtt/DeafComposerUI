@@ -66,6 +66,7 @@ export class SongPanelComponent implements OnInit, OnChanges, OnDestroy, AfterVi
   ngOnInit() {
     MIDIjs.stop()
     this.setTracks()
+    console.log(this.song)
   }
   ngAfterViewInit(): void {
     this.slider.max = this.song.songStats.durationInSeconds
