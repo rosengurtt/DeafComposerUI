@@ -7,6 +7,7 @@ import { SoundEventType } from './sound-event-type.enum'
 
 export class SoundEvent {
     type: SoundEventType
+    bar: number
     startTick: number
     endTick: number
     isTiedToPrevious: boolean
@@ -18,6 +19,7 @@ export class SoundEvent {
 
     constructor(
         type: SoundEventType,
+        bar: number,
         start: number,
         end: number,
         isTiedToPrevious: boolean | null = null,
@@ -25,6 +27,7 @@ export class SoundEvent {
         this.type = type
         this.startTick = start
         this.endTick = end
+        this.bar = bar
         if (isTiedToPrevious) this.isTiedToPrevious = isTiedToPrevious
         else this.isTiedToPrevious = false
         if (isAccented) this.isAccented = isAccented

@@ -45,7 +45,7 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
   lastYrecorded: number | null
   muteIcon = "volume_up"
   songViewType: typeof SongViewType = SongViewType
-  lengthOfMusicNotationDrawing = 0
+  musicNotationViewBoxWidth: number
 
   constructor(private drawingService: DrawingPianoRollService,
     private drawingRythmService: DrawingRythmService) {
@@ -55,7 +55,7 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
 
     const svgBoxId = `${this.svgBoxIdPrefix}_${this.songId}_${this.trackId}`
     const simplification = 0
-    this.drawingService.drawTrackGraphic(this.trackId, svgBoxId, this.song, simplification);
+    this.drawingService.drawPianoRollGraphic(this.trackId, svgBoxId, this.song, simplification);
     this.updateSvgBox()
     this.resetEventSubscritpion = this.resetEvent.subscribe(x => this.reset(x))
     this.moveProgressBarEventSubscritpion = this.moveProgressBarEvent.subscribe(x => this.moveProgressBar(x))
@@ -78,12 +78,12 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
         const svgBoxId = `${this.svgBoxIdPrefix}_${this.songId}_${this.trackId}`
         const simplification = 0
         if (this.viewType == SongViewType.pianoRoll) {
-          this.drawingService.drawTrackGraphic(this.trackId, svgBoxId, this.song, simplification);
+          this.drawingService.drawPianoRollGraphic(this.trackId, svgBoxId, this.song, simplification);
         }
-        else
-          this.lengthOfMusicNotationDrawing = 
-          this.drawingRythmService.drawTrackGraphic(this.trackId, svgBoxId, this.song, simplification, 1, 2);
-          redrawSvgBox = true
+        else {
+          this.musicNotationViewBoxWidth = this.drawingRythmService.drawMusicNotationGraphic(this.trackId, svgBoxId, this.song, simplification, 1, 20);
+        }
+        redrawSvgBox = true
       }
       switch (propName) {
         case 'displacement':
@@ -115,9 +115,9 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
         height = this.scale * 128
         break;
       case SongViewType.rythmMusicNotation:
-        minX = 0
+        minX = this.displacement.x
         minY = 0
-        width = 1200
+        width = this.musicNotationViewBoxWidth
         height = 128
         break;
     }
@@ -131,7 +131,6 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
     this.updateSvgBox()
   }
   dragStarted(event): void {
-    console.log("estoy en dragStarted")
     this.isDragActive = true
     this.lastXrecorded = event.offsetX
     this.lastYrecorded = event.offsetY

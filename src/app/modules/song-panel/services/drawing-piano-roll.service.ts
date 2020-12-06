@@ -146,7 +146,7 @@ export class DrawingPianoRollService {
         return textElement
     }
 
-    public drawTrackGraphic(
+    public drawPianoRollGraphic(
         trackNumber: number,
         svgBoxId: string,
         song: Song,

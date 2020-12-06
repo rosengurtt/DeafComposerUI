@@ -5,15 +5,27 @@ import { NoteDuration } from 'src/app/core/models/note-duration'
 import { SoundEvent } from 'src/app/core/models/sound-event'
 import { TimeSignature } from 'src/app/core/models/time-signature'
 import { SoundEventType } from 'src/app/core/models/sound-event-type.enum'
-import { timestamp } from 'rxjs/operators'
-import { Time } from '@angular/common'
-import { NumberInput } from '@angular/cdk/coercion'
+import { BeatGraphNeeds } from 'src/app/core/models/beat-graph-needs'
+import { Note } from 'src/app/core/models/note'
+import { Fraction } from 'src/app/core/models/fraction'
+import { Bar } from 'src/app/core/models/bar'
 
 @Injectable()
 export class DrawingRythmService {
     svgns = 'http://www.w3.org/2000/svg'
-    separation = 50
+    svgBox: HTMLElement
     ticksPerQuarterNote = 96
+    song: Song
+    simplification: SongSimplification
+    standardSeparation = 32 // Represents the distance in pixels between 2 notes, 2 rests or a note and a rest
+    beats: BeatGraphNeeds[] // Represents the information we need about each beat to draw the notes and rests of that beat
+    bars: Bar[]             // Info include the start and end tick and the time signature of each bar of the song
+    songNotes: Note[]
+    voiceNotes: Note[]
+    isPercusion: boolean
+    eventsToDraw: SoundEvent[]  // Represents all the notes and rests we have to draw
+
+    separation = 50
     tolerance = 8   // when we consider some interval to be a quarter, it could have for ex. 93 ticks intead of the 96
     // tolerance represents the max we tolerate for a duration to differ from 96 ticks 
     standardWidth: number   // represents the width of a note or a silence symbol. We keep a variable that has the x coordinate
@@ -31,30 +43,49 @@ export class DrawingRythmService {
     // that consists mostly of quarter notes will occupy less space per bar than a song
     // that consists of sixteenths
     // The function returns the total length of the drawing
-    public drawTrackGraphic(
+    public drawMusicNotationGraphic(
         voice: number,
         svgBoxId: string,
         song: Song,
         simplificationNo: number,
         fromBar: number,
         toBar: number): number {
-        const svgBox = document.getElementById(svgBoxId)
-        if (!svgBox) {
+
+        this.svgBox = document.getElementById(svgBoxId)
+        if (!this.svgBox) {
             return
         }
-        this.clearSVGbox(svgBox)
-        const simplif = new SongSimplification(song.songSimplifications[simplificationNo])
 
-        const isPercusion = simplif.isVoicePercusion(voice)
+        this.clearSVGbox(this.svgBox)
+        this.song = song
+        this.simplification = new SongSimplification(song.songSimplifications[simplificationNo])
+        this.bars = song.bars
+        this.songNotes = this.simplification.notes.map(n => this.normalizeNoteStart(n))
+        this.isPercusion = this.simplification.isVoicePercusion(voice)
+        this.voiceNotes = this.simplification.getNotesOfVoice(voice, song, fromBar, toBar)
+        this.eventsToDraw = this.getEventsToDraw()
+        // let x = 0
+        // for (const bar of this.bars)
+        //     x += this.drawBar(bar, x)
 
-        const notes = simplif.getNotesOfVoice(voice, song, fromBar, toBar)
 
-        this.timeSignature = song.songStats.timeSignature
-        this.barLengthInTicks = this.ticksPerQuarterNote * this.timeSignature.numerator * 4 / this.timeSignature.denominator
-        this.barSeparationInPixels= this.ticksPerQuarterNote * 1.3 * this.timeSignature.numerator
-        this.standardWidth = this.barLengthInTicks / 12
+        // De aca para abajo se van al carajo
 
-        return this.drawNotes(svgBox, song, voice, simplificationNo, fromBar, toBar)
+        // const svgBox = document.getElementById(svgBoxId)
+        // if (!svgBox) {
+        //     return
+        // }
+
+        // const notes = this.simplification.getNotesOfVoice(voice, song, fromBar, toBar)
+
+        // this.timeSignature = song.songStats.timeSignature
+
+        // this.barLengthInTicks = this.ticksPerQuarterNote * this.timeSignature.numerator * 4 / this.timeSignature.denominator
+        // this.barSeparationInPixels = this.ticksPerQuarterNote * 1.3 * this.timeSignature.numerator
+        // this.standardWidth = this.barLengthInTicks / 12
+
+
+        // return this.drawNotes(svgBox, song, voice, simplificationNo, fromBar, toBar) / 10
     }
 
     private clearSVGbox(svgBox: HTMLElement) {
@@ -63,10 +94,339 @@ export class DrawingRythmService {
         }
     }
 
+    // Before we draw the notes and rests for a beat in a vlice of the song, we need to see what happens
+    // in that beat in all voices. For example if we have 2 eights in a beat in a voice, but we have
+    // 4 sixteens in that beat in another voice, we need to separate the 2 eights so they are aligned with
+    // the corresponding sixteens of the other voice
+    // BeatGraphNeeds gives all the information we need to draw the notes/rests of a beat in a voice,
+    // we don't need to know anything else about the other voices
+    private getBeatsGraphicNeeds(bar: Bar, beat: number): BeatGraphNeeds {
+        const beatDurationInTicks = 96 * 4 / bar.timeSignature.denominator
+        let startOfBeat = bar.ticksFromBeginningOfSong + (beat - 1) * beatDurationInTicks
+        let endOfBeat = startOfBeat + beatDurationInTicks
+        let notesOfBeat = this.songNotes
+            .filter(n => n.startSinceBeginningOfSongInTicks < endOfBeat &&
+                n.endSinceBeginningOfSongInTicks > startOfBeat)
+        const cutPoints = this.getStartPointsOfBeat(notesOfBeat, startOfBeat, endOfBeat)
+        return new BeatGraphNeeds(bar.barNumber, beat, cutPoints)
+
+    }
+    // Finds the ticks inside a beat where notes or rests start
+    private getStartPointsOfBeat(notes: Note[], beatStart: number, beatEnd: number): number[] {
+        let retObj = new Set<number>()
+        // Add start of notes
+        notes.forEach(n => {
+            if (n.startSinceBeginningOfSongInTicks >= beatStart)
+                retObj.add(n.startSinceBeginningOfSongInTicks - beatStart)
+        })
+        // Add rests
+        const tolerance = 4
+        for (let i = 0; i < notes.length - 1; i++) {
+            if (notes[i].endSinceBeginningOfSongInTicks + tolerance < notes[i + 1].startSinceBeginningOfSongInTicks)
+                retObj.add(notes[i].endSinceBeginningOfSongInTicks - beatStart)
+        }
+        return this.normalizeStartPoints(Array.from(retObj), beatEnd - beatStart)
+
+    }
+    // We want points that have values like  1/2, 2/3, etc
+    private normalizeStartPoints(points: number[], beatDuration: number): number[] {
+        let retObj: number[] = []
+        // tolerance is the maximum distance that 2 points can be appart and still represent the same point
+        // it depends on the number of points, because if we have in a beat 8 thirtyseconds, then the distance
+        // between them can be short, but they are still different notes. But if we have 2 notes in the beat
+        // we don't expect any of them to be a thirtysecond.
+        const tolerance = beatDuration / (points.length * 4)
+        for (let point of points) {
+            for (let [i, j] of [[1, 2], [1, 3], [2, 3], [1, 4], [3, 4], [1, 6], [5, 6], [1, 8], [3, 8], [5, 8], [7, 8],
+            [1, 12], [5, 12], [7, 12], [11, 12], [1, 16], [3, 16], [5, 16], [7, 16], [9, 16], [11, 16], [13, 16], [15, 16],
+            [1, 32], [3, 32], [5, 32], [7, 32], [9, 32], [11, 32], [13, 32], [15, 32], [17, 32], [19, 32], [21, 32], [23, 32],
+            [25, 32], [27, 32], [29, 32], [31, 32]])
+                if (point > i / j * beatDuration - tolerance && point < i / j * beatDuration + tolerance)
+                    retObj.push(Math.round(beatDuration * i / j))
+        }
+        return retObj
+    }
+    // If we have a note starting in tick 0 and another starting in tick 2, they actually are supposed to start
+    // at the same time. So we want to discretize the notes in a way where all notes that should start together
+    // start exactly in the same tick
+    // This method aproximates the start to the biggest subdivision it can make of the beat, without going too
+    // far from the note current start tick
+    private normalizeNoteStart(note: Note): Note {
+
+        const tolerance = note.durationInTicks / 6
+        let retObj = new Note(note.id, note.pitch, note.volume, note.startSinceBeginningOfSongInTicks,
+            note.endSinceBeginningOfSongInTicks, note.isPercussion, note.voice, note.PitchBending, note.instrument)
+        const barOfNote = this.getBarOfNote(note)
+        const timeSig = barOfNote.timeSignature
+        const beatDuration = this.ticksPerQuarterNote * timeSig.denominator / 4
+        let beatStart: number
+        for (let i = timeSig.numerator - 1; i >= 0; i--) {
+            if (barOfNote.ticksFromBeginningOfSong + i * beatDuration < note.startSinceBeginningOfSongInTicks) {
+                beatStart =barOfNote.ticksFromBeginningOfSong + i * beatDuration 
+                break
+            }
+        }
+
+        for (let [i, j] of [[1, 2], [1, 3], [2, 3], [1, 4], [3, 4], [1, 6], [5, 6], [1, 8], [3, 8], [5, 8], [7, 8],
+        [1, 12], [5, 12], [7, 12], [11, 12], [1, 16], [3, 16], [5, 16], [7, 16], [9, 16], [11, 16], [13, 16], [15, 16],
+        [1, 32], [3, 32], [5, 32], [7, 32], [9, 32], [11, 32], [13, 32], [15, 32], [17, 32], [19, 32], [21, 32], [23, 32],
+        [25, 32], [27, 32], [29, 32], [31, 32]])
+            if (note.startSinceBeginningOfSongInTicks - beatStart > i / j * beatDuration - tolerance &&
+                note.startSinceBeginningOfSongInTicks - beatStart < i / j * beatDuration + tolerance)
+                note.startSinceBeginningOfSongInTicks = beatStart + Math.round(beatDuration * i / j)
+
+        return retObj
+    }
+
+    private getBarOfNote(n: Note): Bar {
+        for (let i = 0; i < this.bars.length; i++) {
+            if (this.bars[i].ticksFromBeginningOfSong <= n.startSinceBeginningOfSongInTicks &&
+                (i == this.bars.length - 1 || this.bars[i + 1].ticksFromBeginningOfSong > n.startSinceBeginningOfSongInTicks))
+                return this.bars[i]
+        }
+        return null
+    }
+
+    // bar is the bar number, that is 1 for the first bar of the song
+    // x is the coordinate in pixels where we must start drawing
+    private drawBar(bar: Bar, x: number): number {
+        const timeSig = bar.timeSignature
+        const totalBeats = timeSig.numerator
+        if (this.mustDrawTimeSignature(bar))
+            x += this.drawTimeSignature(x, timeSig)
+
+        for (let beat = 1; beat <= totalBeats; beat++)
+            x += this.drawBeat(x, bar, beat)
+
+        this.drawBarLine(x)
+        return x
+    }
+
+    // We draw the time signature in a bar if it is the first bar or if the time signature is different from the
+    // previous bar
+    private mustDrawTimeSignature(bar: Bar): boolean {
+        if (bar.barNumber == 1) return true
+        const previousTimeSig = this.bars[bar.barNumber - 1].timeSignature
+        const currentTimeSig = bar.timeSignature
+        if (previousTimeSig.numerator == currentTimeSig.numerator &&
+            previousTimeSig.denominator == currentTimeSig.denominator)
+            return false
+        return true
+    }
+    // Returns the space it took in the drawing
+    private drawTimeSignature(x: number, timeSignature: TimeSignature): number {
+        this.createText(this.svgBox, timeSignature.numerator.toString(), x + 10, 40, 20, 'black')
+        this.createText(this.svgBox, timeSignature.denominator.toString(), x + 10, 80, 20, 'black')
+        return 50
+    }
+
+    // We draw beat by beat. This is because when we have multiple notes in a beat, like 4 sixteens, we have to draw
+    // a beam that connects them together. But if we have 8 sixteens in 2 consecutive beats, we connect the first 4
+    // and the second 4, we don't connect the 8 together    
+    private drawBeat(x: number, bar: Bar, beat: number): number {
+        const timeSig = bar.timeSignature
+        const beatDurationInTicks = 96 * timeSig.denominator / 4
+        const startTick = bar.ticksFromBeginningOfSong + (beat - 1) * beatDurationInTicks
+        const endTick = startTick + beatDurationInTicks
+        const beatGraphNeeds = this.getBeatsGraphicNeeds(bar, beat)
+        const beatEvents = this.eventsToDraw
+            .filter(e => e.startTick >= startTick && e.endTick <= endTick)
+            .sort((e1, e2) => e2.startTick - e1.startTick)
+
+        for (const e of beatEvents) {
+
+        }
+        return 0
+    }
+    // When we draw for example a sixteenth inside a beat, we have to align it with other notest played in the
+    // same beat in other voices. So for example if the sixteenth is the second in a group of 4, any note
+    // played in another voice at the same time as this sixteenth, should have the same x coordinate
+    // the x returned is a fraction of the total display width of the beat. For example if we have the second
+    // sixteenth as before, we should return 1/4
+    private calculateXofEventInsideBeat(event: SoundEvent, beatGraphNeeds: BeatGraphNeeds) {
+        const totalEventsToDrawInBeat = beatGraphNeeds.EventsStartTickFromBeginningOfBeat.length
+        const eventsBeforeThisOne = beatGraphNeeds.EventsStartTickFromBeginningOfBeat.filter(e => e < event.startTick)
+    }
+
+    // Generates the sequence of notes and rests that will need to be drawn for this voice
+    private getEventsToDraw(): SoundEvent[] {
+        let retObj = <SoundEvent[]>[]
+        const tolerance = 8
+        let endOfLastComputedNote = 0
+        for (const n of this.voiceNotes) {
+            const currentBar = this.getBarOfTick(endOfLastComputedNote)
+            if (endOfLastComputedNote < n.startSinceBeginningOfSongInTicks - tolerance) {
+                let event = new SoundEvent(SoundEventType.silence, currentBar, endOfLastComputedNote, n.startSinceBeginningOfSongInTicks)
+
+                retObj.push(event)
+                endOfLastComputedNote = n.startSinceBeginningOfSongInTicks
+            }
+            const noteBar = this.getBarOfTick(n.startSinceBeginningOfSongInTicks)
+            retObj.push(new SoundEvent(SoundEventType.note, noteBar, n.startSinceBeginningOfSongInTicks, n.endSinceBeginningOfSongInTicks))
+            endOfLastComputedNote = n.endSinceBeginningOfSongInTicks
+        }
+        let standadizedEvents = this.standardizeSequenceOfNotesAndRests(retObj)
+
+        // remove undefined items. Not sure why there are sometimes undefined items
+        return standadizedEvents.filter(item => item)
+    }
+
+    // Returns the bar number (starting from 1) where the tick is located
+    // Because the first bar is 1, the tick is inside bars[barNumber-1], not bars[barNumber]
+    private getBarOfTick(tick: number): number {
+        return this.bars.filter(b => b.ticksFromBeginningOfSong <= tick).length
+    }
+    // A rest can be divided in a sequence of rests. For example if a rest extends to the next bar, we split it
+    // in 2, one that ends with the first bar and one that starts with the second.
+    // If a rest is a quarter and a half, we split it in one of 1 quarter and 1 eight. In this case we have to decide which
+    // one goes first. We select the option that makes the rests start in the hardest bit
+    // The same with the notes
+    private standardizeSequenceOfNotesAndRests(input: SoundEvent[]): SoundEvent[] {
+        let retObj = this.splitEventsThatExtendToNextBar(input)
+        return this.splitEventsThatHaveOddDurations(retObj)
+    }
+
+    private splitEventsThatExtendToNextBar(input: SoundEvent[]): SoundEvent[] {
+        let retObj = <SoundEvent[]>[]
+        const tolerance = 6
+        for (const e of input) {
+            const startBar = this.bars.filter(b => b.ticksFromBeginningOfSong <= e.startTick + tolerance).length
+            const endBar = this.bars.filter(b => b.ticksFromBeginningOfSong <= e.endTick - tolerance).length
+
+            if (endBar > startBar) {
+                let splitPoints = <number[]>[]
+                // the event can extend for more than 2 bars. Add one event at the end of each
+                for (let i = startBar; i < endBar; i++) {
+                    // startBar and endBar are indexes that start in 1, not in 0 as is usual in javascript arrays
+                    // so bars[startBar] is actually the bar startBar+1
+                    splitPoints.push(this.bars[startBar].ticksFromBeginningOfSong)
+                }
+                const splitEvents = this.splitEvent(e, splitPoints)
+                splitEvents.forEach(e => retObj.push(e))
+            }
+            else
+                retObj.push(e)
+        }
+        return retObj
+    }
+    // When we want to split a sound event in many, for ex. because the event extends from one bar to the next, we
+    // call this function and we pass the points where we want to split the event (it could for ex. extend several bars,
+    // not just 2) and it returns a sequence of events that correspond to the split points we passed
+    // The first event returned has a isTiedToPrevious value of false, and all the rest of true
+    private splitEvent(e: SoundEvent, splitPoints: number[]): SoundEvent[] {
+        // In case we don't have actually to split anyting because there are no split points,
+        // return the event as an array of events
+        if (!splitPoints || splitPoints.length == 0)
+            return [e]
+        let retObj = <SoundEvent[]>[]
+        let lastStartPoint = e.startTick
+        for (const p of splitPoints) {
+            retObj.push(new SoundEvent(e.type, e.bar, lastStartPoint, p, lastStartPoint == e.startTick ? false : true))
+            lastStartPoint = p
+        }
+        retObj.push(new SoundEvent(e.type, e.bar, lastStartPoint, e.endTick, true))
+        return retObj
+    }
+
+    // If a silence is a quarter and a half, we split it in one of 1 quarter and 1 eight. In this case we have to decide which
+    // one goes first. We select the option that makes the silences start in the hardest bit
+    // The same with the notes
+    private splitEventsThatHaveOddDurations(input: SoundEvent[]): SoundEvent[] {
+        let retObj = <SoundEvent[]>[]
+        for (const e of input) {
+            retObj = retObj.concat(this.normalizeInterval(e))
+        }
+        return retObj
+    }
+
+    // We want all intervals of notes and rests to be a full quarter, or eight, etc and not a quarter and a half,
+    // or stil worse a quarter plus an eight plus a sixteenth
+    // This function splits a quarter and a half in 2 notes, a quarter plus an eight plus a sixteenth in 3, in such
+    // a way tat all durations returned are a full interval and not a mix of intervals
+    // We have to consider the case where the bar has triplets
+    private normalizeInterval(e: SoundEvent): SoundEvent[] {
+        const tolerance = 8
+        // the following  line is needed because of typescript/javascript limitations
+        e = new SoundEvent(e.type, e.bar, e.startTick, e.endTick, e.isTiedToPrevious, e.isAccented)
+        const timeSig = this.bars[e.bar - 1].timeSignature
+        const beatDuration = 96 * timeSig.numerator / 4
+        const barHasTriplets = this.bars[e.bar - 1].hasTriplets
+
+        let points: number[]
+        if (barHasTriplets)
+            points = [1 / 4, 1 / 2, 1, 2, 3, 4, 6, 8, 12, 16, 24, 32]
+        else
+            points = [1 / 4, 1 / 2, 1, 2, 4, 8, 16, 32]
+        for (const i of points) {
+            // if the event has a duration that is a whole quarter, an eight, a sixteenth, etc. return it
+            if ((e.duration > (beatDuration / i - tolerance) * i &&
+                e.duration < (beatDuration / i + tolerance) * i) ||
+                e.duration < 5) {
+                return [e]
+            }
+            else {
+                // the note has an odd interval, so we split it in 2
+                const splitPoint = [this.getSplitPoint(e)]
+                const splittedEvent = this.splitEvent(e, splitPoint)
+                // we call it recursively, because one of the subdivisions may be odd as well
+                // like when we have a rest that is a quarter plus an eight plus a sixteenth
+                const left = this.normalizeInterval(splittedEvent[0])
+                const right = this.normalizeInterval(splittedEvent[1])
+                return left.concat(right)
+            }
+        }
+    }
+    // When we want to split a note or rest in 2, we prefer to select intervals that start and stop in 
+    // whole divisions of beats. For example if a note duration is a quarter + an eight
+    // and starts in tick 0, we will split it in a quarter and an eight, but if it starts in tick
+    // 48, we would split it in an eight and a quarter 
+    // This function finds the point inside an interval where it makes more sense to split the note
+    private getSplitPoint(e: SoundEvent): number {
+        let divisions: number[]
+        const bar = this.bars[e.bar - 1]
+        const barHasTriplets = bar.hasTriplets
+        if (barHasTriplets)
+            divisions = [1 / 2, 1, 2, 3, 4, 6, 8, 12, 16, 24, 32]
+        else
+            divisions = [1 / 2, 1, 2, 3, 4, 6, 8, 16, 32]
+
+        // we find the longest interval that is the length of a quarter subdivision
+        // that is shorter than the event
+        // Then we find the point between startTick and endTick that is a multiplier
+        // of that interval
+        for (const d of divisions) {
+            const intervalInTicks = this.ticksPerQuarterNote / d
+            if (e.duration > intervalInTicks) {
+                const barStart = bar.ticksFromBeginningOfSong
+                const k1 = (e.startTick - barStart) % intervalInTicks
+                const k2 = (e.endTick - barStart) % intervalInTicks
+                if (k2 > 0)
+                    return e.endTick - k2
+                else
+                    return e.startTick + (intervalInTicks - k1)
+            }
+        }
+    }
+
+
+    private drawBarLine(x: number): number {
+        this.drawPath(this.svgBox, 'black', 2, `M ${x + 10},20 V 100 z`)
+        return 50
+    }
+
+
+
+
+
+
+    //------------------------------------------------------------------------------------------------------
+    //------------------------------------------------------------------------------------------------------
+    //------------------------------------------------------------------------------------------------------
+    //------------------------------------------------------------------------------------------------------
 
     private drawNotes(svgBox: HTMLElement, song: Song, voice: number, simplificationNo: number, fromBar: number, toBar: number): number {
         let x = 0
-        x += this.drawTimeSignature(svgBox, 0, song.songStats.timeSignature)
+        x += this.drawTimeSignatureOld(svgBox, 0, song.songStats.timeSignature)
 
         console.log(`voice: ${voice}`)
         let events = this.getSequenceOfNotesAndSilences(song, simplificationNo, voice, fromBar, toBar)
@@ -79,11 +439,17 @@ export class DrawingRythmService {
             const lastTick = eventsToDrawTogether.sort((a, b) => b.endTick - a.endTick)[0].endTick
             if (lastTick % this.barLengthInTicks == 0) {
                 barLine += 1
-                this.drawBarLine(svgBox, barLine * this.barSeparationInPixels)
+                this.drawBarLineOld(svgBox, barLine * this.barSeparationInPixels)
                 x = barLine * this.barSeparationInPixels + this.standardWidth
             }
         }
+
         return x
+    }
+
+    private drawBarLineOld(svgBox: HTMLElement, x: number): number {
+        this.drawPath(svgBox, 'black', 2, `M ${x + 10},20 V 100 z`)
+        return 50
     }
 
     // When we draw the events, there are cases where we have to draw together a group of notes:
@@ -91,7 +457,7 @@ export class DrawingRythmService {
     // - when we have a duration of a note that is something like a quarter and an eight, we draw them as 2 symbols with a tie
     private getNextGroupToDrawTogehter(events: SoundEvent[], eventStart: number, barLength: number): SoundEvent[] {
         // If it is a silence return it, we don't group silences when we draw them
-        if (events[eventStart].type == SoundEventType.silence) return new Array(events[eventStart])
+        if (eventStart < events.length && events[eventStart].type == SoundEventType.silence) return new Array(events[eventStart])
 
         // See if we have ties to the next notes
         let i = 0
@@ -110,9 +476,6 @@ export class DrawingRythmService {
         return new Array(events[eventStart])
     }
 
-
-
-
     private getSequenceOfNotesAndSilences(song: Song, simplificationNo: number, voice: number, fromBar: number, toBar: number): SoundEvent[] {
         let retObj = <SoundEvent[]>[]
         const tolerance = 10
@@ -125,7 +488,7 @@ export class DrawingRythmService {
                 .filter(x => x.voice == voice && x.startSinceBeginningOfSongInTicks < startTick)
                 .sort((n1, n2) => n2.startSinceBeginningOfSongInTicks - n1.startSinceBeginningOfSongInTicks)[0]
             if (latestNoteFromPreviousBar.endSinceBeginningOfSongInTicks > startTick + tolerance) {
-                let event = new SoundEvent(SoundEventType.note, latestNoteFromPreviousBar.startSinceBeginningOfSongInTicks,
+                let event = new SoundEvent(SoundEventType.note, 0, latestNoteFromPreviousBar.startSinceBeginningOfSongInTicks,
                     latestNoteFromPreviousBar.endSinceBeginningOfSongInTicks)
                 retObj.push(event)
                 endOfLastComputedNote = event.endTick
@@ -134,14 +497,17 @@ export class DrawingRythmService {
         const notes = simplif.getNotesOfVoice(voice, song, fromBar, toBar)
         for (let i = 0; i < notes.length; i++) {
             if (endOfLastComputedNote < notes[i].startSinceBeginningOfSongInTicks - tolerance) {
-                let event = new SoundEvent(SoundEventType.silence, endOfLastComputedNote, notes[i].startSinceBeginningOfSongInTicks)
+                let event = new SoundEvent(SoundEventType.silence, 0, endOfLastComputedNote, notes[i].startSinceBeginningOfSongInTicks)
                 retObj.push(event)
                 endOfLastComputedNote = notes[i].startSinceBeginningOfSongInTicks
             }
-            retObj.push(new SoundEvent(SoundEventType.note, notes[i].startSinceBeginningOfSongInTicks, notes[i].endSinceBeginningOfSongInTicks))
+            retObj.push(new SoundEvent(SoundEventType.note, 0, notes[i].startSinceBeginningOfSongInTicks, notes[i].endSinceBeginningOfSongInTicks))
             endOfLastComputedNote = notes[i].endSinceBeginningOfSongInTicks
         }
-        return this.standardizeSequenceOfNotesAndSilences(retObj, this.barLengthInTicks)
+        let standadizedEvents = this.standardizeSequenceOfNotesAndSilences(retObj, this.barLengthInTicks)
+
+        // remove undefined items
+        return standadizedEvents.filter(item => item)
     }
 
     // A silence can be divided in a sequence of silences. For example if a silence extends to the next bar, we split it
@@ -150,11 +516,11 @@ export class DrawingRythmService {
     // one goes first. We select the option that makes the silences start in the hardest bit
     // The same with the notes
     private standardizeSequenceOfNotesAndSilences(input: SoundEvent[], barLength: number): SoundEvent[] {
-        let retObj = this.splitEventsThatExtendToNextBar(input, barLength)
-        return this.splitEventsThatHaveOddDurations(retObj)
+        let retObj = this.splitEventsThatExtendToNextBarOld(input, barLength)
+        return this.splitEventsThatHaveOddDurationsOld(retObj)
     }
 
-    private splitEventsThatExtendToNextBar(input: SoundEvent[], barLength: number): SoundEvent[] {
+    private splitEventsThatExtendToNextBarOld(input: SoundEvent[], barLength: number): SoundEvent[] {
         let retObj = <SoundEvent[]>[]
         for (let i = 0; i < input.length; i++) {
             const startBar = Math.floor((input[i].startTick + this.tolerance) / barLength)
@@ -166,7 +532,7 @@ export class DrawingRythmService {
                 for (let j = 0; j < barDiff; j++) {
                     splitPoints.push((startBar + j + 1) * barLength)
                 }
-                const splitEvents = this.splitEvent(input[i], splitPoints)
+                const splitEvents = this.splitEventOld(input[i], splitPoints)
                 splitEvents.forEach(e => retObj.push(e))
             }
             else
@@ -178,23 +544,21 @@ export class DrawingRythmService {
     // If a silence is a quarter and a half, we split it in one of 1 quarter and 1 eight. In this case we have to decide which
     // one goes first. We select the option that makes the silences start in the hardest bit
     // The same with the notes
-    private splitEventsThatHaveOddDurations(input: SoundEvent[]): SoundEvent[] {
+    private splitEventsThatHaveOddDurationsOld(input: SoundEvent[]): SoundEvent[] {
         let retObj = <SoundEvent[]>[]
         for (let i = 0; i < input.length; i++) {
-            retObj = retObj.concat(this.normalizeInterval(input[i]))
+            retObj = retObj.concat(this.normalizeIntervalOld(input[i]))
         }
         return retObj
     }
-
-
 
     // We want all intervals of notes and silences to be a full quarter, or eight, etc and not a quarter and a half,
     // or stil worse a quarter plus an eight plus a sixteenth
     // This function splits a quarter and a half in 2 notes, a quarter plus an eight plus a sixteenth in 3, in such
     // a way tat all durations returned are a full interval and not a mix of intervals
-    private normalizeInterval(e: SoundEvent, depht = 0): SoundEvent[] {
+    private normalizeIntervalOld(e: SoundEvent, depht = 0): SoundEvent[] {
         // the following  line is needed because of typescript/javascript limitations
-        e = new SoundEvent(e.type, e.startTick, e.endTick, e.isTiedToPrevious, e.isAccented)
+        e = new SoundEvent(e.type, 0, e.startTick, e.endTick, e.isTiedToPrevious, e.isAccented)
 
         for (let i = 16; i > 1 / 64; i = i / 2) {
             // if the note doesn't need to be split, return it
@@ -207,9 +571,9 @@ export class DrawingRythmService {
                 // if the notes has an odd interval
                 if (e.duration > (this.ticksPerQuarterNote + this.tolerance) * i / 2 &&
                     e.duration < (this.ticksPerQuarterNote - this.tolerance) * i) {
-                    const splitPoints = [this.getSplitPoint(e)]
-                    const splittedEvent = this.splitEvent(e, splitPoints)
-                    return this.normalizeInterval(splittedEvent[0], depht + 1).concat(this.normalizeInterval(splittedEvent[1], depht + 1))
+                    const splitPoints = [this.getSplitPointOld(e)]
+                    const splittedEvent = this.splitEventOld(e, splitPoints)
+                    return this.normalizeIntervalOld(splittedEvent[0], depht + 1).concat(this.normalizeIntervalOld(splittedEvent[1], depht + 1))
                 }
             }
         }
@@ -219,7 +583,7 @@ export class DrawingRythmService {
     // When we want to split a note or silence in 2, we prefer to select intervals that start and stop in 
     // hard beats. This functions tries to find the point inside an interval where it makes more sense to
     // split a note
-    private getSplitPoint(e: SoundEvent): number {
+    private getSplitPointOld(e: SoundEvent): number {
         for (let n = this.ticksPerQuarterNote * 2; n > 3; n = n / 2) {
             if (e.duration > n) {
                 const k1 = e.startTick % n
@@ -235,14 +599,14 @@ export class DrawingRythmService {
     // When we want to split a sound event in many, for ex. because the event extends from one bar to the next, we
     // call this function and we pass the points where we want to split the event (it could for ex. extend several bars,
     // not just 2) and it returns a sequence of events that correspond to the split points we passed
-    private splitEvent(e: SoundEvent, splitPoints: number[]): SoundEvent[] {
+    private splitEventOld(e: SoundEvent, splitPoints: number[]): SoundEvent[] {
         let retObj = <SoundEvent[]>[]
         let lastStartPoint = e.startTick
         for (let i = 0; i < splitPoints.length; i++) {
-            retObj.push(new SoundEvent(e.type, lastStartPoint, splitPoints[i], i == 0 ? false : true))
+            retObj.push(new SoundEvent(e.type, 0, lastStartPoint, splitPoints[i], i == 0 ? false : true))
             lastStartPoint = splitPoints[i]
         }
-        retObj.push(new SoundEvent(e.type, lastStartPoint, e.endTick, true))
+        retObj.push(new SoundEvent(e.type, 0, lastStartPoint, e.endTick, true))
         return retObj
     }
 
@@ -283,16 +647,12 @@ export class DrawingRythmService {
         return true
     }
 
-    private drawTimeSignature(svgBox: HTMLElement, x: number, timeSignature: TimeSignature): number {
+    private drawTimeSignatureOld(svgBox: HTMLElement, x: number, timeSignature: TimeSignature): number {
         this.createText(svgBox, timeSignature.numerator.toString(), x + 10, 40, 20, 'black')
         this.createText(svgBox, timeSignature.denominator.toString(), x + 10, 80, 20, 'black')
         return 50
     }
 
-    private drawBarLine(svgBox: HTMLElement, x: number): number {
-        this.drawPath(svgBox, 'black', 2, `M ${x + 10},20 V 100 z`)
-        return 50
-    }
 
     private drawTie(svgBox: HTMLElement, x1: number, x2: number) {
         this.drawPath(svgBox, 'black', 2, `M ${x1},95 Q ${(x1 + x2) / 2},110 ${x2},95 z`)
@@ -475,5 +835,8 @@ export class DrawingRythmService {
         g.appendChild(textElement)
     }
 
+    private setViewBox(g: Element, minX: number, minY: number, width: number, height: number) {
+        g.setAttributeNS(null, 'viewBox', `${minX} ${minY} ${width} ${height}`)
+    }
 
 }
