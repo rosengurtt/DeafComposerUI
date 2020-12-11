@@ -168,7 +168,7 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
     else
       numberOfTicks = null
     const progressBarId = `${this.progressBarIdPrefix}${this.songId}_${this.trackId}`
-    this.drawingService.createProgressBar(svgBoxId, progressBarId, numberOfTicks)
+    this.drawingService.createProgressBar(progressBarId, numberOfTicks)
   }
 
 

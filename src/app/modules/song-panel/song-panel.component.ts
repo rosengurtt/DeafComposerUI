@@ -76,7 +76,7 @@ export class SongPanelComponent implements OnInit, OnChanges, OnDestroy, AfterVi
   }
   setTracks(): void {
     let typescriptSacamela = new SongSimplification(this.song.songSimplifications[0])
-    this.tracks = typescriptSacamela.voicesWithNotes
+    this.tracks = typescriptSacamela.voicesWithNotes.sort((a, b) => a - b)
   }
 
   ngOnChanges(changes: SimpleChanges): void {

@@ -70,7 +70,5 @@ export class SongStats {
         this.totalSustainPedalEvents = data.totalSustainPedalEvents
         this.totalChannelIndependentEvents = data.totalChannelIndependentEvents
     }
-    getTicksPerBar(): number {
-        return 96 * this.timeSignature.numerator * (4 / this.timeSignature.denominator)
-    }
+
 }

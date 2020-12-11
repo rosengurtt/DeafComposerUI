@@ -28,4 +28,17 @@ export class Note {
         this.PitchBending = PitchBending
         this.instrument = instrument
     }
+
+    public isEqual(n: Note): boolean {
+        if (!n) return false
+        if (n.pitch == this.pitch &&
+            n.volume == this.volume &&
+            n.startSinceBeginningOfSongInTicks == this.startSinceBeginningOfSongInTicks &&
+            n.endSinceBeginningOfSongInTicks == this.endSinceBeginningOfSongInTicks &&
+            n.isPercussion == this.isPercussion &&
+            n.voice == this.voice &&
+            n.instrument == this.instrument)
+            return true
+        return false
+    }
 }
