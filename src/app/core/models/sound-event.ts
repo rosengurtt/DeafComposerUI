@@ -10,10 +10,11 @@ export class SoundEvent {
     bar: number
     startTick: number
     endTick: number
+    duration: NoteDuration
     isTiedToPrevious: boolean
     isAccented: boolean
 
-    get duration() {
+    get durationInTicks() {
         return this.endTick - this.startTick
     }
 
@@ -22,12 +23,14 @@ export class SoundEvent {
         bar: number,
         start: number,
         end: number,
+        duration: NoteDuration,
         isTiedToPrevious: boolean | null = null,
         isAccented: boolean | null = null) {
         this.type = type
         this.startTick = start
         this.endTick = end
         this.bar = bar
+        this.duration = duration
         if (isTiedToPrevious) this.isTiedToPrevious = isTiedToPrevious
         else this.isTiedToPrevious = false
         if (isAccented) this.isAccented = isAccented
@@ -43,12 +46,12 @@ export class SoundEvent {
     get standardizedDuration(): NoteDuration {
         const ticksPerQuarterNote = 96
         const tolerance = 8
-        if (this.duration > (ticksPerQuarterNote - tolerance) * 4) return NoteDuration.whole
-        if (this.duration > (ticksPerQuarterNote - tolerance) * 2) return NoteDuration.half
-        if (this.duration > (ticksPerQuarterNote - tolerance)) return NoteDuration.quarter
-        if (this.duration > (ticksPerQuarterNote - tolerance) / 2) return NoteDuration.eight
-        if (this.duration > (ticksPerQuarterNote - tolerance) / 4) return NoteDuration.sixteenth
-        if (this.duration > (ticksPerQuarterNote - tolerance) / 8) return NoteDuration.thirtysecond
-        if (this.duration > (ticksPerQuarterNote - tolerance) / 16) return NoteDuration.sixtyfourth
+        if (this.durationInTicks > (ticksPerQuarterNote - tolerance) * 4) return NoteDuration.whole
+        if (this.durationInTicks > (ticksPerQuarterNote - tolerance) * 2) return NoteDuration.half
+        if (this.durationInTicks > (ticksPerQuarterNote - tolerance)) return NoteDuration.quarter
+        if (this.durationInTicks > (ticksPerQuarterNote - tolerance) / 2) return NoteDuration.eight
+        if (this.durationInTicks > (ticksPerQuarterNote - tolerance) / 4) return NoteDuration.sixteenth
+        if (this.durationInTicks > (ticksPerQuarterNote - tolerance) / 8) return NoteDuration.thirtysecond
+        if (this.durationInTicks > (ticksPerQuarterNote - tolerance) / 16) return NoteDuration.sixtyfourth
     }
 }

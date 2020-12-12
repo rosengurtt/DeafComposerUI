@@ -45,7 +45,6 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
   lastYrecorded: number | null
   muteIcon = "volume_up"
   songViewType: typeof SongViewType = SongViewType
-  musicNotationViewBoxWidth: number
 
   constructor(private drawingService: DrawingPianoRollService,
     private drawingRythmService: DrawingRythmService) {
@@ -81,7 +80,7 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
           this.drawingService.drawPianoRollGraphic(this.trackId, svgBoxId, this.song, simplification);
         }
         else {
-          this.musicNotationViewBoxWidth = this.drawingRythmService.drawMusicNotationGraphic(this.trackId, svgBoxId, this.song, simplification, 1, 20);
+          this.drawingRythmService.drawMusicNotationGraphic(this.trackId, svgBoxId, this.song, simplification, 1, 20);
         }
         redrawSvgBox = true
       }
@@ -117,7 +116,7 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
       case SongViewType.rythmMusicNotation:
         minX = this.displacement.x
         minY = 0
-        width = this.musicNotationViewBoxWidth
+        width = 1200
         height = 128
         break;
     }

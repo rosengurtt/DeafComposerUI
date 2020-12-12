@@ -5,5 +5,6 @@ export enum NoteDuration{
     eight,
     sixteenth,
     thirtysecond,
-    sixtyfourth
+    sixtyfourth,
+    unknown
 }
