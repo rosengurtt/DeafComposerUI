@@ -43,7 +43,6 @@ export class DrawingRythmService {
 
 
 
-
     // We assign to each quarter, eightth, sixteenth or whatever a total of 50 px width
     // The height is always 50 px
     // We insert a vertical bar between compases that ocupies a total space of 50 px
@@ -65,6 +64,7 @@ export class DrawingRythmService {
         this.clearSVGbox(this.svgBox)
         this.voice = voice
         this.song = song
+        console.log(song)
         this.simplification = new SongSimplification(song.songSimplifications[simplificationNo])
         this.bars = song.bars
         // Order notes by start time
@@ -122,7 +122,8 @@ export class DrawingRythmService {
             deltaX += StaffElements.drawTimeSignature(this.svgBox, x + deltaX, timeSig)
 
         for (let beat = 1; beat <= totalBeats; beat++) {
-            deltaX += this.drawBeat(x + deltaX, bar, beat)
+            const beatGraphNeeds = this.getBeatGraphicNeeds(bar, beat)
+            deltaX += StaffElements.drawBeat(this.svgBox, x + deltaX, bar, beat, beatGraphNeeds, this.eventsToDraw)
         }
         deltaX += StaffElements.drawBarLine(this.svgBox, x + deltaX)
         StaffElements.drawBarNumber(this.svgBox, x + deltaX / 2 - 10, bar.barNumber)
@@ -133,35 +134,33 @@ export class DrawingRythmService {
 
 
 
-    // We draw beat by beat. This is because when we have multiple notes in a beat, like 4 sixteens, we have to draw
-    // a beam that connects them together. But if we have 8 sixteens in 2 consecutive beats, we connect the first 4
-    // and the second 4, we don't connect the 8 together    
-    private drawBeat(x: number, bar: Bar, beat: number): number {
-        const timeSig = bar.timeSignature
-        const beatDurationInTicks = 96 * timeSig.denominator / 4
-        const beatStartTick = bar.ticksFromBeginningOfSong + (beat - 1) * beatDurationInTicks
-        const beatEndTick = beatStartTick + beatDurationInTicks
-        const beatGraphNeeds = this.getBeatGraphicNeeds(bar, beat)
-        const beatEvents = this.eventsToDraw
-            .filter(e => e.startTick >= beatStartTick && e.endTick <= beatEndTick)
-            .sort((e1, e2) => e1.startTick - e2.startTick)
+    // private drawBeat(x: number, bar: Bar, beat: number): number {
+    //     const timeSig = bar.timeSignature
+    //     const beatDurationInTicks = 96 * timeSig.denominator / 4
+    //     const beatStartTick = bar.ticksFromBeginningOfSong + (beat - 1) * beatDurationInTicks
+    //     const beatEndTick = beatStartTick + beatDurationInTicks
+    //     const beatGraphNeeds = this.getBeatGraphicNeeds(bar, beat)
+    //     const beatEvents = this.eventsToDraw
+    //         .filter(e => e.startTick >= beatStartTick && e.startTick < beatEndTick)
+    //         .sort((e1, e2) => e1.startTick - e2.startTick)
 
-        for (const e of beatEvents) {
-            let g = document.createElementNS(this.svgns, 'g')
-            this.svgBox.appendChild(g)
-            let deltaX = DrawingCalculations.calculateXofEventInsideBeat(e, beatGraphNeeds, beatStartTick)
-            if (e.duration == NoteDuration.unknown) console.log(e)
-            if (e.type == SoundEventType.note) {
-                if (beatEvents.length == 1) StaffElements.drawSingleNote(g, e.duration, x)
-                else
-                    StaffElements.drawBasicNote(g, x + deltaX)
-            }
-            else {
-                StaffElements.drawRest(g, e.duration, x)
-            }
-        }
-        return DrawingCalculations.calculateWidthInPixelsOfBeat(beatGraphNeeds)
-    }
+    //     for (const e of beatEvents) {
+    //         let g = document.createElementNS(this.svgns, 'g')
+    //         this.svgBox.appendChild(g)
+    //         let deltaX = DrawingCalculations.calculateXofEventInsideBeat(e, beatGraphNeeds, beatStartTick)
+    //         if (e.duration == NoteDuration.unknown) console.log(e)
+    //         if (e.type == SoundEventType.note) {
+    //             // if (beatEvents.length == 1) 
+    //             StaffElements.drawSingleNote(g, e.duration, x + deltaX)
+    //             // else
+    //             //      StaffElements.drawBasicNote(g, x + deltaX)
+    //         }
+    //         else {
+    //             StaffElements.drawRest(g, e.duration, x + deltaX)
+    //         }
+    //     }
+    //     return DrawingCalculations.calculateWidthInPixelsOfBeat(beatGraphNeeds)
+    // }
 
 
     // private calculateWidthInPixelsOfBeat(beatGraphNeeds: BeatGraphNeeds) {
@@ -380,7 +379,7 @@ export class DrawingRythmService {
     //     }
     // }
 
-        // // We draw the time signature in a bar if it is the first bar or if the time signature is different from the
+    // // We draw the time signature in a bar if it is the first bar or if the time signature is different from the
     // // previous bar
     // private mustDrawTimeSignature(bar: Bar): boolean {
     //     if (bar.barNumber == 1) return true
@@ -397,7 +396,7 @@ export class DrawingRythmService {
     //     StaffElements.createText(this.svgBox, timeSignature.denominator.toString(), x + 10, 80, 20, 'black')
     //     return 50
     // }
- // If we have a note starting in tick 0 and another starting in tick 2, they actually are supposed to start
+    // If we have a note starting in tick 0 and another starting in tick 2, they actually are supposed to start
     // at the same time. So we want to discretize the notes in a way where all notes that should start together
     // start exactly in the same tick
     // This method aproximates the start to the biggest subdivision it can make of the beat, without going too
@@ -454,7 +453,7 @@ export class DrawingRythmService {
     //     }
     //     return null
     // }
-        // When we draw for example a sixteenth inside a beat, we have to align it with other notest played in the
+    // When we draw for example a sixteenth inside a beat, we have to align it with other notest played in the
     // same beat in other voices. So for example if the sixteenth is the second in a group of 4, any note
     // played in another voice at the same time as this sixteenth, should have the same x coordinate
     // the x returned is a fraction of the total display width of the beat. For example if we have the second

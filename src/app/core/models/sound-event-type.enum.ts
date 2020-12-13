@@ -1,4 +1,4 @@
 export enum SoundEventType {
-    silence,
+    rest,
     note
 }

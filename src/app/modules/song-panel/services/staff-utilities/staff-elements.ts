@@ -1,17 +1,145 @@
 import { Bar } from 'src/app/core/models/bar'
+import { BeatGraphNeeds } from 'src/app/core/models/beat-graph-needs'
 import { NoteDuration } from 'src/app/core/models/note-duration'
+import { SoundEvent } from 'src/app/core/models/sound-event'
+import { SoundEventType } from 'src/app/core/models/sound-event-type.enum'
 import { TimeSignature } from 'src/app/core/models/time-signature'
+import { DrawingCalculations } from './drawing-calculations'
 
 export abstract class StaffElements {
     private static svgns = 'http://www.w3.org/2000/svg'
     private static standardWidth = 50
 
-        // We draw the time signature in a bar if it is the first bar or if the time signature is different from the
+
+    // We draw beat by beat. This is because when we have multiple notes in a beat, like 4 sixteens, we have to draw
+    // a beam that connects them together. But if we have 8 sixteens in 2 consecutive beats, we connect the first 4
+    // and the second 4, we don't connect the 8 together    
+    public static drawBeat(g: Element, x: number, bar: Bar, beat: number, beatGraphNeeds: BeatGraphNeeds, eventsToDraw: SoundEvent[]): number {
+        let soreton = false
+        if (bar.barNumber == 2) soreton = true
+
+        const timeSig = bar.timeSignature
+        const beatDurationInTicks = 96 * timeSig.denominator / 4
+        const beatStartTick = bar.ticksFromBeginningOfSong + (beat - 1) * beatDurationInTicks
+        const beatEndTick = beatStartTick + beatDurationInTicks
+        const beatEvents = eventsToDraw
+            .filter(e => e.startTick >= beatStartTick && e.startTick < beatEndTick)
+            .sort((e1, e2) => e1.startTick - e2.startTick)
+
+
+        if (soreton) {
+            console.log(`beat=${beat} beatStartTick ${beatStartTick}`)
+            if (beat == 1) console.log(eventsToDraw)
+        }
+        for (const e of beatEvents) {
+            let deltaX = DrawingCalculations.calculateXofEventInsideBeat(e, beatGraphNeeds, beatStartTick)
+            if (soreton) {
+                console.log(e)
+                console.log(`deltaX=${deltaX}`)
+            }
+            if (e.type == SoundEventType.note) {
+                if (beatEvents.length == 1)
+                    this.drawSingleNote(g, e.duration, x + deltaX)
+                else {
+                    StaffElements.drawBasicNote(g, x + deltaX)
+                }
+
+            }
+            else {
+                if (soreton) console.log(`dibujo el rest deltaX: ${deltaX}`)
+                this.drawRest(g, e.duration, x + deltaX)
+            }
+        }
+        this.drawBeatBeams(g, x, beatStartTick, beatGraphNeeds, beatEvents)
+        return DrawingCalculations.calculateWidthInPixelsOfBeat(beatGraphNeeds)
+    }
+
+    // When a beat has several eights and/or sixteens, etc. we have to draw a beam connecting them
+    // This method draws them
+    private static drawBeatBeams(g: Element, x: number, beatStartTick: number, beatGraphNeeds: BeatGraphNeeds, beatEvents: SoundEvent[]): void {
+        let soreton = false
+        if (beatStartTick < 400) soreton = true
+        if (soreton){
+            console.log(`beatStartTick: ${beatStartTick} `)
+            console.log(beatEvents)
+        } 
+        for (let i = 0; i < beatEvents.length - 1; i++) {
+            const startX = DrawingCalculations.calculateXofEventInsideBeat(beatEvents[i], beatGraphNeeds, beatStartTick)
+            const endX = DrawingCalculations.calculateXofEventInsideBeat(beatEvents[i + 1], beatGraphNeeds, beatStartTick)
+            if (soreton) console.log(`startX ${startX} endX ${endX}`)
+            if (this.isNoteShorterThan(beatEvents[i], NoteDuration.quarter) && this.isNoteShorterThan(beatEvents[i + 1], NoteDuration.quarter)) {
+                if (soreton) console.log("entre al primer if")
+                this.drawBeam(g, x + startX, x + endX, NoteDuration.eight)
+            }
+            if (this.isNoteShorterThan(beatEvents[i], NoteDuration.eight) && this.isNoteShorterThan(beatEvents[i + 1], NoteDuration.eight)) {
+                if (soreton) console.log("entre al segundo if")
+                this.drawBeam(g, x + startX, x + endX, NoteDuration.sixteenth)
+            }
+            if (this.isNoteShorterThan(beatEvents[i], NoteDuration.sixteenth) && this.isNoteShorterThan(beatEvents[i + 1], NoteDuration.sixteenth))
+                this.drawBeam(g, x + startX, x + endX, NoteDuration.thirtysecond)
+            if (this.isNoteShorterThan(beatEvents[i], NoteDuration.thirtysecond) && this.isNoteShorterThan(beatEvents[i + 1], NoteDuration.thirtysecond))
+                this.drawBeam(g, x + startX, x + endX, NoteDuration.sixtyfourth)
+        }
+
+        // const firstNoteShorterThanAquarter = beatEvents.filter(n => this.isNoteShorterThan(n, NoteDuration.quarter) == true)
+        //     .sort((a, b) => a.startTick - b.startTick)[0]
+        // const lastNoteShorterThanAquarter = beatEvents.filter(n => this.isNoteShorterThan(n, NoteDuration.quarter) == true)
+        //     .sort((a, b) => b.startTick - a.startTick)[0]
+
+        // if (firstNoteShorterThanAquarter && lastNoteShorterThanAquarter &&
+        //     firstNoteShorterThanAquarter.startTick < lastNoteShorterThanAquarter.startTick) {
+        //     const firstNoteShorterThanAquarterDeltaX = DrawingCalculations.calculateXofEventInsideBeat(firstNoteShorterThanAquarter, beatGraphNeeds, beatStartTick)
+        //     const lastNoteShorterThanAquarterDeltaX = DrawingCalculations.calculateXofEventInsideBeat(lastNoteShorterThanAquarter, beatGraphNeeds, beatStartTick)
+
+        //     this.drawPath(g, "black", 1, `M ${x + 19 + firstNoteShorterThanAquarterDeltaX},40 L ${x + 19 + lastNoteShorterThanAquarterDeltaX},40 z`)
+        // }
+
+        // const firstNoteShorterThanAnEight = beatEvents.filter(n => this.isNoteShorterThan(n, NoteDuration.eight) == true)
+        //     .sort((a, b) => a.startTick - b.startTick)[0]
+        // const lastNoteShorterThanAnEight = beatEvents.filter(n => this.isNoteShorterThan(n, NoteDuration.eight) == true)
+        //     .sort((a, b) => b.startTick - a.startTick)[0]
+
+        // if (firstNoteShorterThanAnEight && lastNoteShorterThanAnEight &&
+        //     firstNoteShorterThanAnEight.startTick < lastNoteShorterThanAnEight.startTick) {
+        //     const firstNoteShorterThanAquarterDeltaX = DrawingCalculations.calculateXofEventInsideBeat(firstNoteShorterThanAnEight, beatGraphNeeds, beatStartTick)
+        //     const lastNoteShorterThanAquarterDeltaX = DrawingCalculations.calculateXofEventInsideBeat(lastNoteShorterThanAnEight, beatGraphNeeds, beatStartTick)
+
+        //     this.drawPath(g, "black", 1, `M ${x + 19 + firstNoteShorterThanAquarterDeltaX},46 L ${x + 19 + lastNoteShorterThanAquarterDeltaX},46 z`)
+        // }
+
+    }
+
+    private static drawBeam(g: Element, startX: number, endX: number, duration: NoteDuration): void {
+        switch (duration) {
+            case NoteDuration.eight:
+                this.drawPath(g, "black", 1, `M ${startX + 19},40 L ${endX + 19},40 z`)
+                break;
+            case NoteDuration.sixteenth:
+                this.drawPath(g, "black", 1, `M ${startX + 19},46 L ${endX + 19},46 z`)
+                break;
+            case NoteDuration.thirtysecond:
+                this.drawPath(g, "black", 1, `M ${startX + 19},52 L ${endX + 19},52 z`)
+                break;
+            case NoteDuration.sixtyfourth:
+                this.drawPath(g, "black", 1, `M ${startX + 19},58 L ${endX + 19},58 z`)
+                break;
+        }
+    }
+
+    private static isNoteShorterThan(event: SoundEvent, duration: NoteDuration): boolean {
+        if (event.type == SoundEventType.rest) return false
+        // We have defined the enum with longest durations first, so the higher the enum, the shorter the note
+        return event.duration > duration
+    }
+
+
+
+    // We draw the time signature in a bar if it is the first bar or if the time signature is different from the
     // previous bar
-    public static mustDrawTimeSignature(barNumber: number, bars:Bar[]): boolean {
+    public static mustDrawTimeSignature(barNumber: number, bars: Bar[]): boolean {
         if (barNumber == 1) return true
         const previousTimeSig = bars[barNumber - 2].timeSignature
-        const currentTimeSig = bars[barNumber-1].timeSignature
+        const currentTimeSig = bars[barNumber - 1].timeSignature
         if (previousTimeSig.numerator == currentTimeSig.numerator &&
             previousTimeSig.denominator == currentTimeSig.denominator)
             return false
@@ -90,15 +218,19 @@ export abstract class StaffElements {
                 break;
             case NoteDuration.eight:
                 this.drawCircleAndStem(group, x)
+                this.drawSubStems(group, x, 1, 1)
                 break;
             case NoteDuration.sixteenth:
-                this.drawCircleAndStem(group, x + 20)
+                this.drawCircleAndStem(group, x)
+                this.drawSubStems(group, x, 2, 1)
                 break;
             case NoteDuration.thirtysecond:
-                this.drawCircleAndStem(group, x + 20)
+                this.drawCircleAndStem(group, x)
+                this.drawSubStems(group, x, 3, 1)
                 break;
             case NoteDuration.sixtyfourth:
-                this.drawCircleAndStem(group, x + 20)
+                this.drawCircleAndStem(group, x)
+                this.drawSubStems(group, x, 4, 1)
                 break;
         }
     }

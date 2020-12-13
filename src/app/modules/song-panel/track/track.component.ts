@@ -115,9 +115,9 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
         break;
       case SongViewType.rythmMusicNotation:
         minX = this.displacement.x
-        minY = 0
-        width = 1200
-        height = 128
+        minY = this.displacement.y
+        width = 1200 * this.scale * 1.3
+        height = 128 * this.scale * 1.3
         break;
     }
     this.viewBox = `${minX} ${minY} ${width} ${height}`

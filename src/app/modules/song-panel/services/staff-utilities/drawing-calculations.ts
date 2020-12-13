@@ -10,7 +10,7 @@ import { Bar } from '../../../../core/models/bar'
 
 export class DrawingCalculations {
     private static ticksPerQuarterNote = 96
-    private static standardWidth =50
+    private static standardWidth = 50
     private static normalizedBeatSubdivisionsWithTriplets = [[1, 1], [1, 2], [1, 3], [2, 3], [1, 4], [3, 4], [1, 6], [5, 6], [1, 8], [3, 8], [5, 8], [7, 8],
     [1, 12], [5, 12], [7, 12], [11, 12], [1, 16], [3, 16], [5, 16], [7, 16], [9, 16], [11, 16], [13, 16], [15, 16],
     [1, 32], [3, 32], [5, 32], [7, 32], [9, 32], [11, 32], [13, 32], [15, 32], [17, 32], [19, 32], [21, 32], [23, 32],
@@ -54,7 +54,7 @@ export class DrawingCalculations {
             const currentBar = this.getBarOfTick(bars, endOfLastComputedNote)
             if (endOfLastComputedNote + tolerance < n.startSinceBeginningOfSongInTicks) {
                 const eventDuration = this.getEventDuration(bars, endOfLastComputedNote, n.startSinceBeginningOfSongInTicks)
-                let event = new SoundEvent(SoundEventType.silence, currentBar, endOfLastComputedNote, n.startSinceBeginningOfSongInTicks, eventDuration)
+                let event = new SoundEvent(SoundEventType.rest, currentBar, endOfLastComputedNote, n.startSinceBeginningOfSongInTicks, eventDuration)
                 soundEvents.push(event)
                 endOfLastComputedNote = n.startSinceBeginningOfSongInTicks
             }
@@ -72,7 +72,7 @@ export class DrawingCalculations {
     // We want to have a global view regadless of which track we are drawing of the ticks where there is note
     // starting or there is a bar starting. We need this information to align the drawings of the different tracks
     // so notes that start in the same tick are shown in the same vertical
-    public static getAllNoteStarts(song: Song, simplificationNo:number): number[] {
+    public static getAllNoteStarts(song: Song, simplificationNo: number): number[] {
         const simplification = new SongSimplification(song.songSimplifications[simplificationNo])
         const bars = song.bars
         // Order notes by start time
@@ -126,7 +126,7 @@ export class DrawingCalculations {
         }
         return null
     }
-    private static getEventDuration(bars: Bar[], startTick: number, endTick: number) {
+    private static getEventDuration(bars: Bar[], startTick: number, endTick: number): NoteDuration {
         const bar = this.getBarOfTick(bars, startTick)
         const timeSignature = bars[bar - 1].timeSignature
         const beatDurationInTicks = timeSignature.denominator / 4 * 96
@@ -159,6 +159,8 @@ export class DrawingCalculations {
         }
         return NoteDuration.unknown
     }
+
+
     // A rest can be divided in a sequence of rests. For example if a rest extends to the next bar, we split it
     // in 2, one that ends with the first bar and one that starts with the second.
     // If a rest is a quarter and a half, we split it in one of 1 quarter and 1 eight. In this case we have to decide which
@@ -166,10 +168,37 @@ export class DrawingCalculations {
     // The same with the notes
     private static standardizeSequenceOfNotesAndRests(bars: Bar[], input: SoundEvent[]): SoundEvent[] {
         let retObj = this.splitEventsThatExtendToNextBar(bars, input)
-        return this.splitEventsThatHaveOddDurations(bars, retObj)
+        retObj= this.splitEventsThatHaveOddDurations(bars, retObj)
+        return this.splitRestsLongerThanAquarter(bars, retObj)
 
     }
 
+    // We don't draw rests that have a duration of a half or a whole. We split them in quarters
+    private static splitRestsLongerThanAquarter(bars: Bar[], input: SoundEvent[]): SoundEvent[] {
+        let retObj = <SoundEvent[]>[]
+        for (const e of input) {
+            const duration = this.getEventDuration(bars, e.startTick, e.endTick)
+            // If it is not a rest don't touch it
+            if (e.type == SoundEventType.note)
+                retObj.push(e)
+            else if (duration == NoteDuration.half) {
+                const splitPoint = Math.round((e.endTick + e.startTick) / 2)
+                let splitted = this.splitEvent(e, [splitPoint], bars)
+                retObj = retObj.concat(splitted)
+            }
+            else if (duration == NoteDuration.whole) {
+                let splitPoints = []
+                for (let i = 1; i < 4; i++) {
+                    splitPoints.push(e.startTick + Math.round(i * (e.durationInTicks / 4)))
+                }
+                let splitted = this.splitEvent(e, splitPoints, bars)
+                retObj = retObj.concat(splitted)
+            }
+            else
+                retObj.push(e)
+        }
+        return retObj
+    }
 
     private static splitEventsThatExtendToNextBar(bars: Bar[], input: SoundEvent[]): SoundEvent[] {
         let retObj = <SoundEvent[]>[]
