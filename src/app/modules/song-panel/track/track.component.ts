@@ -149,9 +149,7 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
   changeMuteStatus(): void {
     if (this.muteIcon === "volume_up") {
       this.muteIcon = "volume_off"
-      console.log(this.muteIcon)
       this.muteStatusChange.emit({ track: this.trackId, status: false })
-      console.log(this.muteIcon)
     }
     else {
       this.muteIcon = "volume_up"

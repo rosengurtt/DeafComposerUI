@@ -1,6 +1,9 @@
 
 import { Note } from '../../../../core/models/note'
 import { Bar } from '../../../../core/models/bar'
+import { SoundEvent } from 'src/app/core/models/sound-event'
+import { DrawingCalculations } from './drawing-calculations'
+
 export class Normalization {
     private static ticksPerQuarterNote = 96
     private static normalizedBeatSubdivisionsWithTriplets = [[1, 1], [1, 2], [1, 3], [2, 3], [1, 4], [3, 4], [1, 6], [5, 6], [1, 8], [3, 8], [5, 8], [7, 8],
@@ -36,7 +39,7 @@ export class Normalization {
         return new Note(note.id, note.pitch, note.volume, normalizedStart, note.endSinceBeginningOfSongInTicks, note.isPercussion,
             note.voice, note.PitchBending, note.instrument)
     }
-    private static normalizePoint(point: number, beatDuration: number, tolerance: number, hasTriplets: boolean, beatStart: number) {
+    public static normalizePoint(point: number, beatDuration: number, tolerance: number, hasTriplets: boolean, beatStart: number) {
         if (point == 0 || point == beatDuration || point == beatStart) return point
 
         // if (hasTriplets) {
@@ -69,5 +72,43 @@ export class Normalization {
         }
         return null
     }
-   
+     // We want all intervals of notes and rests to be a full quarter, or eight, etc and not a quarter and a half,
+    // or stil worse a quarter plus an eight plus a sixteenth
+    // This function splits a quarter and a half in 2 notes, a quarter plus an eight plus a sixteenth in 3, in such
+    // a way tat all durations returned are a full interval and not a mix of intervals
+    // We have to consider the case where the bar has triplets
+    public static normalizeInterval(bars: Bar[], e: SoundEvent): SoundEvent[] {
+        // the following  line is needed because of typescript/javascript limitations
+        e = new SoundEvent(e.type, e.bar, e.startTick, e.endTick, e.duration, e.isTiedToPrevious, e.isAccented)
+        const timeSig = bars[e.bar - 1].timeSignature
+        const beatDuration = 96 * timeSig.numerator / 4
+        const barHasTriplets = bars[e.bar - 1].hasTriplets
+
+        let points: number[]
+        // if the duration is not odd, return the event as an array of events
+        if (barHasTriplets)
+            points = [1 / 4, 1 / 2, 1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64]
+        else
+            points = [1 / 4, 1 / 2, 1, 2, 4, 8, 16, 32, 64]
+        for (const p of points) {
+            // if the event has a duration that is a whole quarter, an eight, a sixteenth, etc. return it
+            if (e.durationInTicks == beatDuration / p || e.durationInTicks < 3)
+                return [e]
+        }
+        // if it is odd, find a larger and a shorter standard intervals and split the event
+        for (let i = 0; i < points.length - 1; i++) {
+            if (e.durationInTicks < beatDuration / points[i] && e.durationInTicks > beatDuration / points[i + 1]) {
+                // the note has an odd interval, so we split it in 2
+                const splitPoint = [DrawingCalculations.getSplitPoint(bars, e)]
+                const splittedEvent = DrawingCalculations.splitEvent(e, splitPoint, bars)
+                // we call it recursively, because one of the subdivisions may be odd as well
+                // like when we have a rest that is a quarter plus an eight plus a sixteenth
+                const left = this.normalizeInterval(bars, splittedEvent[0])
+                const right = this.normalizeInterval(bars, splittedEvent[1])
+                return left.concat(right)
+            }
+        }
+        console.log("me voy por donde no debiera")
+        console.log(e)
+    }
 }
