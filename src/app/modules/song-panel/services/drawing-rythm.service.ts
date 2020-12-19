@@ -61,7 +61,6 @@ export class DrawingRythmService {
         this.isPercusion = this.simplification.isVoicePercusion(voice)
         this.voiceNotes = this.simplification.getNotesOfVoice(voice, song)
         this.eventsToDraw = DrawingCalculations.getEventsToDraw(song, simplificationNo, voice)
-        console.log(this.eventsToDraw )
         this.allNoteStarts = DrawingCalculations.getAllNoteStarts(song, simplificationNo)
 
         let x = 0
@@ -72,6 +71,8 @@ export class DrawingRythmService {
             startTieX = beatDrawingInfo.startTieX
         }
     }
+
+
 
     private clearSVGbox(svgBox: HTMLElement) {
         while (svgBox.firstChild) {

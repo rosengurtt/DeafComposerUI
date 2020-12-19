@@ -38,6 +38,7 @@ export const songPanelReducer = createReducer<SongPanelState>(
     on(SongPanelPageActions.removeSong, (state, action): SongPanelState => {
         let newState = cloneDeep(state)
         newState.songsUnderAnalysis = state.songsUnderAnalysis.filter(song => song.id !== action.song.id)
+        newState.viewType = SongViewType.pianoRoll
         return newState
     }),
 

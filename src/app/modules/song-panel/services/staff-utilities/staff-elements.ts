@@ -29,7 +29,6 @@ export abstract class StaffElements {
 
         // Check if first note has a tie that comes from a previous beat        
         if (beatEvents[0]?.isTiedToPrevious && beatEvents[0]?.type==SoundEventType.note) {
-            console.log(`dibujo inter beat  tieStartX ${tieStartX} x:${x}`)
             this.drawTie(g, tieStartX, x)
             tieStartX = x
         }
@@ -38,9 +37,6 @@ export abstract class StaffElements {
 
         for (let i = 0; i < beatEvents.length; i++) {
             const e: SoundEvent = beatEvents[i]
-            if (bar.barNumber==5 && beat==1){
-console.log(e)
-            }
 
             let deltaX = DrawingCalculations.calculateXofEventInsideBeat(e, beatGraphNeeds, beatStartTick)
 
@@ -56,11 +52,7 @@ console.log(e)
             // Take care of ties
 
             // If the note is tied to previous, draw the tie
-            if (e.type == SoundEventType.note && e.isTiedToPrevious) {
-           
-                    console.log("dibujo intra beat")
-                    console.log(e)
-            
+            if (e.type == SoundEventType.note && e.isTiedToPrevious) {            
                 tieEndX = x + deltaX
                 this.drawTie(g, tieStartX, tieEndX)              
             }

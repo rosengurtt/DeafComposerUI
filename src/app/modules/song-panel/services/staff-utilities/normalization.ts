@@ -42,25 +42,13 @@ export class Normalization {
     public static normalizePoint(point: number, beatDuration: number, tolerance: number, hasTriplets: boolean, beatStart: number) {
         if (point == 0 || point == beatDuration || point == beatStart) return point
 
-        // if (hasTriplets) {
         for (let [i, j] of this.normalizedBeatSubdivisionsWithTriplets) {
             if (point - beatStart >= i / j * beatDuration - tolerance &&
                 point - beatStart <= i / j * beatDuration + tolerance) {
                 return beatStart + Math.round(beatDuration * i / j)
             }
         }
-        // }
-        // if (!hasTriplets) {
-        //     for (let [i, j] of this.normalizedBeatSubdivisionsWithoutTriplets) {
-        //         if (muestren)
-        //         console.log(`[i,j]= [${i},${j}] comparo ${point - beatStart} con ${i / j * beatDuration - tolerance}` )
-        //         if (point - beatStart >= i / j * beatDuration - tolerance &&
-        //             point - beatStart <= i / j * beatDuration + tolerance) {
-        //             return beatStart + Math.round(beatDuration * i / j)
-        //         }
-        //     }
-        // }
-        console.log("sali por donde no debo")
+        console.log("intente normalizar este point y no pude")
         console.log(`point ${point}  beatStart ${beatStart}  beatDuration ${beatDuration}`)
     }
 
@@ -72,7 +60,7 @@ export class Normalization {
         }
         return null
     }
-     // We want all intervals of notes and rests to be a full quarter, or eight, etc and not a quarter and a half,
+    // We want all intervals of notes and rests to be a full quarter, or eight, etc and not a quarter and a half,
     // or stil worse a quarter plus an eight plus a sixteenth
     // This function splits a quarter and a half in 2 notes, a quarter plus an eight plus a sixteenth in 3, in such
     // a way tat all durations returned are a full interval and not a mix of intervals
@@ -91,16 +79,21 @@ export class Normalization {
         else
             points = [1 / 4, 1 / 2, 1, 2, 4, 8, 16, 32, 64]
         for (const p of points) {
+
             // if the event has a duration that is a whole quarter, an eight, a sixteenth, etc. return it
-            if (e.durationInTicks == beatDuration / p || e.durationInTicks < 3)
+            if (e.durationInTicks == beatDuration / p || e.durationInTicks < 8)
                 return [e]
         }
+
         // if it is odd, find a larger and a shorter standard intervals and split the event
         for (let i = 0; i < points.length - 1; i++) {
             if (e.durationInTicks < beatDuration / points[i] && e.durationInTicks > beatDuration / points[i + 1]) {
                 // the note has an odd interval, so we split it in 2
                 const splitPoint = [DrawingCalculations.getSplitPoint(bars, e)]
                 const splittedEvent = DrawingCalculations.splitEvent(e, splitPoint, bars)
+
+
+                splittedEvent[0].isTiedToPrevious = e.isTiedToPrevious
                 // we call it recursively, because one of the subdivisions may be odd as well
                 // like when we have a rest that is a quarter plus an eight plus a sixteenth
                 const left = this.normalizeInterval(bars, splittedEvent[0])
@@ -108,7 +101,7 @@ export class Normalization {
                 return left.concat(right)
             }
         }
-        console.log("me voy por donde no debiera")
+        console.log("intente normalizar este intervalo y no pude")
         console.log(e)
     }
 }
