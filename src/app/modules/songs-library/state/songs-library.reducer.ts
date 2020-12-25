@@ -2,7 +2,7 @@
 import { createReducer, on } from '@ngrx/store'
 import { SongsLibraryApiActions, SongsLibraryPageActions } from './actions'
 import { SongsLibraryState } from './index'
-import * as cloneDeep from 'lodash/cloneDeep'
+import { cloneDeep } from 'lodash-es'
 
 
 const initialState: SongsLibraryState = {
@@ -56,7 +56,7 @@ export const songsLibraryReducer = createReducer<SongsLibraryState>(
     }),
     on(SongsLibraryPageActions.songsPaginationChange, (state, action): SongsLibraryState => {
         let newState = cloneDeep(state)
-        newState.stongsNewPage = action.paginationData.pageNo
+        newState.songsNewPage = action.paginationData.pageNo
         return newState
     }),
 

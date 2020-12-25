@@ -1,7 +1,7 @@
 import { createReducer, on } from '@ngrx/store'
 import { SongPanelPageActions } from './actions'
 import { SongPanelState } from './index'
-import * as cloneDeep from 'lodash/cloneDeep'
+import {cloneDeep} from 'lodash-es'
 import { StringifiedMap } from 'src/app/core/utilities/stringified-map'
 import { Coordenadas } from 'src/app/core/models/coordenadas'
 import { SongViewType } from 'src/app/core/models/SongViewTypes.enum'
