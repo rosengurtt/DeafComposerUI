@@ -15,6 +15,8 @@ export class Normalization {
     [1, 32], [3, 32], [5, 32], [7, 32], [9, 32], [11, 32], [13, 32], [15, 32], [17, 32], [19, 32], [21, 32], [23, 32],
     [25, 32], [27, 32], [29, 32], [31, 32]]
 
+    private static beatDivisions = [1 / 4, 1 / 2, 1, 2, 3, 4, 6, 8, 12, 16, 24, 32]
+
     // If we have a note starting in tick 0 and another starting in tick 2, they actually are supposed to start
     // at the same time. So we want to discretize the notes in a way where all notes that should start together
     // start exactly in the same tick
@@ -62,8 +64,10 @@ export class Normalization {
     }
     // We want all intervals of notes and rests to be a full quarter, or eight, etc and not a quarter and a half,
     // or stil worse a quarter plus an eight plus a sixteenth
-    // This function splits a quarter and a half in 2 notes, a quarter plus an eight plus a sixteenth in 3, in such
+    // This function splits a 3/2 quarter in 2 notes, a 7/4 quarter in 3 (a quarter plus an eight plus a sixteenth), in such
     // a way tat all durations returned are a full interval and not a mix of intervals
+    // It has to select the order of the figures, for ex when splitting to a quarter and an eight it has to decide which one
+    // goes first. It does this trying to make the starting of the notes/rests to fall in the hardest subdivision of the beat
     // We have to consider the case where the bar has triplets
     public static normalizeInterval(bars: Bar[], e: SoundEvent): SoundEvent[] {
         // the following  line is needed because of typescript/javascript limitations
@@ -72,30 +76,22 @@ export class Normalization {
         const beatDuration = 96 * timeSig.numerator / 4
         const barHasTriplets = bars[e.bar - 1].hasTriplets
 
-        let points: number[]
-        // if the duration is not odd, return the event as an array of events
-        if (barHasTriplets)
-            points = [1 / 4, 1 / 2, 1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64]
-        else
-            points = [1 / 4, 1 / 2, 1, 2, 4, 8, 16, 32, 64]
-        for (const p of points) {
-
+        for (const p of this.beatDivisions) {
             // if the event has a duration that is a whole quarter, an eight, a sixteenth, etc. return it
-            if (e.durationInTicks == beatDuration / p || e.durationInTicks < 8)
+            if (e.durationInTicks == beatDuration / p || e.durationInTicks < 20)
                 return [e]
         }
 
         // if it is odd, find a larger and a shorter standard intervals and split the event
-        for (let i = 0; i < points.length - 1; i++) {
-            if (e.durationInTicks < beatDuration / points[i] && e.durationInTicks > beatDuration / points[i + 1]) {
+        for (let i = 0; i < this.beatDivisions.length - 1; i++) {
+            if (e.durationInTicks < beatDuration / this.beatDivisions[i] && e.durationInTicks > beatDuration / this.beatDivisions[i + 1]) {
                 // the note has an odd interval, so we split it in 2
                 const splitPoint = [DrawingCalculations.getSplitPoint(bars, e)]
                 const splittedEvent = DrawingCalculations.splitEvent(e, splitPoint, bars)
 
-
+                // If the original event was tied to the previous, make the first tied to previous
                 splittedEvent[0].isTiedToPrevious = e.isTiedToPrevious
                 // we call it recursively, because one of the subdivisions may be odd as well
-                // like when we have a rest that is a quarter plus an eight plus a sixteenth
                 const left = this.normalizeInterval(bars, splittedEvent[0])
                 const right = this.normalizeInterval(bars, splittedEvent[1])
                 return left.concat(right)

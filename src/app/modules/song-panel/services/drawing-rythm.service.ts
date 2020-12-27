@@ -57,10 +57,16 @@ export class DrawingRythmService {
         // normalize start time of notes
         this.songNotes = aux.map(n => Normalization.normalizeNoteStart(this.bars, n))
 
+
         console.log(`voice ${voice}`)
         this.isPercusion = this.simplification.isVoicePercusion(voice)
         this.voiceNotes = this.simplification.getNotesOfVoice(voice, song)
+      
+        let soreton=this.voiceNotes.filter(x=>x.startSinceBeginningOfSongInTicks>=380 && x.startSinceBeginningOfSongInTicks<600)
+        console.log("este es el soreton")
+        console.log(soreton)
         this.eventsToDraw = DrawingCalculations.getEventsToDraw(song, simplificationNo, voice)
+        console.log(this.eventsToDraw)
         this.allNoteStarts = DrawingCalculations.getAllNoteStarts(song, simplificationNo)
 
         let x = 0

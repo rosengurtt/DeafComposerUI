@@ -45,18 +45,16 @@ export class DrawingCalculations {
         const simplification = new SongSimplification(song.songSimplifications[simplificationNo])
         const bars = song.bars
         const voiceNotes = simplification.getNotesOfVoice(voice, song)
-        const tolerance = 6
+        const tolerance = 10
         let soundEvents = <SoundEvent[]>[]
         let endOfLastComputedNote = 0
-        // in this loop we add rest events when there are significan empty spaces between consecutive notes
+        // in this loop we add rest events when there are significant empty spaces between consecutive notes
         for (let i = 0; i < voiceNotes.length; i++) {
             let n = voiceNotes[i]
-            const currentBar = this.getBarOfTick(bars, endOfLastComputedNote)
-            // if previousNote 
-            // if there is a number of ticks greater than tolerance between the end of the previous not and this one
+            let currentBar = this.getBarOfTick(bars, endOfLastComputedNote)
+            // if there is a number of ticks greater than tolerance between the end of the previous note and this one
             // and we are not at the start of the beat, add a rest
             if (endOfLastComputedNote + tolerance < n.startSinceBeginningOfSongInTicks) {
-
                 const eventDuration = this.getEventDuration(bars, endOfLastComputedNote, n.startSinceBeginningOfSongInTicks)
                 let event = new SoundEvent(SoundEventType.rest, currentBar, endOfLastComputedNote, n.startSinceBeginningOfSongInTicks, eventDuration)
                 soundEvents.push(event)
@@ -235,8 +233,8 @@ export class DrawingCalculations {
         let pointBar = this.getBarOfTick(bars, lastStartPoint)
         for (const p of splitPoints) {
             const eventDuration = this.getEventDuration(bars, lastStartPoint, p)
-            // Get the bar for the event that starts in point p         
             retObj.push(new SoundEvent(e.type, pointBar, lastStartPoint, p, eventDuration, lastStartPoint == e.startTick ? e.isTiedToPrevious : true))
+            // Get the bar for the event that starts in point p         
             lastStartPoint = p
             pointBar = this.getBarOfTick(bars, lastStartPoint)
         }
@@ -245,9 +243,8 @@ export class DrawingCalculations {
         return retObj
     }
 
-    // If a silence is a quarter and a half, we split it in one of 1 quarter and 1 eight. In this case we have to decide which
+    // If a note or a rest is a quarter and a half, we split it in one of 1 quarter and 1 eight. In this case we have to decide which
     // one goes first. We select the option that makes the silences start in the hardest bit
-    // The same with the notes
     private static splitEventsThatHaveOddDurations(bars: Bar[], input: SoundEvent[]): SoundEvent[] {
         let retObj = <SoundEvent[]>[]
         for (const e of input) {
@@ -267,16 +264,29 @@ export class DrawingCalculations {
         const barHasTriplets = bar.hasTriplets
         const barStart = bar.ticksFromBeginningOfSong
         const barDuration = this.ticksPerQuarterNote * bar.timeSignature.numerator * 4 / bar.timeSignature.denominator
-        if (barHasTriplets)
-            divisions = [1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 72, 96, 128]
-        else
-            divisions = [1, 2, 3, 4, 8, 16, 32, 64, 128]
+        const beatsPerBar = bar.timeSignature.numerator
+        const beatDuration = barDuration / beatsPerBar
+
+        divisions = [1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64, 72, 96, 128]
+
+        let beatStart: number
+        // We first check if a beat boundary falls inside e
+        for (let k = 0; k <= beatsPerBar; k++) {
+            let candidate = k * beatDuration
+            if (e.startTick - barStart < candidate && e.endTick - barStart > candidate) {
+                return candidate + barStart
+            }
+            if (e.startTick - barStart >= candidate)
+                beatStart = barStart + candidate
+        }
+        // e can not be longer than a beat, because in that case there should be a beat boundary inside
+        // and e it is completely inside a beat. we now try with subdivisions of it
 
         for (let d of divisions) {
             for (let k = 0; k <= d; k++) {
-                let candidate = k * (barDuration / d)
-                if (e.startTick - barStart < candidate && e.endTick - barStart > candidate) {
-                    return candidate + barStart
+                let candidate = k * (beatDuration / d)
+                if (e.startTick - beatStart < candidate && e.endTick - beatStart > candidate) {
+                    return candidate + beatStart
                 }
             }
         }

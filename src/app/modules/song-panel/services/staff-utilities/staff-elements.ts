@@ -28,7 +28,7 @@ export abstract class StaffElements {
 
 
         // Check if first note has a tie that comes from a previous beat        
-        if (beatEvents[0]?.isTiedToPrevious && beatEvents[0]?.type==SoundEventType.note) {
+        if (beatEvents[0]?.isTiedToPrevious && beatEvents[0]?.type == SoundEventType.note) {
             this.drawTie(g, tieStartX, x)
             tieStartX = x
         }
@@ -42,7 +42,7 @@ export abstract class StaffElements {
 
             if (e.type == SoundEventType.note) {
                 // if there is a single note, we don't have to care about beams, just draw it
-                if (beatEvents.length == 1) this.drawSingleNote(g, e.duration, x + deltaX)
+                if (beatEvents.filter(x => x.type == SoundEventType.note).length == 1) this.drawSingleNote(g, e.duration, x + deltaX)
                 // if there are several notes, draw a 'quarter' that later will be converted to whatever it is by adding beams
                 else StaffElements.drawBasicNote(g, x + deltaX)
             }
@@ -52,13 +52,13 @@ export abstract class StaffElements {
             // Take care of ties
 
             // If the note is tied to previous, draw the tie
-            if (e.type == SoundEventType.note && e.isTiedToPrevious) {            
+            if (e.type == SoundEventType.note && e.isTiedToPrevious) {
                 tieEndX = x + deltaX
-                this.drawTie(g, tieStartX, tieEndX)              
+                this.drawTie(g, tieStartX, tieEndX)
             }
             // Update the start point for the next tie
             tieStartX = x + deltaX
-           
+
         }
         this.drawBeatBeams(g, x, beatStartTick, beatGraphNeeds, beatEvents)
 
