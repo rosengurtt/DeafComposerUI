@@ -46,8 +46,11 @@ export const trackMutedStatusChange = createAction(
 export const unmuteAllTracks = createAction(
   '[Songs-Panel Page] Unmute all tracks'
 )
-export const ChangeViewType= createAction(
+export const ChangeViewType = createAction(
   '[Songs-Panel Page] Change View Type',
   props<{ viewType: SongViewType }>()
 )
-
+export const SelectSongSimplification = createAction(
+  '[Songs-Panel Page] Select Song Simplfication',
+  props<{ songSimplificationVersion: number }>()
+)

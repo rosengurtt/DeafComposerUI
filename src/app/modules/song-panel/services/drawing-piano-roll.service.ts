@@ -29,6 +29,7 @@ export class DrawingPianoRollService {
     song: Song
     songSimplification: SongSimplification
     bars: Bar[]
+    voiceNotes: Note[]
 
     public drawPianoRollGraphic(
         trackNumber: number,
@@ -42,6 +43,7 @@ export class DrawingPianoRollService {
         this.song = song
         this.songSimplification = new SongSimplification(song.songSimplifications[simplificationNo])
         this.bars = song.bars
+        this.voiceNotes = trackNumber === null ? this.songSimplification.notes : this.songSimplification.getNotesOfVoice(trackNumber)
 
         const instrument = this.songSimplification.getInstrumentOfVoice(trackNumber)
         const isPercusion = this.songSimplification.isVoicePercusion(trackNumber)
@@ -50,8 +52,21 @@ export class DrawingPianoRollService {
         this.paintNotesTrack(trackNumber, color)
 
         this.createStaffBars()
+        console.log(`voice: ${trackNumber}`)
+        console.log(song)
+        console.log(this.voiceNotes)
 
-       // this.createHorizontalLinesAtCnotes()
+
+        // this.createHorizontalLinesAtCnotes()
+    }
+
+
+    private paintNotesTrack(trackNumber: number, color: string) {
+        for (const note of this.voiceNotes) {
+            const cx: number = note.startSinceBeginningOfSongInTicks
+            const cy: number = note.pitch
+            this.createNote(cx, cy, note.durationInTicks, color)
+        }
     }
     // Draws in one canvas all tracks mixed together
     public drawTracksCollapsedGraphic(
@@ -174,19 +189,11 @@ export class DrawingPianoRollService {
             svgBox.removeChild(svgBox.firstChild)
     }
 
-    private paintNotesTrack(trackNumber: number, color: string) {
-        const notes = trackNumber === null ? this.songSimplification.notes : this.songSimplification.getNotesOfVoice(trackNumber)
-        for (const note of notes) {
-            const cx: number = note.startSinceBeginningOfSongInTicks
-            const cy: number = note.pitch
-            this.createNote(cx, cy, note.durationInTicks, color)
-        }
-    }
     private createStaffBars() {
         const fontSize = 10
         const pitchSpaceLength = 128
         for (let bar of this.bars) {
-            bar =  new Bar(bar)
+            bar = new Bar(bar)
             const barx = bar.barWidthInTicks * (bar.barNumber - 1)
             const textLength = bar.barWidthInTicks / 3
             this.createLine(barx, barx, 0, pitchSpaceLength, 10, this.colorMusicBar, 0, '')

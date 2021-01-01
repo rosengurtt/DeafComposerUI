@@ -1,7 +1,7 @@
 import { createReducer, on } from '@ngrx/store'
 import { SongPanelPageActions } from './actions'
 import { SongPanelState } from './index'
-import {cloneDeep} from 'lodash-es'
+import { cloneDeep } from 'lodash-es'
 import { StringifiedMap } from 'src/app/core/utilities/stringified-map'
 import { Coordenadas } from 'src/app/core/models/coordenadas'
 import { SongViewType } from 'src/app/core/models/SongViewTypes.enum'
@@ -9,6 +9,7 @@ import { SongViewType } from 'src/app/core/models/SongViewTypes.enum'
 
 const initialState: SongPanelState = {
     songsUnderAnalysis: [],
+    simplificationVersionSelected: 0,
     displacement: null,
     scale: null,
     playingSong: null,
@@ -102,6 +103,11 @@ export const songPanelReducer = createReducer<SongPanelState>(
     on(SongPanelPageActions.ChangeViewType, (state, action): SongPanelState => {
         let newState = cloneDeep(state)
         newState.viewType = action.viewType
+        return newState
+    }),
+    on(SongPanelPageActions.SelectSongSimplification, (state, action): SongPanelState => {
+        let newState = cloneDeep(state)
+        newState.simplificationVersionSelected = action.songSimplificationVersion
         return newState
     }),
 );

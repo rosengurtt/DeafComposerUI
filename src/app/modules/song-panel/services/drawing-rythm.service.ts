@@ -62,11 +62,11 @@ export class DrawingRythmService {
         this.isPercusion = this.simplification.isVoicePercusion(voice)
         this.voiceNotes = this.simplification.getNotesOfVoice(voice, song)
       
-        let soreton=this.voiceNotes.filter(x=>x.startSinceBeginningOfSongInTicks>=380 && x.startSinceBeginningOfSongInTicks<600)
-        console.log("este es el soreton")
-        console.log(soreton)
+        console.log(this.voiceNotes)
         this.eventsToDraw = DrawingCalculations.getEventsToDraw(song, simplificationNo, voice)
+
         console.log(this.eventsToDraw)
+     
         this.allNoteStarts = DrawingCalculations.getAllNoteStarts(song, simplificationNo)
 
         let x = 0

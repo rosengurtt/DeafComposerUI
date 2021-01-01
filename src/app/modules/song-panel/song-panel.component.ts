@@ -28,6 +28,7 @@ export class SongPanelComponent implements OnInit, OnChanges, OnDestroy, AfterVi
   @Input() playingSong: PlayingSong
   @Input() mutedTracks: number[]
   @Input() viewType: SongViewType
+  @Input() songSimplificationVersion: number
 
   @Output() closePage = new EventEmitter<Song>()
   @Output() displacementChanged = new EventEmitter<Coordenadas>()
@@ -39,6 +40,7 @@ export class SongPanelComponent implements OnInit, OnChanges, OnDestroy, AfterVi
   @Output() muteStatusChanged = new EventEmitter<{ track: number, status: boolean }>()
   @Output() unmuteAllTracks = new EventEmitter()
   @Output() songViewTypeChanged = new EventEmitter<SongViewType>()
+  @Output() songSimplificationChanged = new EventEmitter<number>()
 
   resetEventSubject: Subject<boolean> = new Subject<boolean>()
   moveProgressBarSubject: Subject<number> = new Subject<number>()
@@ -50,7 +52,6 @@ export class SongPanelComponent implements OnInit, OnChanges, OnDestroy, AfterVi
 
   svgBoxWidth = 1200
   svgBoxHeight = 128
-  simplification = 0
   svgBoxIdPrefix = "svgTrack"
   progressBarIdPrefix = "progBarTrack"
   @ViewChildren(TrackComponent) childrenTracks: QueryList<TrackComponent>
@@ -75,13 +76,13 @@ export class SongPanelComponent implements OnInit, OnChanges, OnDestroy, AfterVi
     this.stop()
   }
   setTracks(): void {
-    let typescriptSacamela = new SongSimplification(this.song.songSimplifications[0])
+    let typescriptSacamela = new SongSimplification(this.song.songSimplifications[this.songSimplificationVersion])
     this.tracks = typescriptSacamela.voicesWithNotes.sort((a, b) => a - b)
   }
 
   ngOnChanges(changes: SimpleChanges): void {
     for (const propName in changes) {
-      if (propName == "song") this.setTracks()
+      if (propName == "song" || propName == "songSimplificationVersion") this.setTracks()
       if (propName == "playingSong" && this.slider) {
         this.slider.value = this.playingSong?.elapsedSeconds
         this.moveProgressBarSubject.next(this.playingSong?.elapsedSeconds)
@@ -110,7 +111,7 @@ export class SongPanelComponent implements OnInit, OnChanges, OnDestroy, AfterVi
     }
     else {
       let mutedTracksParam = this.mutedTracks.length > 0 ? `&mutedTracks=${this.mutedTracks.join(",")}` : ""
-      MIDIjs.play(`https://localhost:9001/api/song/${this.song.id}/midi?startInSeconds=${this.slider.value}${mutedTracksParam}`)
+      MIDIjs.play(`https://localhost:9001/api/song/${this.song.id}/midi?simplificationVersion=${this.songSimplificationVersion}&startInSeconds=${this.slider.value}${mutedTracksParam}`)
       MIDIjs.message_callback = this.getPlayingStatus.bind(this)
     }
     // reset this flag
@@ -150,6 +151,11 @@ export class SongPanelComponent implements OnInit, OnChanges, OnDestroy, AfterVi
 
   switchViewType(type: SongViewType) {
     this.songViewTypeChanged.emit(type)
+  }
+
+  changeSimplification(value) {
+    this.songSimplificationChanged.emit(value)
+    this.cdr.detectChanges();
   }
 }
 

@@ -37,7 +37,7 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
 
   resetEventSubscritpion: Subscription
   moveProgressBarEventSubscritpion: Subscription
-  viewBox: string
+  viewBox: string = '0 0 8045 128'
   svgBox: any
   instrument: string
   isDragActive = false
@@ -51,17 +51,16 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
 
   }
   ngAfterViewInit(): void {
-
     const svgBoxId = `${this.svgBoxIdPrefix}_${this.songId}_${this.trackId}`
-    const simplification = 0
-    this.drawingService.drawPianoRollGraphic(this.trackId, svgBoxId, this.song, simplification);
+    this.drawingService.drawPianoRollGraphic(this.trackId, svgBoxId, this.song, this.simplification);
     this.updateSvgBox()
     this.resetEventSubscritpion = this.resetEvent.subscribe(x => this.reset(x))
     this.moveProgressBarEventSubscritpion = this.moveProgressBarEvent.subscribe(x => this.moveProgressBar(x))
   }
 
   ngOnInit() {
-    let typescriptSacamela = new SongSimplification(this.song.songSimplifications[0])
+    console.log(`estoy en onInit en voice ${this.trackId} y simplification es ${this.simplification}`)
+    let typescriptSacamela = new SongSimplification(this.song.songSimplifications[this.simplification])
     let instrumentCode = typescriptSacamela.getInstrumentOfVoice(this.trackId)
     this.instrument = Instrument[instrumentCode]
   }
@@ -75,12 +74,12 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
     for (const propName in changes) {
       if (propName == "viewType") {
         const svgBoxId = `${this.svgBoxIdPrefix}_${this.songId}_${this.trackId}`
-        const simplification = 0
         if (this.viewType == SongViewType.pianoRoll) {
-          this.drawingService.drawPianoRollGraphic(this.trackId, svgBoxId, this.song, simplification);
+          console.log(`estoy en voice ${this.trackId}   y voy a llamar a drawPianoRollGraphic`)
+          this.drawingService.drawPianoRollGraphic(this.trackId, svgBoxId, this.song, this.simplification);
         }
         else {
-          this.drawingRythmService.drawMusicNotationGraphic(this.trackId, svgBoxId, this.song, simplification, 1, 20);
+          this.drawingRythmService.drawMusicNotationGraphic(this.trackId, svgBoxId, this.song, this.simplification, 1, 20);
         }
         redrawSvgBox = true
       }
@@ -121,7 +120,6 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
         break;
     }
     this.viewBox = `${minX} ${minY} ${width} ${height}`
-
   }
 
 

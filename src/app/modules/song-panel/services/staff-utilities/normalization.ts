@@ -76,6 +76,9 @@ export class Normalization {
         const beatDuration = 96 * timeSig.numerator / 4
         const barHasTriplets = bars[e.bar - 1].hasTriplets
 
+        if (e.startTick==8064){
+            let parenLasRotativas=1
+        }
         for (const p of this.beatDivisions) {
             // if the event has a duration that is a whole quarter, an eight, a sixteenth, etc. return it
             if (e.durationInTicks == beatDuration / p || e.durationInTicks < 20)

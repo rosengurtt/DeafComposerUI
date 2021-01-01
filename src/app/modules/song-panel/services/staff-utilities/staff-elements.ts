@@ -68,20 +68,22 @@ export abstract class StaffElements {
     // When a beat has several eights and/or sixteens, etc. we have to draw a beam connecting them
     // This method draws them
     private static drawBeatBeams(g: Element, x: number, beatStartTick: number, beatGraphNeeds: BeatGraphNeeds, beatEvents: SoundEvent[]): void {
-        for (let i = 0; i < beatEvents.length - 1; i++) {
-            const startX = DrawingCalculations.calculateXofEventInsideBeat(beatEvents[i], beatGraphNeeds, beatStartTick)
-            const endX = DrawingCalculations.calculateXofEventInsideBeat(beatEvents[i + 1], beatGraphNeeds, beatStartTick)
-            if (this.isNoteShorterThan(beatEvents[i], NoteDuration.quarter) && this.isNoteShorterThan(beatEvents[i + 1], NoteDuration.quarter)) {
+        const thisBeatNoteEvents = beatEvents.filter(x => x.type == SoundEventType.note)
+        for (let i = 0; i < thisBeatNoteEvents.length - 1; i++) {
+            const startX = DrawingCalculations.calculateXofEventInsideBeat(thisBeatNoteEvents[i], beatGraphNeeds, beatStartTick)
+            const endX = DrawingCalculations.calculateXofEventInsideBeat(thisBeatNoteEvents[i + 1], beatGraphNeeds, beatStartTick)
+
+            if (this.isNoteShorterThan(thisBeatNoteEvents[i], NoteDuration.quarter) && this.isNoteShorterThan(thisBeatNoteEvents[i + 1], NoteDuration.quarter)) {
 
                 this.drawBeam(g, x + startX, x + endX, NoteDuration.eight)
             }
-            if (this.isNoteShorterThan(beatEvents[i], NoteDuration.eight) && this.isNoteShorterThan(beatEvents[i + 1], NoteDuration.eight)) {
+            if (this.isNoteShorterThan(thisBeatNoteEvents[i], NoteDuration.eight) && this.isNoteShorterThan(thisBeatNoteEvents[i + 1], NoteDuration.eight)) {
 
                 this.drawBeam(g, x + startX, x + endX, NoteDuration.sixteenth)
             }
-            if (this.isNoteShorterThan(beatEvents[i], NoteDuration.sixteenth) && this.isNoteShorterThan(beatEvents[i + 1], NoteDuration.sixteenth))
+            if (this.isNoteShorterThan(thisBeatNoteEvents[i], NoteDuration.sixteenth) && this.isNoteShorterThan(thisBeatNoteEvents[i + 1], NoteDuration.sixteenth))
                 this.drawBeam(g, x + startX, x + endX, NoteDuration.thirtysecond)
-            if (this.isNoteShorterThan(beatEvents[i], NoteDuration.thirtysecond) && this.isNoteShorterThan(beatEvents[i + 1], NoteDuration.thirtysecond))
+            if (this.isNoteShorterThan(thisBeatNoteEvents[i], NoteDuration.thirtysecond) && this.isNoteShorterThan(thisBeatNoteEvents[i + 1], NoteDuration.thirtysecond))
                 this.drawBeam(g, x + startX, x + endX, NoteDuration.sixtyfourth)
         }
     }

@@ -2,15 +2,16 @@
 import { createFeatureSelector, createSelector } from '@ngrx/store'
 import { Song } from 'src/app/core/models/song'
 import { StringifiedMap } from 'src/app/core/utilities/stringified-map'
-import {PlayingSong} from 'src/app/core/models/playing-song'
-import {SongViewType} from 'src/app/core/models/SongViewTypes.enum'
+import { PlayingSong } from 'src/app/core/models/playing-song'
+import { SongViewType } from 'src/app/core/models/SongViewTypes.enum'
 
 // State for this feature (Product)
 export interface SongPanelState {
     songsUnderAnalysis: Song[]
+    simplificationVersionSelected: number
     displacement: string
     scale: string
-    playingSong: PlayingSong    
+    playingSong: PlayingSong
     tracksMuted: number[]
     viewType: SongViewType
     error: string
@@ -59,4 +60,9 @@ export const getMutedTracks = createSelector(
 export const getSongViewType = createSelector(
     getSongPanelFeatureState,
     state => state.viewType
+)
+
+export const getSongSimplificationSelected = createSelector(
+    getSongPanelFeatureState,
+    state => state.simplificationVersionSelected
 )
