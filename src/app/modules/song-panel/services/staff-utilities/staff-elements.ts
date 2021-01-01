@@ -42,9 +42,17 @@ export abstract class StaffElements {
 
             if (e.type == SoundEventType.note) {
                 // if there is a single note, we don't have to care about beams, just draw it
-                if (beatEvents.filter(x => x.type == SoundEventType.note).length == 1) this.drawSingleNote(g, e.duration, x + deltaX)
+                if (beatEvents.filter(x => x.type == SoundEventType.note).length == 1) {
+                    const graph = this.drawSingleNote(g, e.duration, x + deltaX)
+                    e.graphic.push(graph)
+                    e.x = x + deltaX
+                }
                 // if there are several notes, draw a 'quarter' that later will be converted to whatever it is by adding beams
-                else StaffElements.drawBasicNote(g, x + deltaX)
+                else {
+                    const graph = StaffElements.drawBasicNote(g, x + deltaX)
+                    e.graphic.push(graph)
+                    e.x = x + deltaX
+                }
             }
             // if it is a rest, draw the rest
             else this.drawRest(g, e.duration, x + deltaX)
@@ -162,9 +170,12 @@ export abstract class StaffElements {
 
     // Draws a circle and a stem. The idea is that regardless of a note being a quarter, and eight or a
     // sixteenth, we draw it as a quarter, and then we add the needed beams to convert it to an eight or whatever
-    public static drawBasicNote(g: Element, x: number, isCircleFull = true) {
-        this.drawEllipse(g, x + 13, 80, 7, 5, 'black', 2, `rotate(-25 ${x + 13} 80)`, isCircleFull)
-        this.drawPath(g, 'black', 2, `M ${x + 19},40 V 78 z`)
+    public static drawBasicNote(svgBox: Element, x: number, isCircleFull = true): Element {
+        let group = document.createElementNS(this.svgns, 'g')
+        svgBox.appendChild(group)
+        this.drawEllipse(group, x + 13, 80, 7, 5, 'black', 2, `rotate(-25 ${x + 13} 80)`, isCircleFull)
+        this.drawPath(group, 'black', 2, `M ${x + 19},40 V 78 z`)
+        return group
     }
 
     private static drawQuarterRest(g: Element, x: number) {
@@ -180,7 +191,7 @@ export abstract class StaffElements {
 
     }
 
-    public static drawSingleNote(svgBox: Element, type: NoteDuration, x: number): void {
+    public static drawSingleNote(svgBox: Element, type: NoteDuration, x: number): Element {
         let group = document.createElementNS(this.svgns, 'g')
         svgBox.appendChild(group)
         switch (type) {
@@ -210,6 +221,7 @@ export abstract class StaffElements {
                 this.drawSubStems(group, x, 4, 1)
                 break;
         }
+        return group
     }
 
     public static drawRest(svgBox: Element, type: NoteDuration, x: number): void {

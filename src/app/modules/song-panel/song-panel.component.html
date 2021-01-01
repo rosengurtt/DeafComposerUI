@@ -11,7 +11,7 @@
 <div class="simplificationsSelector">
   <mat-form-field appearance="fill">
     <mat-label>Simplifications</mat-label>
-    <mat-select matNativeControl required (selectionChange)="changeSimplification($event.value)" value="0">
+    <mat-select matNativeControl required (selectionChange)="changeSimplification($event.value)" value="1">
       <mat-option value="0">Original Midi</mat-option>
       <mat-option value="1">Data cleaned of little imperfections</mat-option>
       <mat-option value="2">Embelishments removed</mat-option>

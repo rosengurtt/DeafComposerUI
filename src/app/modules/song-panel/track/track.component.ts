@@ -1,3 +1,4 @@
+import { ThrowStmt } from '@angular/compiler'
 import { Component, OnInit, Input, OnChanges, SimpleChanges, AfterViewInit, ViewChild, Output, EventEmitter } from '@angular/core'
 import { Observable, Subscription } from 'rxjs'
 import { Coordenadas } from 'src/app/core/models/coordenadas'
@@ -12,7 +13,11 @@ import { DrawingRythmService } from '../services/drawing-rythm.service'
 @Component({
   selector: 'dc-track',
   templateUrl: './track.component.html',
-  styleUrls: ['./track.component.scss']
+  styleUrls: ['./track.component.scss'],
+  providers: [
+    DrawingPianoRollService,
+    DrawingRythmService
+  ]
 })
 export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
 
@@ -35,9 +40,11 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
   @Output() displaceChange = new EventEmitter<Coordenadas>()
   @Output() muteStatusChange = new EventEmitter<{ track: number, status: boolean }>()
 
+  svgBoxId: string
+  progressBarId: string
   resetEventSubscritpion: Subscription
   moveProgressBarEventSubscritpion: Subscription
-  viewBox: string = '0 0 8045 128'
+  viewBox: string
   svgBox: any
   instrument: string
   isDragActive = false
@@ -45,24 +52,26 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
   lastYrecorded: number | null
   muteIcon = "volume_up"
   songViewType: typeof SongViewType = SongViewType
+  totalVoices: number
 
-  constructor(private drawingService: DrawingPianoRollService,
+  constructor(private drawingPianoRollService: DrawingPianoRollService,
     private drawingRythmService: DrawingRythmService) {
 
   }
   ngAfterViewInit(): void {
-    const svgBoxId = `${this.svgBoxIdPrefix}_${this.songId}_${this.trackId}`
-    this.drawingService.drawPianoRollGraphic(this.trackId, svgBoxId, this.song, this.simplification);
+    this.svgBoxId = `${this.svgBoxIdPrefix}_${this.songId}_${this.trackId}`
+    this.progressBarId = `${this.progressBarIdPrefix}${this.songId}_${this.trackId}`
+    this.drawingPianoRollService.drawPianoRollGraphic(this.trackId, this.svgBoxId, this.song, this.simplification);
     this.updateSvgBox()
     this.resetEventSubscritpion = this.resetEvent.subscribe(x => this.reset(x))
     this.moveProgressBarEventSubscritpion = this.moveProgressBarEvent.subscribe(x => this.moveProgressBar(x))
   }
 
   ngOnInit() {
-    console.log(`estoy en onInit en voice ${this.trackId} y simplification es ${this.simplification}`)
     let typescriptSacamela = new SongSimplification(this.song.songSimplifications[this.simplification])
     let instrumentCode = typescriptSacamela.getInstrumentOfVoice(this.trackId)
     this.instrument = Instrument[instrumentCode]
+    this.totalVoices = typescriptSacamela.numberOfVoices
   }
 
 
@@ -75,11 +84,10 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
       if (propName == "viewType") {
         const svgBoxId = `${this.svgBoxIdPrefix}_${this.songId}_${this.trackId}`
         if (this.viewType == SongViewType.pianoRoll) {
-          console.log(`estoy en voice ${this.trackId}   y voy a llamar a drawPianoRollGraphic`)
-          this.drawingService.drawPianoRollGraphic(this.trackId, svgBoxId, this.song, this.simplification);
+          this.drawingPianoRollService.drawPianoRollGraphic(this.trackId, svgBoxId, this.song, this.simplification);
         }
         else {
-          this.drawingRythmService.drawMusicNotationGraphic(this.trackId, svgBoxId, this.song, this.simplification, 1, 20);
+          this.drawingRythmService.drawMusicNotationGraphic(this.trackId, svgBoxId, this.song, this.simplification);
         }
         redrawSvgBox = true
       }
@@ -96,15 +104,10 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
   }
 
 
-  updateSvgBox(): void {
+  updateSvgBox(minX: number | null = null, minY: number | null = null, width: number | null = null, height: number | null = null): void {
     const svgBoxId = `${this.svgBoxIdPrefix}_${this.songId}_${this.trackId}`
     const svgBox = document.getElementById(svgBoxId)
     if (!svgBox) return
-    let minX: number
-    let minY: number
-    let width: number
-    let height: number
-    let style: string
     switch (this.viewType) {
       case SongViewType.pianoRoll:
         minX = this.displacement.x
@@ -113,10 +116,10 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
         height = this.scale * 128
         break;
       case SongViewType.rythmMusicNotation:
-        minX = this.displacement.x
-        minY = this.displacement.y
-        width = 1200 * this.scale * 1.3
-        height = 128 * this.scale * 1.3
+        minX = minX == null ? this.displacement.x : minX
+        minY = minY == null ? this.displacement.y : minY
+        width = width == null ? 1200 * this.scale * 2 : width
+        height = height == null ? 128 * this.scale * 2 : height
         break;
     }
     this.viewBox = `${minX} ${minY} ${width} ${height}`
@@ -125,6 +128,7 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
 
   reset(unmuteAllTracks: boolean): void {
     if (unmuteAllTracks) this.muteIcon = "volume_up"
+    this.drawingRythmService.paintAllNotesBlack()
     this.updateSvgBox()
   }
   dragStarted(event): void {
@@ -156,14 +160,29 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
   }
 
   moveProgressBar(secondsElapsed: number): void {
-    const svgBoxId = `${this.svgBoxIdPrefix}_${this.songId}_${this.trackId}`
     let numberOfTicks: number
     if (secondsElapsed)
       numberOfTicks = (secondsElapsed * this.song.songStats.numberOfTicks) / this.song.songStats.durationInSeconds
     else
       numberOfTicks = null
-    const progressBarId = `${this.progressBarIdPrefix}${this.songId}_${this.trackId}`
-    this.drawingService.createProgressBar(progressBarId, numberOfTicks)
+
+    if (this.viewType == SongViewType.pianoRoll) {
+      this.drawingPianoRollService.createProgressBar(numberOfTicks)
+    }
+    else {
+      const displacement = this.drawingRythmService.paintNotesBeingPlayed(numberOfTicks)
+      // We don't want to raise a displacement event for each voice, but a single one for each elapsed second
+      if (secondsElapsed * 2 % this.totalVoices != this.trackId) return
+      // We don't want to move continuosly the staff, because it would be unpleasant to follow, we want to freeze
+      // the staf while the time moves from the notes in the left to the one in the right, and then we move 
+      // "one page", so the viewer starts looking again in the left
+      // that is why we use tolerance. The value of 2000 was obtained experimenting
+      let tolerance = 2000
+      if (displacement && displacement > this.displacement.x + tolerance) {
+        let coor = new Coordenadas(-(displacement - this.displacement.x - tolerance/2) / 50, 0)
+        this.displaceChange.emit(coor)
+      }
+    }
   }
 
 

@@ -25,21 +25,24 @@ export class DrawingPianoRollService {
     colorOthers = 'rgb(224,224,100)'
 
     noteDotRadio = 1
-    svgBox: HTMLElement
     song: Song
     songSimplification: SongSimplification
     bars: Bar[]
     voiceNotes: Note[]
+    svgBox: HTMLElement
+    progressBarId: string
 
     public drawPianoRollGraphic(
         trackNumber: number,
         svgBoxId: string,
         song: Song,
         simplificationNo: number): string {
-        this.svgBox = document.getElementById(svgBoxId)
+
+        this.svgBox = this.getSvgBox(svgBoxId)
+        this.progressBarId = "progressBar" + trackNumber
         if (!this.svgBox) return
 
-        this.clearSVGbox(this.svgBox)
+        this.clearSVGbox(this.getSvgBox(svgBoxId))
         this.song = song
         this.songSimplification = new SongSimplification(song.songSimplifications[simplificationNo])
         this.bars = song.bars
@@ -52,12 +55,13 @@ export class DrawingPianoRollService {
         this.paintNotesTrack(trackNumber, color)
 
         this.createStaffBars()
-        console.log(`voice: ${trackNumber}`)
-        console.log(song)
-        console.log(this.voiceNotes)
 
 
         // this.createHorizontalLinesAtCnotes()
+    }
+
+    private getSvgBox(svgBoxId: string) {
+        return document.getElementById(svgBoxId)
     }
 
 
@@ -73,13 +77,12 @@ export class DrawingPianoRollService {
         svgBoxId: string,
         song: Song,
         simplificationNo: number,
-        createProgressBar: boolean,
-        progressBarId?: string): string {
+        progressBarId: string): string {
 
-        this.svgBox = document.getElementById(svgBoxId)
-        if (!this.svgBox) return
+        if (!this.getSvgBox(svgBoxId)) return
 
-        this.clearSVGbox(this.svgBox)
+        this.progressBarId = progressBarId
+        this.clearSVGbox(this.getSvgBox(svgBoxId))
         this.song = song
         this.songSimplification = new SongSimplification(song.songSimplifications[simplificationNo])
         this.bars = song.bars
@@ -91,7 +94,6 @@ export class DrawingPianoRollService {
             this.paintNotesTrack(null, color)
         }
         this.createStaffBars()
-        if (createProgressBar) this.createProgressBar(progressBarId, 0)
     }
 
 
@@ -109,15 +111,15 @@ export class DrawingPianoRollService {
         return this.colorOthers
     }
 
-    public createProgressBar(progressBarId: string, ticks: number | null): any {
-        let progressBar = document.getElementById(progressBarId)
-        this.deleteProgressBar(progressBarId)
+    public createProgressBar(ticks: number | null): any {
+        let progressBar = document.getElementById(this.progressBarId)
+        this.deleteProgressBar()
         if (ticks)
-            progressBar = this.createLine(ticks, ticks, 0, 128, 8, this.colorProgressBar, 0, progressBarId)
+            progressBar = this.createLine(ticks, ticks, 0, 128, 8, this.colorProgressBar, 0, this.progressBarId)
     }
 
-    public deleteProgressBar(progressBarId: string) {
-        const progressBar = document.getElementById(progressBarId)
+    public deleteProgressBar() {
+        const progressBar = document.getElementById(this.progressBarId)
         if (progressBar) {
             try {
                 this.svgBox.removeChild(progressBar)
@@ -138,6 +140,7 @@ export class DrawingPianoRollService {
         line.setAttributeNS(null, 'style', `stroke: ${color}; stroke-width: ${width}`)
         if (dotSize) line.setAttributeNS(null, 'stroke-dasharray', dotSize.toString())
         if (id) line.setAttributeNS(null, 'id', id)
+        const svgBox = this.svgBox
         this.svgBox.appendChild(line)
         return line
     }

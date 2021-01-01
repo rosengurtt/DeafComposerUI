@@ -34,9 +34,7 @@ import { DrawingRythmService } from './services/drawing-rythm.service'
       
     ],
     providers: [
-      SongsRepositoryService,
-      DrawingPianoRollService,
-      DrawingRythmService
+      SongsRepositoryService
     ],
     schemas: [CUSTOM_ELEMENTS_SCHEMA]
   })

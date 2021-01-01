@@ -1,7 +1,7 @@
 export class PlayingSong {
     songId: number
     startFromInSeconds: number
-    elapsedSeconds: number
+    elapsedMilliSeconds: number
     durationInSeconds: number
     isPaused: boolean
 
@@ -10,6 +10,6 @@ export class PlayingSong {
         this.startFromInSeconds = startFromInSeconds
         this.durationInSeconds = durationInSeconds
         this.isPaused = false
-        this.elapsedSeconds = startFromInSeconds
+        this.elapsedMilliSeconds = startFromInSeconds
     }
 }

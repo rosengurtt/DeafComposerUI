@@ -9,7 +9,7 @@ import { SongViewType } from 'src/app/core/models/SongViewTypes.enum'
 
 const initialState: SongPanelState = {
     songsUnderAnalysis: [],
-    simplificationVersionSelected: 0,
+    simplificationVersionSelected: 1,
     displacement: null,
     scale: null,
     playingSong: null,
@@ -61,10 +61,12 @@ export const songPanelReducer = createReducer<SongPanelState>(
     }),
     on(SongPanelPageActions.elapsedSecondPlayingSong, (state, action): SongPanelState => {
         let newState = cloneDeep(state)
-        if (state.playingSong.elapsedSeconds + 1 >= state.playingSong.durationInSeconds)
-            newState.playingSong = null
-        else
-            newState.playingSong.elapsedSeconds = state.playingSong.elapsedSeconds + 1
+        if (state.playingSong ) {
+            if (state.playingSong.elapsedMilliSeconds + 500 >= state.playingSong.durationInSeconds * 1000)
+                newState.playingSong = null
+            else
+                newState.playingSong.elapsedMilliSeconds = state.playingSong.elapsedMilliSeconds + 500
+        }
         return newState
     }),
     on(SongPanelPageActions.stopPlayingSong, (state, action): SongPanelState => {

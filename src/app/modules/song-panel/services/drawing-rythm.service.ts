@@ -1,10 +1,8 @@
 import { Injectable } from '@angular/core'
+import { Store } from '@ngrx/store'
 import { SongSimplification } from 'src/app/core/models/song-simplification'
 import { Song } from 'src/app/core/models/song'
-import { NoteDuration } from 'src/app/core/models/note-duration'
 import { SoundEvent } from 'src/app/core/models/sound-event'
-import { TimeSignature } from 'src/app/core/models/time-signature'
-import { SoundEventType } from 'src/app/core/models/sound-event-type.enum'
 import { BeatGraphNeeds } from 'src/app/core/models/beat-graph-needs'
 import { Note } from 'src/app/core/models/note'
 import { Bar } from 'src/app/core/models/bar'
@@ -12,6 +10,8 @@ import { StaffElements } from './staff-utilities/staff-elements'
 import { DrawingCalculations } from './staff-utilities/drawing-calculations'
 import { Normalization } from './staff-utilities/normalization'
 import { BeatDrawingInfo } from 'src/app/core/models/beat-drawing-info'
+import { State } from 'src/app/core/state/app.state'
+import { SoundEventType } from 'src/app/core/models/sound-event-type.enum'
 
 @Injectable()
 export class DrawingRythmService {
@@ -39,9 +39,7 @@ export class DrawingRythmService {
         voice: number,
         svgBoxId: string,
         song: Song,
-        simplificationNo: number,
-        fromBar: number,
-        toBar: number): number {
+        simplificationNo: number): number {
         this.svgBox = document.getElementById(svgBoxId)
         if (!this.svgBox) {
             return
@@ -61,12 +59,9 @@ export class DrawingRythmService {
         console.log(`voice ${voice}`)
         this.isPercusion = this.simplification.isVoicePercusion(voice)
         this.voiceNotes = this.simplification.getNotesOfVoice(voice, song)
-      
-        console.log(this.voiceNotes)
+
         this.eventsToDraw = DrawingCalculations.getEventsToDraw(song, simplificationNo, voice)
 
-        console.log(this.eventsToDraw)
-     
         this.allNoteStarts = DrawingCalculations.getAllNoteStarts(song, simplificationNo)
 
         let x = 0
@@ -79,13 +74,44 @@ export class DrawingRythmService {
     }
 
 
-
     private clearSVGbox(svgBox: HTMLElement) {
         while (svgBox.firstChild) {
             svgBox.removeChild(svgBox.firstChild)
         }
     }
 
+    // Returns the average distance from the left side of the notes painted red
+    // This information can be used to move the viewBox, so the notes being played are always in the center of the svg box
+    public paintNotesBeingPlayed(tick: number): number | null {
+        let notesToPaint = this.eventsToDraw.filter(e => e.type == SoundEventType.note && e.startTick <= tick && e.endTick >= tick)
+        this.paintAllNotesBlack()
+        let totalX = 0
+        let totalNotes = 0
+        if (tick === null || tick == undefined) return
+        for (const e of notesToPaint) {
+            totalX += e.x
+            totalNotes++
+            for (const g of e.graphic) {
+                for (let i = 0; i < g.children.length; i++) {
+                    g.children[i].setAttributeNS(null, 'fill', 'red')
+                    g.children[i].setAttributeNS(null, 'stroke', 'red')
+                }
+            }
+        }
+        if (totalNotes > 0) return totalX / totalNotes
+        return null
+    }
+
+    public paintAllNotesBlack() {
+        for (const e of this.eventsToDraw) {
+            for (const g of e.graphic) {
+                for (let i = 0; i < g.children.length; i++) {
+                    g.children[i].setAttributeNS(null, 'fill', 'black')
+                    g.children[i].setAttributeNS(null, 'stroke', 'black')
+                }
+            }
+        }
+    }
 
 
     // Before we draw the notes and rests for a beat in a slice of the song, we need to see what happens

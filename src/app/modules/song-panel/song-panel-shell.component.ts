@@ -8,10 +8,7 @@ import { Observable, Subscription, timer } from 'rxjs'
 import { SongPanelPageActions } from './state/actions'
 import { Coordenadas } from 'src/app/core/models/coordenadas'
 import { PlayingSong } from 'src/app/core/models/playing-song'
-import { songsPaginationChange } from '../songs-library/state/actions/songs-library-page.actions'
 import { SongViewType } from 'src/app/core/models/SongViewTypes.enum'
-import { MatIconRegistry } from '@angular/material/icon'
-import { DomSanitizer } from '@angular/platform-browser'
 
 @Component({
     templateUrl: './song-panel-shell.component.html'
@@ -55,7 +52,7 @@ export class SongPanelShellComponent implements OnInit {
 
     songStartedPlaying(songStarted: PlayingSong) {
         this.mainStore.dispatch(SongPanelPageActions.startPlayingSong({ playingSong: songStarted }))
-        this.songTimer$ = timer(0, 1000)
+        this.songTimer$ = timer(0, 500)
         this.timerSubscription = this.songTimer$.subscribe(x => { this.mainStore.dispatch(SongPanelPageActions.elapsedSecondPlayingSong()) })
     }
     songStoppedPlaying() {

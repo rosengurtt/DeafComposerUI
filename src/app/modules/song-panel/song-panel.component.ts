@@ -84,8 +84,8 @@ export class SongPanelComponent implements OnInit, OnChanges, OnDestroy, AfterVi
     for (const propName in changes) {
       if (propName == "song" || propName == "songSimplificationVersion") this.setTracks()
       if (propName == "playingSong" && this.slider) {
-        this.slider.value = this.playingSong?.elapsedSeconds
-        this.moveProgressBarSubject.next(this.playingSong?.elapsedSeconds)
+        this.slider.value = this.playingSong?.elapsedMilliSeconds / 1000
+        this.moveProgressBarSubject.next(this.playingSong?.elapsedMilliSeconds / 1000)
       }
     }
   }
