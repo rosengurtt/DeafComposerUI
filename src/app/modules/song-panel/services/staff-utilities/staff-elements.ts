@@ -19,14 +19,16 @@ export abstract class StaffElements {
     // A tie may span several beats
     public static drawBeat(g: Element, x: number, bar: Bar, beat: number, beatGraphNeeds: BeatGraphNeeds, eventsToDraw: SoundEvent[], tieStartX: number | null): BeatDrawingInfo {
         const timeSig = bar.timeSignature
-        const beatDurationInTicks = 96 * timeSig.denominator / 4
+        const beatDurationInTicks = 96 * 4 / timeSig.denominator
         const beatStartTick = bar.ticksFromBeginningOfSong + (beat - 1) * beatDurationInTicks
         const beatEndTick = beatStartTick + beatDurationInTicks
         const beatEvents = eventsToDraw
             .filter(e => e.startTick >= beatStartTick && e.startTick < beatEndTick)
             .sort((e1, e2) => e1.startTick - e2.startTick)
 
-
+            if (bar.barNumber==52){
+                let acaestaelsorete=true
+            }
         // Check if first note has a tie that comes from a previous beat        
         if (beatEvents[0]?.isTiedToPrevious && beatEvents[0]?.type == SoundEventType.note) {
             this.drawTie(g, tieStartX, x)
@@ -37,6 +39,8 @@ export abstract class StaffElements {
 
         for (let i = 0; i < beatEvents.length; i++) {
             const e: SoundEvent = beatEvents[i]
+
+     
 
             let deltaX = DrawingCalculations.calculateXofEventInsideBeat(e, beatGraphNeeds, beatStartTick)
 

@@ -20,12 +20,12 @@ export class DrawingRythmService {
     song: Song
     voice: number
     simplification: SongSimplification
-    beats: BeatGraphNeeds[] // Represents the information we need about each beat to draw the notes and rests of that beat
     bars: Bar[]             // Info include the start and end tick and the time signature of each bar of the song
     songNotes: Note[]
     voiceNotes: Note[]
     isPercusion: boolean
     eventsToDraw: SoundEvent[]  // Represents all the notes and rests we have in this voice
+    eventsToDrawForAllVoices: Array<Array<SoundEvent>>
     allNoteStarts: number[] // Represents all the ticks where there is a note starting in any of the voices
 
     // We assign to each quarter, eightth, sixteenth or whatever a total of 50 px width
@@ -60,9 +60,17 @@ export class DrawingRythmService {
         this.isPercusion = this.simplification.isVoicePercusion(voice)
         this.voiceNotes = this.simplification.getNotesOfVoice(voice, song)
 
-        this.eventsToDraw = DrawingCalculations.getEventsToDraw(song, simplificationNo, voice)
+        console.log(this.voiceNotes)
 
-        this.allNoteStarts = DrawingCalculations.getAllNoteStarts(song, simplificationNo)
+        this.eventsToDrawForAllVoices = []
+        for (let v = 0; v < this.simplification.numberOfVoices; v++) {
+            this.eventsToDrawForAllVoices.push(DrawingCalculations.getEventsToDraw(song, simplificationNo, v))
+        }
+        this.eventsToDraw = this.eventsToDrawForAllVoices[voice]
+        console.log(this.eventsToDraw)
+
+
+        this.allNoteStarts = DrawingCalculations.getAllNoteStarts(song, simplificationNo, this.eventsToDrawForAllVoices)
 
         let x = 0
         let startTieX: number | null = null
@@ -138,6 +146,11 @@ export class DrawingRythmService {
         const timeSig = bar.timeSignature
         const totalBeats = timeSig.numerator
         let deltaX = 0
+
+        // if it is the last bar and it has no notes, don't show it
+        if (bar.barNumber == this.bars.length  &&
+            this.simplification.notes.filter(n => n.endSinceBeginningOfSongInTicks > bar.ticksFromBeginningOfSong).length == 0)
+            return new BeatDrawingInfo(0, 0)
 
         if (StaffElements.mustDrawTimeSignature(bar.barNumber, this.bars))
             deltaX += StaffElements.drawTimeSignature(this.svgBox, x + deltaX, timeSig)
