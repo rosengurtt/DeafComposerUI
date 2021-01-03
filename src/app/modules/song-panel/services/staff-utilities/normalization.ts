@@ -15,7 +15,7 @@ export class Normalization {
     [1, 32], [3, 32], [5, 32], [7, 32], [9, 32], [11, 32], [13, 32], [15, 32], [17, 32], [19, 32], [21, 32], [23, 32],
     [25, 32], [27, 32], [29, 32], [31, 32]]
 
-    private static beatDivisions = [1 / 4, 1 / 2, 1, 2, 3, 4, 6, 8, 12, 16, 24, 32]
+    private static beatDivisions = [1/16, 1/12, 1/8, 1/6, 1 / 4, 1 / 2, 1, 2, 3, 4, 6, 8, 12, 16, 24, 32]
 
     // If we have a note starting in tick 0 and another starting in tick 2, they actually are supposed to start
     // at the same time. So we want to discretize the notes in a way where all notes that should start together
@@ -70,6 +70,10 @@ export class Normalization {
     // goes first. It does this trying to make the starting of the notes/rests to fall in the hardest subdivision of the beat
     // We have to consider the case where the bar has triplets
     public static normalizeInterval(bars: Bar[], e: SoundEvent): SoundEvent[] {
+
+        if(e.startTick==3504 && e.endTick==4032){
+            let parenlasrotativas=true
+        }
         // the following  line is needed because of typescript/javascript limitations
         e = new SoundEvent(e.type, e.bar, e.startTick, e.endTick, e.duration, e.isTiedToPrevious, e.isAccented)
         const timeSig = bars[e.bar - 1].timeSignature
@@ -84,6 +88,8 @@ export class Normalization {
 
         // if it is odd, find a larger and a shorter standard intervals and split the event
         for (let i = 0; i < this.beatDivisions.length - 1; i++) {
+            let sacamela1=beatDuration / this.beatDivisions[i]
+            let sacamela2=beatDuration / this.beatDivisions[i + 1]
             if (e.durationInTicks < beatDuration / this.beatDivisions[i] && e.durationInTicks > beatDuration / this.beatDivisions[i + 1]) {
                 // the note has an odd interval, so we split it in 2
                 const splitPoint = [this.getSplitPoint(bars, e)]

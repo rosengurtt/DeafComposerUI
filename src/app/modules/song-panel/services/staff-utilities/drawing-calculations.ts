@@ -1,7 +1,6 @@
 import { Song } from '../../../../core/models/song'
 import { NoteDuration } from '../../../../core/models/note-duration'
 import { SoundEvent } from '../../../../core/models/sound-event'
-import { TimeSignature } from '../../../../core/models/time-signature'
 import { SoundEventType } from '../../../../core/models/sound-event-type.enum'
 import { BeatGraphNeeds } from '../../../../core/models//beat-graph-needs'
 import { Note } from '../../../../core/models/note'
@@ -52,6 +51,9 @@ export class DrawingCalculations {
         for (let i = 0; i < voiceNotes.length; i++) {
             let n = voiceNotes[i]
             let currentBar = this.getBarOfTick(bars, endOfLastComputedNote)
+            if (currentBar==24){
+                let parenlasrotativas=1
+            }
             // if there is a number of ticks greater than tolerance between the end of the previous note and this one
             // and we are not at the start of the beat, add a rest
             if (endOfLastComputedNote + tolerance < n.startSinceBeginningOfSongInTicks) {

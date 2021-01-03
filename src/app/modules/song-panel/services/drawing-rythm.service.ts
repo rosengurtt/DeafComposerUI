@@ -12,6 +12,8 @@ import { Normalization } from './staff-utilities/normalization'
 import { BeatDrawingInfo } from 'src/app/core/models/beat-drawing-info'
 import { State } from 'src/app/core/state/app.state'
 import { SoundEventType } from 'src/app/core/models/sound-event-type.enum'
+import { KeySignature } from 'src/app/core/models/key-signature.enum'
+import { Clef } from 'src/app/core/models/clef.enum'
 
 @Injectable()
 export class DrawingRythmService {
@@ -44,11 +46,14 @@ export class DrawingRythmService {
         if (!this.svgBox) {
             return
         }
+
+
         this.clearSVGbox(this.svgBox)
         this.voice = voice
         this.song = song
         this.simplification = new SongSimplification(song.songSimplifications[simplificationNo])
         this.bars = song.bars
+        console.log(song.bars)
         // Order notes by start time
         const aux = [... this.simplification.notes]
             .sort((i, j) => i.startSinceBeginningOfSongInTicks - j.startSinceBeginningOfSongInTicks)
@@ -60,25 +65,31 @@ export class DrawingRythmService {
         this.isPercusion = this.simplification.isVoicePercusion(voice)
         this.voiceNotes = this.simplification.getNotesOfVoice(voice, song)
 
-        console.log(this.voiceNotes)
-
         this.eventsToDrawForAllVoices = []
         for (let v = 0; v < this.simplification.numberOfVoices; v++) {
             this.eventsToDrawForAllVoices.push(DrawingCalculations.getEventsToDraw(song, simplificationNo, v))
         }
         this.eventsToDraw = this.eventsToDrawForAllVoices[voice]
-        console.log(this.eventsToDraw)
-
 
         this.allNoteStarts = DrawingCalculations.getAllNoteStarts(song, simplificationNo, this.eventsToDrawForAllVoices)
 
         let x = 0
+        x += StaffElements.drawClefs(this.svgBox, x)
+        //  x += StaffElements.drawKeySignature(this.svgBox, KeySignature.sevenFlats, x)
+
         let startTieX: number | null = null
         for (const bar of this.bars) {
+
+            // if it is the last bar and it has no notes, don't show it
+            if (bar.barNumber == this.bars.length &&
+                this.simplification.notes.filter(n => n.endSinceBeginningOfSongInTicks > bar.ticksFromBeginningOfSong).length == 0)
+                break
+
             let beatDrawingInfo = this.drawBar(bar, x, startTieX)
             x += beatDrawingInfo.deltaX
             startTieX = beatDrawingInfo.startTieX
         }
+        StaffElements.drawPentagram(this.svgBox, x)
     }
 
 
@@ -138,25 +149,38 @@ export class DrawingRythmService {
         return new BeatGraphNeeds(bar.barNumber, beat, noteStartsInBeat)
 
     }
+    private getBarGraphicNeeds(bar: Bar): BeatGraphNeeds {
+        const beatDurationInTicks = 96 * 4 / bar.timeSignature.denominator
+        let startOfBar = bar.ticksFromBeginningOfSong
+        let endOfBar = startOfBar + bar.timeSignature.numerator * beatDurationInTicks
+        let noteStartsInBeat = this.allNoteStarts
+            .filter(e => e >= startOfBar && e < endOfBar).map(n => n - startOfBar)
+
+        return new BeatGraphNeeds(bar.barNumber, 1, noteStartsInBeat)
+
+    }
 
 
     // bar is the bar number, that is 1 for the first bar of the song
     // x is the coordinate in pixels where we must start drawing
     private drawBar(bar: Bar, x: number, startTieX: number | null): BeatDrawingInfo {
         const timeSig = bar.timeSignature
+        const keySig = bar.keySignature
         const totalBeats = timeSig.numerator
         let deltaX = 0
 
-        // if it is the last bar and it has no notes, don't show it
-        if (bar.barNumber == this.bars.length  &&
-            this.simplification.notes.filter(n => n.endSinceBeginningOfSongInTicks > bar.ticksFromBeginningOfSong).length == 0)
-            return new BeatDrawingInfo(0, 0)
+        if (StaffElements.mustDrawKeySignature(bar.barNumber, this.bars))
+            deltaX += StaffElements.drawKeySignature(this.svgBox, x + deltaX, keySig)
 
         if (StaffElements.mustDrawTimeSignature(bar.barNumber, this.bars))
             deltaX += StaffElements.drawTimeSignature(this.svgBox, x + deltaX, timeSig)
 
         for (let beat = 1; beat <= totalBeats; beat++) {
-            const beatGraphNeeds = this.getBeatGraphicNeeds(bar, beat)
+            let beatGraphNeeds: BeatGraphNeeds
+            if (timeSig.numerator == 3 && timeSig.denominator == 8)
+                beatGraphNeeds = this.getBarGraphicNeeds(bar)
+            else
+                beatGraphNeeds = this.getBeatGraphicNeeds(bar, beat)
             const beatDrawInfo = StaffElements.drawBeat(this.svgBox, x + deltaX, bar, beat, beatGraphNeeds, this.eventsToDraw, startTieX)
             deltaX += beatDrawInfo.deltaX
             startTieX = beatDrawInfo.startTieX
@@ -164,6 +188,7 @@ export class DrawingRythmService {
         deltaX += StaffElements.drawBarLine(this.svgBox, x + deltaX)
         StaffElements.drawBarNumber(this.svgBox, x + deltaX / 2 - 10, bar.barNumber)
         return new BeatDrawingInfo(startTieX, deltaX)
+
     }
 
 

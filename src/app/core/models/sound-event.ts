@@ -57,6 +57,5 @@ export class SoundEvent {
         if (this.durationInTicks > (ticksPerQuarterNote - tolerance) / 4) return NoteDuration.sixteenth
         if (this.durationInTicks > (ticksPerQuarterNote - tolerance) / 8) return NoteDuration.thirtysecond
         if (this.durationInTicks > (ticksPerQuarterNote - tolerance) / 16) return NoteDuration.sixtyfourth
-        console.log("estoy en standardizedDuration y me voy por donde no debo")
     }
 }

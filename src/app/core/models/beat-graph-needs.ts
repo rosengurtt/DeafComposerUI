@@ -20,3 +20,4 @@ export class BeatGraphNeeds {
         this.EventsStartTickFromBeginningOfBeat = eventsStartTickFromBeginningOfBeat
     }
 }
+

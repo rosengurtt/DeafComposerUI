@@ -5,6 +5,7 @@ export class Bar {
     barNumber: number
     ticksFromBeginningOfSong: number
     timeSignature: TimeSignature
+    keySignature: number
     tempoInMicrosecondsPerQuarterNote: number
     hasTriplets: boolean
 
