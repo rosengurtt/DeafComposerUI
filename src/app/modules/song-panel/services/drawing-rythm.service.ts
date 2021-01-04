@@ -92,6 +92,11 @@ export class DrawingRythmService {
         StaffElements.drawPentagram(this.svgBox, x)
     }
 
+    // It populates the alteration field of the note sound events held in the global variable eventsToDraw
+    // When a note has to be draw with a sharp, flat or 
+    private AddAlterationsToSoundEvents(){
+
+    }
 
     private clearSVGbox(svgBox: HTMLElement) {
         while (svgBox.firstChild) {
@@ -141,6 +146,16 @@ export class DrawingRythmService {
     // we don't need to know anything else about the other voices
     private getBeatGraphicNeeds(bar: Bar, beat: number): BeatGraphNeeds {
         const beatDurationInTicks = 96 * 4 / bar.timeSignature.denominator
+        // when the time signature is 12/4 we process the beats in groups of 3
+        if (bar.timeSignature.numerator % 3 == 0 && bar.timeSignature.denominator == 8) {
+            let startOfBeat = bar.ticksFromBeginningOfSong + (beat - 1) * beatDurationInTicks
+            let endOfBeat = startOfBeat +  3 * beatDurationInTicks
+            let noteStartsInBeat = this.allNoteStarts
+                .filter(e => e >= startOfBeat && e < endOfBeat).map(n => n - startOfBeat)
+
+            return new BeatGraphNeeds(bar.barNumber, 1, noteStartsInBeat)
+        }
+        // in normal cases we process the beats one at a time
         let startOfBeat = bar.ticksFromBeginningOfSong + (beat - 1) * beatDurationInTicks
         let endOfBeat = startOfBeat + beatDurationInTicks
         let noteStartsInBeat = this.allNoteStarts
@@ -149,16 +164,7 @@ export class DrawingRythmService {
         return new BeatGraphNeeds(bar.barNumber, beat, noteStartsInBeat)
 
     }
-    private getBarGraphicNeeds(bar: Bar): BeatGraphNeeds {
-        const beatDurationInTicks = 96 * 4 / bar.timeSignature.denominator
-        let startOfBar = bar.ticksFromBeginningOfSong
-        let endOfBar = startOfBar + bar.timeSignature.numerator * beatDurationInTicks
-        let noteStartsInBeat = this.allNoteStarts
-            .filter(e => e >= startOfBar && e < endOfBar).map(n => n - startOfBar)
 
-        return new BeatGraphNeeds(bar.barNumber, 1, noteStartsInBeat)
-
-    }
 
 
     // bar is the bar number, that is 1 for the first bar of the song
@@ -177,10 +183,7 @@ export class DrawingRythmService {
 
         for (let beat = 1; beat <= totalBeats; beat++) {
             let beatGraphNeeds: BeatGraphNeeds
-            if (timeSig.numerator == 3 && timeSig.denominator == 8)
-                beatGraphNeeds = this.getBarGraphicNeeds(bar)
-            else
-                beatGraphNeeds = this.getBeatGraphicNeeds(bar, beat)
+            beatGraphNeeds = this.getBeatGraphicNeeds(bar, beat)
             const beatDrawInfo = StaffElements.drawBeat(this.svgBox, x + deltaX, bar, beat, beatGraphNeeds, this.eventsToDraw, startTieX)
             deltaX += beatDrawInfo.deltaX
             startTieX = beatDrawInfo.startTieX

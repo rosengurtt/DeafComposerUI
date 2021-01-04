@@ -1,5 +1,6 @@
 import { NoteDuration } from './note-duration'
 import { SoundEventType } from './sound-event-type.enum'
+import { Alteration } from './alteration.enum'
 
 // When analyzing the rythm of a voice in a song, we are interested in the sequence of notes and silences
 // A sound event can be a note or a silence. We are interested in when it starts and when it ends and if
@@ -13,6 +14,7 @@ export class SoundEvent {
     duration: NoteDuration
     isTiedToPrevious: boolean
     isAccented: boolean
+    alteration: Alteration | null
     graphic: Element[]          // In musical notation this array has the staff objects that are displayed for this note
     // They are an array because a single note can be shown as several tied notes
     x: number                   // This represents the distance of the graphic element from the left border of the svg box

@@ -20,8 +20,10 @@ export abstract class StaffElements {
     // A tie may span several beats
     public static drawBeat(g: Element, x: number, bar: Bar, beat: number, beatGraphNeeds: BeatGraphNeeds, eventsToDraw: SoundEvent[], tieStartX: number | null): BeatDrawingInfo {
         const timeSig = bar.timeSignature
-        if (timeSig.numerator == 3 && timeSig.denominator == 8)
-            return this.drawBeatOf3_8bar(g, x, bar, beat, beatGraphNeeds, eventsToDraw, tieStartX)
+        // if (timeSig.numerator == 3 && timeSig.denominator == 8)
+        //     return this.drawBeatOf3_8bar(g, x, bar, beat, beatGraphNeeds, eventsToDraw, tieStartX)
+        if (timeSig.numerator % 3 == 0 && timeSig.denominator == 8)
+            return this.drawBeatOfbarWithTimeSig3x8(g, x, bar, beat, beatGraphNeeds, eventsToDraw, tieStartX)
         const beatDurationInTicks = 96 * 4 / timeSig.denominator
         const beatStartTick = bar.ticksFromBeginningOfSong + (beat - 1) * beatDurationInTicks
         const beatEndTick = beatStartTick + beatDurationInTicks
@@ -73,19 +75,18 @@ export abstract class StaffElements {
 
         return new BeatDrawingInfo(tieStartX, DrawingCalculations.calculateWidthInPixelsOfBeat(beatGraphNeeds))
     }
-    // Draws beats for a 3/8 bar. These are special
-    public static drawBeatOf3_8bar(g: Element, x: number, bar: Bar, beat: number, beatGraphNeeds: BeatGraphNeeds, eventsToDraw: SoundEvent[], tieStartX: number | null): BeatDrawingInfo {
-        // we draw the whole bar when we process the first beat, so if this is beat 2 or 3 do nothing
-        if (beat > 1) return new BeatDrawingInfo(tieStartX, 0)
 
-        if (bar.barNumber==12){
-            let paren=true
-        }
+
+    // Draws beats of bars with a time signature of 3x/8 like 3/8, 6/8 or 12/8
+    public static drawBeatOfbarWithTimeSig3x8(g: Element, x: number, bar: Bar, beat: number, beatGraphNeeds: BeatGraphNeeds, eventsToDraw: SoundEvent[], tieStartX: number | null): BeatDrawingInfo {
+        // we draw the beats in groups of 3, so we make drawings in beat 1, 4, 7 and 10
+        if ((beat - 1) % 3 != 0) return new BeatDrawingInfo(tieStartX, 0)
+
         const beatDurationInTicks = 48
-        const barStartTick = bar.ticksFromBeginningOfSong + (beat - 1) * beatDurationInTicks
-        const barEndTick = barStartTick + beatDurationInTicks * 3
+        const beatStartTick = bar.ticksFromBeginningOfSong + (beat - 1) * beatDurationInTicks
+        const beatEndTick = beatStartTick + beatDurationInTicks * 3
         const beatEvents = eventsToDraw
-            .filter(e => e.startTick >= barStartTick && e.startTick < barEndTick)
+            .filter(e => e.startTick >= beatStartTick && e.startTick < beatEndTick)
             .sort((e1, e2) => e1.startTick - e2.startTick)
 
         // Check if first note has a tie that comes from a previous beat        
@@ -98,14 +99,14 @@ export abstract class StaffElements {
 
         for (let i = 0; i < beatEvents.length; i++) {
             const e: SoundEvent = beatEvents[i]
-            let deltaX = DrawingCalculations.calculateXofEventInsideBeat(e, beatGraphNeeds, barStartTick)
+            let deltaX = DrawingCalculations.calculateXofEventInsideBeat(e, beatGraphNeeds, beatStartTick)
 
             if (e.type == SoundEventType.note) {
                 // if there is a single note, we don't have to care about beams, just draw it
                 if (beatEvents.filter(x => x.type == SoundEventType.note).length == 1 ||
-                // if there are 2 notes and one of them is a quarter
-               (beatEvents.filter(x => x.type == SoundEventType.note).length == 2 && 
-               beatEvents.filter(x => x.type == SoundEventType.note && x.duration==NoteDuration.quarter).length>0)
+                    // if there are 2 notes and one of them is a quarter
+                    (beatEvents.filter(x => x.type == SoundEventType.note).length == 2 &&
+                        beatEvents.filter(x => x.type == SoundEventType.note && x.duration == NoteDuration.quarter).length > 0)
                 ) {
                     const graph = this.drawSingleNote(g, e.duration, x + deltaX)
                     e.graphic.push(graph)
@@ -122,7 +123,6 @@ export abstract class StaffElements {
             else this.drawRest(g, e.duration, x + deltaX)
 
             // Take care of ties
-
             // If the note is tied to previous, draw the tie
             if (e.type == SoundEventType.note && e.isTiedToPrevious) {
                 tieEndX = x + deltaX
@@ -130,14 +130,10 @@ export abstract class StaffElements {
             }
             // Update the start point for the next tie
             tieStartX = x + deltaX
-
         }
-        this.drawBeatBeams(g, x, barStartTick, beatGraphNeeds, beatEvents)
-
+        this.drawBeatBeams(g, x, beatStartTick, beatGraphNeeds, beatEvents)
         return new BeatDrawingInfo(tieStartX, DrawingCalculations.calculateWidthInPixelsOfBeat(beatGraphNeeds))
-
     }
-
 
 
 
