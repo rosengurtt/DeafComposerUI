@@ -15,6 +15,7 @@ export class SoundEvent {
     isTiedToPrevious: boolean
     isAccented: boolean
     alteration: Alteration | null
+    pitch: number | null
     graphic: Element[]          // In musical notation this array has the staff objects that are displayed for this note
     // They are an array because a single note can be shown as several tied notes
     x: number                   // This represents the distance of the graphic element from the left border of the svg box
@@ -24,6 +25,7 @@ export class SoundEvent {
 
     constructor(
         type: SoundEventType,
+        pitch: number,
         bar: number,
         start: number,
         end: number,
@@ -31,6 +33,7 @@ export class SoundEvent {
         isTiedToPrevious: boolean | null = null,
         isAccented: boolean | null = null) {
         this.type = type
+        this.pitch = pitch
         this.startTick = start
         this.endTick = end
         this.bar = bar

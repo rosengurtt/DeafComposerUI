@@ -58,14 +58,14 @@ export class DrawingCalculations {
             // and we are not at the start of the beat, add a rest
             if (endOfLastComputedNote + tolerance < n.startSinceBeginningOfSongInTicks) {
                 const eventDuration = Normalization.getEventDuration(bars, endOfLastComputedNote, n.startSinceBeginningOfSongInTicks)
-                let event = new SoundEvent(SoundEventType.rest, currentBar, endOfLastComputedNote, n.startSinceBeginningOfSongInTicks, eventDuration)
+                let event = new SoundEvent(SoundEventType.rest, null, currentBar, endOfLastComputedNote, n.startSinceBeginningOfSongInTicks, eventDuration)
                 soundEvents.push(event)
                 endOfLastComputedNote = n.startSinceBeginningOfSongInTicks
             }
             // Get the bar in which the note is
             const noteBar = this.getBarOfTick(bars, n.startSinceBeginningOfSongInTicks)
             const eventDuration = Normalization.getEventDuration(bars, n.startSinceBeginningOfSongInTicks, n.endSinceBeginningOfSongInTicks)
-            soundEvents.push(new SoundEvent(SoundEventType.note, noteBar, n.startSinceBeginningOfSongInTicks, n.endSinceBeginningOfSongInTicks, eventDuration))
+            soundEvents.push(new SoundEvent(SoundEventType.note, n.pitch, noteBar, n.startSinceBeginningOfSongInTicks, n.endSinceBeginningOfSongInTicks, eventDuration))
             if (i < voiceNotes.length - 1)
                 endOfLastComputedNote = this.getBestEndingTickForNote(n, voiceNotes[i + 1])
             else

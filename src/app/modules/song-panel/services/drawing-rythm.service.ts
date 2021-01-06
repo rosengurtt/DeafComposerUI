@@ -14,6 +14,7 @@ import { State } from 'src/app/core/state/app.state'
 import { SoundEventType } from 'src/app/core/models/sound-event-type.enum'
 import { KeySignature } from 'src/app/core/models/key-signature.enum'
 import { Clef } from 'src/app/core/models/clef.enum'
+import { Alteration } from 'src/app/core/models/alteration.enum'
 
 @Injectable()
 export class DrawingRythmService {
@@ -46,7 +47,6 @@ export class DrawingRythmService {
         if (!this.svgBox) {
             return
         }
-
 
         this.clearSVGbox(this.svgBox)
         this.voice = voice
@@ -94,8 +94,73 @@ export class DrawingRythmService {
 
     // It populates the alteration field of the note sound events held in the global variable eventsToDraw
     // When a note has to be draw with a sharp, flat or 
-    private AddAlterationsToSoundEvents(){
+    private AddAlterationsToSoundEvents() {
+        for (let bar of this.bars) {
+            // alterations "have memory" If C3 for example has a sharp, then we don't put sharps again in C3 until
+            // it is played without alteration or the bar has ended. The first time it is played without alteration after a sharp we add
+            // a cancel sign and the next time it is altered we add a sharp again
+            // The memory works only on that pitch. If a different C is played (for example C4) after the initial sharp on C3 
+            // we have to add a sharp the first time to C4
+            let currentAlterations = new Set<number>()
+            const barDuration = bar.timeSignature.numerator * 4 / bar.timeSignature.denominator * 96
+            const barStart = bar.ticksFromBeginningOfSong
+            const barEnd = barStart + barDuration
+            const keySig = bar.keySignature
+            let eventsInThisBar = this.eventsToDraw
+                .filter(e => e.startTick >= barStart && e.startTick < barEnd)
+                .sort((a, b) => a.startTick - b.startTick)
+            const unalteredPitches = this.getPitchesOfKeySignature(bar.keySignature)
+            for (const e of eventsInThisBar) {
+                if (e.type == SoundEventType.rest) continue
+                // If key signature has sharps we add sharps
+                // If the key is C and we have F#. C# or G# we add sharps
+                if (keySig > 0 ||
+                    keySig == 0 && (unalteredPitches.has(6) || unalteredPitches.has(1) || unalteredPitches.has(8))) {
+                    // if this note is not in the scale and there are no previous alterations in this bar for this pitch, 
+                    // add an alteration to it and store the fact in the currentAlterations array
+                    if (!unalteredPitches.has(e.pitch % 12) && !currentAlterations.has(e.pitch)) {
+                        e.alteration = Alteration.sharp
+                        currentAlterations.add(e.pitch)
+                    }
+                    // if this pitch is in the scale and there was an alteration for the corresponding note in the scale, cancel the 
+                    // previous alterations
+                    if (unalteredPitches.has(e.pitch % 12) && currentAlterations.has(e.pitch + 1)) {
+                        e.alteration = Alteration.cancel
+                        currentAlterations.delete(e.pitch + 1)
+                    }
+                }
+                else {
+                    // if this note is not in the scale and there are no previous alterations in this bar for this pitch, 
+                    // add an alteration to it and store the fact in the currentAlterations array
+                    if (!unalteredPitches.has(e.pitch % 12) && !currentAlterations.has(e.pitch)) {
+                        e.alteration = Alteration.flat
+                        currentAlterations.add(e.pitch)
+                    }
+                    // if this pitch is in the scale and there was an alteration for the corresponding note in the scale, cancel the 
+                    // previous alterations
+                    if (unalteredPitches.has(e.pitch % 12) && currentAlterations.has(e.pitch - 1)) {
+                        e.alteration = Alteration.cancel
+                        currentAlterations.delete(e.pitch - 1)
+                    }
+                }
+            }
 
+        }
+    }
+
+
+    // When drawing notes in the pentagram, we need to know which notes will need an alteration added
+    // The notes that belong to the scale defined by the key signature are the ones that don't have alterations
+    // If the key is C (no alterations) then the notes with piches 0,2,4,5,7,9,11 are the ones that will have no
+    // This function returns the pitches that will have no alterations given a certain key signature
+    private getPitchesOfKeySignature(keySignature: number): Set<number> {
+        let retObj: number[] = [0, 2, 4, 5, 7, 9, 11]
+        // Adding 7 * keySignature is equivalent to "transpose the scale" to the 5th, so for ex for the G scale
+        // keySignature=1 (1 sharp) and adding 7 to each pitch in retObj we change from the C scale to the G scale
+        // We add 60, because KeySignature is negative for flats, so for example if we have 7 flats 7 * keysig = -49
+        // Adding 60 in that case leave us with 11 instead of -49, so adding 11 to retObj we end up with the 
+        // B major scale
+        return new Set(retObj.map(x => (x + (7 * keySignature) + 60) % 12))
     }
 
     private clearSVGbox(svgBox: HTMLElement) {
@@ -149,7 +214,7 @@ export class DrawingRythmService {
         // when the time signature is 12/4 we process the beats in groups of 3
         if (bar.timeSignature.numerator % 3 == 0 && bar.timeSignature.denominator == 8) {
             let startOfBeat = bar.ticksFromBeginningOfSong + (beat - 1) * beatDurationInTicks
-            let endOfBeat = startOfBeat +  3 * beatDurationInTicks
+            let endOfBeat = startOfBeat + 3 * beatDurationInTicks
             let noteStartsInBeat = this.allNoteStarts
                 .filter(e => e >= startOfBeat && e < endOfBeat).map(n => n - startOfBeat)
 

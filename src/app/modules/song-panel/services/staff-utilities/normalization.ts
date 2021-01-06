@@ -75,7 +75,7 @@ export class Normalization {
             let parenlasrotativas=true
         }
         // the following  line is needed because of typescript/javascript limitations
-        e = new SoundEvent(e.type, e.bar, e.startTick, e.endTick, e.duration, e.isTiedToPrevious, e.isAccented)
+        e = new SoundEvent(e.type, e.pitch, e.bar, e.startTick, e.endTick, e.duration, e.isTiedToPrevious, e.isAccented)
         const timeSig = bars[e.bar - 1].timeSignature
         const beatDuration = 96 * 4 / timeSig.denominator
         const barHasTriplets = bars[e.bar - 1].hasTriplets
@@ -162,13 +162,13 @@ export class Normalization {
         let pointBar = this.getBarOfTick(bars, lastStartPoint)
         for (const p of splitPoints) {
             const eventDuration = this.getEventDuration(bars, lastStartPoint, p)
-            retObj.push(new SoundEvent(e.type, pointBar, lastStartPoint, p, eventDuration, lastStartPoint == e.startTick ? e.isTiedToPrevious : true))
+            retObj.push(new SoundEvent(e.type, e.pitch, pointBar, lastStartPoint, p, eventDuration, lastStartPoint == e.startTick ? e.isTiedToPrevious : true))
             // Get the bar for the event that starts in point p         
             lastStartPoint = p
             pointBar = this.getBarOfTick(bars, lastStartPoint)
         }
         const eventDuration = this.getEventDuration(bars, lastStartPoint, e.endTick)
-        retObj.push(new SoundEvent(e.type, pointBar, lastStartPoint, e.endTick, eventDuration, true))
+        retObj.push(new SoundEvent(e.type, e.pitch, pointBar, lastStartPoint, e.endTick, eventDuration, true))
         return retObj
     }
     // Returns the bar number (first bar=1) in which a tick is located

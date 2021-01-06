@@ -7,6 +7,7 @@ import { TimeSignature } from 'src/app/core/models/time-signature'
 import { DrawingCalculations } from './drawing-calculations'
 import { BeatDrawingInfo } from 'src/app/core/models/beat-drawing-info'
 import { KeySignature } from 'src/app/core/models/key-signature.enum'
+import { Alteration } from 'src/app/core/models/alteration.enum'
 
 export abstract class StaffElements {
     private static svgns = 'http://www.w3.org/2000/svg'
@@ -46,13 +47,13 @@ export abstract class StaffElements {
             if (e.type == SoundEventType.note) {
                 // if there is a single note, we don't have to care about beams, just draw it
                 if (beatEvents.filter(x => x.type == SoundEventType.note).length == 1) {
-                    const graph = this.drawSingleNote(g, e.duration, x + deltaX)
+                    const graph = this.drawSingleNote(g, e, x + deltaX)
                     e.graphic.push(graph)
                     e.x = x + deltaX
                 }
                 // if there are several notes, draw a 'quarter' that later will be converted to whatever it is by adding beams
                 else {
-                    const graph = StaffElements.drawBasicNote(g, x + deltaX)
+                    const graph = StaffElements.drawBasicNote(g, x + deltaX, e)
                     e.graphic.push(graph)
                     e.x = x + deltaX
                 }
@@ -108,13 +109,13 @@ export abstract class StaffElements {
                     (beatEvents.filter(x => x.type == SoundEventType.note).length == 2 &&
                         beatEvents.filter(x => x.type == SoundEventType.note && x.duration == NoteDuration.quarter).length > 0)
                 ) {
-                    const graph = this.drawSingleNote(g, e.duration, x + deltaX)
+                    const graph = this.drawSingleNote(g, e, x + deltaX)
                     e.graphic.push(graph)
                     e.x = x + deltaX
                 }
                 // if there are several notes, draw a 'quarter' that later will be converted to whatever it is by adding beams
                 else {
-                    const graph = StaffElements.drawBasicNote(g, x + deltaX)
+                    const graph = StaffElements.drawBasicNote(g, x + deltaX, e)
                     e.graphic.push(graph)
                     e.x = x + deltaX
                 }
@@ -271,11 +272,24 @@ export abstract class StaffElements {
 
     // Draws a circle and a stem. The idea is that regardless of a note being a quarter, and eight or a
     // sixteenth, we draw it as a quarter, and then we add the needed beams to convert it to an eight or whatever
-    public static drawBasicNote(svgBox: Element, x: number, isCircleFull = true): Element {
+    public static drawBasicNote(svgBox: Element, x: number, e: SoundEvent, isCircleFull = true): Element {
         let group = document.createElementNS(this.svgns, 'g')
         svgBox.appendChild(group)
         this.drawEllipse(group, x + 13, 80, 7, 5, 'black', 2, `rotate(-25 ${x + 13} 80)`, isCircleFull)
         this.drawPath(group, 'black', 2, `M ${x + 19},40 V 78 z`)
+        if (e.alteration) {
+            switch (<Alteration>e.alteration) {
+                case Alteration.flat:
+                    this.drawFlat(group, x, 0)
+                    break
+                case Alteration.cancel:
+                    this.drawCancelAlteration(group, x, 0)
+                    break
+                case Alteration.sharp:
+                    this.drawSharp(group, x, 0)
+                    break
+            }
+        }
         return group
     }
 
@@ -292,10 +306,10 @@ export abstract class StaffElements {
 
     }
 
-    public static drawSingleNote(svgBox: Element, type: NoteDuration, x: number): Element {
+    public static drawSingleNote(svgBox: Element, e: SoundEvent, x: number): Element {
         let group = document.createElementNS(this.svgns, 'g')
         svgBox.appendChild(group)
-        switch (type) {
+        switch (e.duration) {
             case NoteDuration.whole:
                 this.drawNoteCircle(group, x, false)
                 break;
@@ -321,6 +335,19 @@ export abstract class StaffElements {
                 this.drawCircleAndStem(group, x)
                 this.drawSubStems(group, x, 4, 1)
                 break;
+        }
+        if (e.alteration) {
+            switch (<Alteration>e.alteration) {
+                case Alteration.flat:
+                    this.drawFlat(group, x, 0)
+                    break
+                case Alteration.cancel:
+                    this.drawCancelAlteration(group, x, 0)
+                    break
+                case Alteration.sharp:
+                    this.drawSharp(group, x, 0)
+                    break
+            }
         }
         return group
     }
@@ -448,72 +475,87 @@ export abstract class StaffElements {
         clef.setAttributeNS(null, 'transform', 'matrix(3,0,0,3,15,-150) translate(-15,90) scale(0.2 0.2)')
     }
 
-    private static drawSharp(g: Element, sharpNo: number, x: number): number {
+    private static drawSharpOfKeySignature(g: Element, sharpNo: number, x: number): number {
         let deltaX: number = 11
         let deltaY: number = 0
         switch (sharpNo) {
             case 1:
-                deltaY = 0
+                deltaY = -30
                 break
             case 2:
-                deltaY = 20
+                deltaY = -10
                 break
             case 3:
-                deltaY = -6
+                deltaY = -36
                 break
             case 4:
-                deltaY = 14
+                deltaY = -16
                 break
             case 5:
-                deltaY = 30
+                deltaY = 0
                 break
             case 6:
-                deltaY = 8
+                deltaY = -22
                 break
             case 7:
-                deltaY = 25
+                deltaY = -5
                 break
         }
+        this.drawSharp(g, x, deltaY - 112)
+        return this.drawSharp(g, x, deltaY)
+    }
+
+    private static drawSharp(g: Element, x: number, y: number): number {
+        let deltaX: number = 11
         const path = "M 86.102,447.457 L 86.102,442.753 L 88.102,442.201 L 88.102,446.881 L 86.102,447.457 z M 90.04,446.319 L 88.665,446.713 L 88.665,442.033 L 90.04,441.649 L 90.04,439.705 L 88.665,440.089 L 88.665,435.30723 L 88.102,435.30723 L 88.102,440.234 L 86.102,440.809 L 86.102,436.15923 L 85.571,436.15923 L 85.571,440.986 L 84.196,441.371 L 84.196,443.319 L 85.571,442.935 L 85.571,447.606 L 84.196,447.989 L 84.196,449.929 L 85.571,449.545 L 85.571,454.29977 L 86.102,454.29977 L 86.102,449.375 L 88.102,448.825 L 88.102,453.45077 L 88.665,453.45077 L 88.665,448.651 L 90.04,448.266 L 90.04,446.319 z"
         const style = "fill:#000000"
-        let sharpGclef = this.drawPath(g, 'black', 0, path, style)
-        sharpGclef.setAttributeNS(null, 'transform', `translate(${-180 + x + deltaX},${-794 + deltaY}) scale(1.9 1.9)`)
-        let sharpFclef = this.drawPath(g, 'black', 0, path, style)
-        sharpFclef.setAttributeNS(null, 'transform', `translate(${-180 + x + deltaX},${-682 + deltaY}) scale(1.9 1.9)`)
+        let sharp = this.drawPath(g, 'black', 0, path, style)
+        sharp.setAttributeNS(null, 'transform', `translate(${-180 + x + deltaX},${-652 + y}) scale(1.9 1.9)`)
         return deltaX
     }
-    private static drawFlat(g: Element, flatNo: number, x: number): number {
-        let deltaX: number = 11
+
+    private static drawFlatOfKeySignature(g: Element, flatNo: number, x: number): number {
         let deltaY: number = 0
         switch (flatNo) {
             case 1:
-                deltaY = 0
+                deltaY = -6
                 break
             case 2:
-                deltaY = -20
+                deltaY = -26
                 break
             case 3:
-                deltaY = 6
+                deltaY = 0
                 break
             case 4:
-                deltaY = -12
+                deltaY = -18
                 break
             case 5:
-                deltaY = 12
+                deltaY = 6
                 break
             case 6:
-                deltaY = -5
+                deltaY = -11
                 break
             case 7:
-                deltaY = 17
+                deltaY = 11
                 break
         }
+        this.drawFlat(g, x, deltaY)
+        return this.drawFlat(g, x, deltaY - 111)
+    }
+    private static drawFlat(g: Element, x: number, y: number): number {
+        let deltaX: number = 11
         const path = "M 97.359,444.68428 C 96.732435,445.46734 96.205,445.91553 95.51,446.44253 L 95.51,443.848 C 95.668,443.449 95.901,443.126 96.21,442.878 C 96.518,442.631 96.83,442.507 97.146,442.507 C 98.621857,442.72115 98.104999,443.97562 97.359,444.68428 z M 95.51,442.569 L 95.51,435.29733 L 94.947,435.29733 L 94.947,446.91453 C 94.947,447.26653 95.043,447.44253 95.235,447.44253 C 95.346,447.44253 95.483913,447.34953 95.69,447.22653 C 97.091908,446.36314 97.992494,445.6642 98.89183,444.43098 C 99.16986,444.04973 99.366461,443.18512 98.96397,442.5813 C 98.71297,442.20474 98.234661,441.80922 97.621641,441.6923 C 96.828092,441.54095 96.14376,441.93605 95.51,442.569 z"
         const style = "fill:#000000"
-        let flatFclef = this.drawPath(g, 'black', 0, path, style)
-        flatFclef.setAttributeNS(null, 'transform', `translate(${-236 + x + deltaX},${-835 + deltaY}) scale(2.3 2.3)`)
-        let flatGclef = this.drawPath(g, 'black', 0, path, style)
-        flatGclef.setAttributeNS(null, 'transform', `translate(${-236 + x + deltaX},${-946 + deltaY}) scale(2.3 2.3)`)
+        let flat = this.drawPath(g, 'black', 0, path, style)
+        flat.setAttributeNS(null, 'transform', `translate(${-236 + x + deltaX},${-829 + y}) scale(2.3 2.3)`)
+        return deltaX
+    }
+    private static drawCancelAlteration(g: Element, x: number, y: number): number {
+        let deltaX: number = 11
+        const path = "M 233.072,24.112 V 51.52 h -1.248 V 41.248 l -6.672,1.728 V 15.232 h 1.2 v 10.704 l 6.72,-1.824 z m -6.72,6.432 v 7.536 l 5.472,-1.44 v -7.536 l -5.472,1.44 z"
+        const style = "fill:#000000"
+        let natural = this.drawPath(g, 'black', 0, path, style)
+        natural.setAttributeNS(null, 'transform', `matrix(2.2084033,0,0,1.8468318,-422.56928,74.339659) translate(${25 + x + deltaX},${5 + y}) scale(0.5 0.5)`)
         return deltaX
     }
 
@@ -521,11 +563,11 @@ export abstract class StaffElements {
         let deltaX = 13
         // sharps
         for (let s = 1; s <= k; s++) {
-            deltaX += this.drawSharp(g, s, x + deltaX)
+            deltaX += this.drawSharpOfKeySignature(g, s, x + deltaX)
         }
         // flats
         for (let f = 1; f <= -k; f++) {
-            deltaX += this.drawFlat(g, f, x + deltaX)
+            deltaX += this.drawFlatOfKeySignature(g, f, x + deltaX)
         }
         return deltaX
     }
