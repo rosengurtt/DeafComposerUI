@@ -6,8 +6,9 @@ import { SoundEventType } from 'src/app/core/models/sound-event-type.enum'
 import { TimeSignature } from 'src/app/core/models/time-signature'
 import { DrawingCalculations } from './drawing-calculations'
 import { BeatDrawingInfo } from 'src/app/core/models/beat-drawing-info'
-import { KeySignature } from 'src/app/core/models/key-signature.enum'
+import { KeySignatureEnum } from 'src/app/core/models/key-signature.enum'
 import { Alteration } from 'src/app/core/models/alteration.enum'
+import { KeySignature } from 'src/app/core/models/key-signature'
 
 export abstract class StaffElements {
     private static svgns = 'http://www.w3.org/2000/svg'
@@ -220,7 +221,7 @@ export abstract class StaffElements {
         if (barNumber == 1) return true
         const previousKeySig = bars[barNumber - 2].keySignature
         const currentKeySig = bars[barNumber - 1].keySignature
-        if (previousKeySig == currentKeySig)
+        if (previousKeySig.key == currentKeySig.key)
             return false
         return true
     }
@@ -273,11 +274,13 @@ export abstract class StaffElements {
     // Draws a circle and a stem. The idea is that regardless of a note being a quarter, and eight or a
     // sixteenth, we draw it as a quarter, and then we add the needed beams to convert it to an eight or whatever
     public static drawBasicNote(svgBox: Element, x: number, e: SoundEvent, isCircleFull = true): Element {
+        this.writeEventInfo(svgBox,  e,x)
         let group = document.createElementNS(this.svgns, 'g')
         svgBox.appendChild(group)
-        this.drawEllipse(group, x + 13, 80, 7, 5, 'black', 2, `rotate(-25 ${x + 13} 80)`, isCircleFull)
-        this.drawPath(group, 'black', 2, `M ${x + 19},40 V 78 z`)
-        if (e.alteration) {
+        this.drawNoteCircle(group, x, isCircleFull)
+        //this.drawEllipse(group, x + 13, 81, 7, 5, 'black', 2, `rotate(-25 ${x + 13} 81)`, isCircleFull)
+        this.drawStem(group, x)
+        if (e.alteration != null) {
             switch (<Alteration>e.alteration) {
                 case Alteration.flat:
                     this.drawFlat(group, x, 0)
@@ -307,6 +310,7 @@ export abstract class StaffElements {
     }
 
     public static drawSingleNote(svgBox: Element, e: SoundEvent, x: number): Element {
+        this.writeEventInfo(svgBox,  e,x)
         let group = document.createElementNS(this.svgns, 'g')
         svgBox.appendChild(group)
         switch (e.duration) {
@@ -336,7 +340,7 @@ export abstract class StaffElements {
                 this.drawSubStems(group, x, 4, 1)
                 break;
         }
-        if (e.alteration) {
+        if (e.alteration != null) {
             switch (<Alteration>e.alteration) {
                 case Alteration.flat:
                     this.drawFlat(group, x, 0)
@@ -413,7 +417,7 @@ export abstract class StaffElements {
     }
 
     private static drawNoteCircle(g: Element, x: number, isCircleFull = true) {
-        this.drawEllipse(g, x + 13, 80, 7, 5, 'black', 2, `rotate(-25 ${x + 13} 80)`, isCircleFull)
+        this.drawEllipse(g, x + 13, 81, 7, 5, 'black', 2, `rotate(-25 ${x + 13} 81)`, isCircleFull)
     }
 
     private static drawCircleAndStem(parent: Element, x: number, isCircleFull = true) {
@@ -436,22 +440,6 @@ export abstract class StaffElements {
         }
     }
 
-
-    public static createText(g: Element, text: string, x: number, y: number, fontSize: number, color: string,
-        textLength: number | null = null, fontWeight: string = 'normal'): void {
-        const textElement: any = document.createElementNS(this.svgns, 'text')
-        const textNode = document.createTextNode(text)
-        textElement.appendChild(textNode)
-        textElement.setAttributeNS(null, 'x', x)
-        textElement.setAttributeNS(null, 'y', y)
-        textElement.setAttributeNS(null, 'font-size', fontSize.toString())
-        if (textLength)
-            textElement.setAttributeNS(null, 'textLength', textLength.toString())
-        textElement.setAttributeNS(null, 'font-weight', fontWeight)
-        textElement.setAttributeNS(null, 'lengthAdjust', 'spacingAndGlyphs')
-        textElement.setAttributeNS(null, 'fill', color)
-        g.appendChild(textElement)
-    }
 
     // x1 is the x of the starting note and x2 is the x of the ending note
     private static drawTie(svgBox: Element, x1: number, x2: number) {
@@ -480,74 +468,74 @@ export abstract class StaffElements {
         let deltaY: number = 0
         switch (sharpNo) {
             case 1:
-                deltaY = -30
+                deltaY = 81
                 break
             case 2:
-                deltaY = -10
+                deltaY = 101
                 break
             case 3:
-                deltaY = -36
+                deltaY = 75
                 break
             case 4:
-                deltaY = -16
+                deltaY = 95
                 break
             case 5:
-                deltaY = 0
+                deltaY = 111
                 break
             case 6:
-                deltaY = -22
+                deltaY = 89
                 break
             case 7:
-                deltaY = -5
+                deltaY = 106
                 break
         }
         this.drawSharp(g, x, deltaY - 112)
         return this.drawSharp(g, x, deltaY)
     }
 
-    private static drawSharp(g: Element, x: number, y: number): number {
-        let deltaX: number = 11
-        const path = "M 86.102,447.457 L 86.102,442.753 L 88.102,442.201 L 88.102,446.881 L 86.102,447.457 z M 90.04,446.319 L 88.665,446.713 L 88.665,442.033 L 90.04,441.649 L 90.04,439.705 L 88.665,440.089 L 88.665,435.30723 L 88.102,435.30723 L 88.102,440.234 L 86.102,440.809 L 86.102,436.15923 L 85.571,436.15923 L 85.571,440.986 L 84.196,441.371 L 84.196,443.319 L 85.571,442.935 L 85.571,447.606 L 84.196,447.989 L 84.196,449.929 L 85.571,449.545 L 85.571,454.29977 L 86.102,454.29977 L 86.102,449.375 L 88.102,448.825 L 88.102,453.45077 L 88.665,453.45077 L 88.665,448.651 L 90.04,448.266 L 90.04,446.319 z"
-        const style = "fill:#000000"
-        let sharp = this.drawPath(g, 'black', 0, path, style)
-        sharp.setAttributeNS(null, 'transform', `translate(${-180 + x + deltaX},${-652 + y}) scale(1.9 1.9)`)
-        return deltaX
-    }
 
     private static drawFlatOfKeySignature(g: Element, flatNo: number, x: number): number {
         let deltaY: number = 0
         switch (flatNo) {
             case 1:
-                deltaY = -6
+                deltaY = 104
                 break
             case 2:
-                deltaY = -26
+                deltaY = 84
                 break
             case 3:
-                deltaY = 0
+                deltaY = 110
                 break
             case 4:
-                deltaY = -18
+                deltaY = 92
                 break
             case 5:
-                deltaY = 6
+                deltaY = 116
                 break
             case 6:
-                deltaY = -11
+                deltaY = 99
                 break
             case 7:
-                deltaY = 11
+                deltaY = 121
                 break
         }
         this.drawFlat(g, x, deltaY)
         return this.drawFlat(g, x, deltaY - 111)
+    }
+    private static drawSharp(g: Element, x: number, y: number): number {
+        let deltaX: number = 11
+        const path = "M 86.102,447.457 L 86.102,442.753 L 88.102,442.201 L 88.102,446.881 L 86.102,447.457 z M 90.04,446.319 L 88.665,446.713 L 88.665,442.033 L 90.04,441.649 L 90.04,439.705 L 88.665,440.089 L 88.665,435.30723 L 88.102,435.30723 L 88.102,440.234 L 86.102,440.809 L 86.102,436.15923 L 85.571,436.15923 L 85.571,440.986 L 84.196,441.371 L 84.196,443.319 L 85.571,442.935 L 85.571,447.606 L 84.196,447.989 L 84.196,449.929 L 85.571,449.545 L 85.571,454.29977 L 86.102,454.29977 L 86.102,449.375 L 88.102,448.825 L 88.102,453.45077 L 88.665,453.45077 L 88.665,448.651 L 90.04,448.266 L 90.04,446.319 z"
+        const style = "fill:#000000"
+        let sharp = this.drawPath(g, 'black', 0, path, style)
+        sharp.setAttributeNS(null, 'transform', `translate(${-180 + x + deltaX},${-763 + y}) scale(1.9 1.9)`)
+        return deltaX
     }
     private static drawFlat(g: Element, x: number, y: number): number {
         let deltaX: number = 11
         const path = "M 97.359,444.68428 C 96.732435,445.46734 96.205,445.91553 95.51,446.44253 L 95.51,443.848 C 95.668,443.449 95.901,443.126 96.21,442.878 C 96.518,442.631 96.83,442.507 97.146,442.507 C 98.621857,442.72115 98.104999,443.97562 97.359,444.68428 z M 95.51,442.569 L 95.51,435.29733 L 94.947,435.29733 L 94.947,446.91453 C 94.947,447.26653 95.043,447.44253 95.235,447.44253 C 95.346,447.44253 95.483913,447.34953 95.69,447.22653 C 97.091908,446.36314 97.992494,445.6642 98.89183,444.43098 C 99.16986,444.04973 99.366461,443.18512 98.96397,442.5813 C 98.71297,442.20474 98.234661,441.80922 97.621641,441.6923 C 96.828092,441.54095 96.14376,441.93605 95.51,442.569 z"
         const style = "fill:#000000"
         let flat = this.drawPath(g, 'black', 0, path, style)
-        flat.setAttributeNS(null, 'transform', `translate(${-236 + x + deltaX},${-829 + y}) scale(2.3 2.3)`)
+        flat.setAttributeNS(null, 'transform', `translate(${-236 + x + deltaX},${-939 + y}) scale(2.3 2.3)`)
         return deltaX
     }
     private static drawCancelAlteration(g: Element, x: number, y: number): number {
@@ -555,21 +543,49 @@ export abstract class StaffElements {
         const path = "M 233.072,24.112 V 51.52 h -1.248 V 41.248 l -6.672,1.728 V 15.232 h 1.2 v 10.704 l 6.72,-1.824 z m -6.72,6.432 v 7.536 l 5.472,-1.44 v -7.536 l -5.472,1.44 z"
         const style = "fill:#000000"
         let natural = this.drawPath(g, 'black', 0, path, style)
-        natural.setAttributeNS(null, 'transform', `matrix(2.2084033,0,0,1.8468318,-422.56928,74.339659) translate(${25 + x + deltaX},${5 + y}) scale(0.5 0.5)`)
+        natural.setAttributeNS(null, 'transform', `translate(${-246 + x + deltaX},${49 + y}) scale(1 1)`)
+
+
         return deltaX
     }
 
     public static drawKeySignature(g: Element, x: number, k: KeySignature): number {
         let deltaX = 13
         // sharps
-        for (let s = 1; s <= k; s++) {
+        for (let s = 1; s <= k.key; s++) {
             deltaX += this.drawSharpOfKeySignature(g, s, x + deltaX)
         }
         // flats
-        for (let f = 1; f <= -k; f++) {
+        for (let f = 1; f <= -k.key; f++) {
             deltaX += this.drawFlatOfKeySignature(g, f, x + deltaX)
         }
         return deltaX
+    }
+
+    
+    public static createText(g: Element, text: string, x: number, y: number, fontSize: number, color: string,
+        textLength: number | null = null, fontWeight: string = 'normal'): void {
+        const textElement: any = document.createElementNS(this.svgns, 'text')
+        const textNode = document.createTextNode(text)
+        textElement.appendChild(textNode)
+        textElement.setAttributeNS(null, 'x', x)
+        textElement.setAttributeNS(null, 'y', y)
+        textElement.setAttributeNS(null, 'font-size', fontSize.toString())
+        if (textLength)
+            textElement.setAttributeNS(null, 'textLength', textLength.toString())
+        textElement.setAttributeNS(null, 'font-weight', fontWeight)
+        textElement.setAttributeNS(null, 'lengthAdjust', 'spacingAndGlyphs')
+        textElement.setAttributeNS(null, 'fill', color)
+        g.appendChild(textElement)
+    }
+
+    private static writeEventInfo(g: Element, e: SoundEvent, x: number) {
+        // this.createText(g, `st=${e.startTick}`, x, 100, 12, `red`)
+        // this.createText(g, `pit=${e.pitch}`, x, 112, 12, `red`)
+        // this.createText(g, `dur=${e.durationInTicks}`, x, 124, 12, `red`)
+        // this.createText(g, `alt=${e.alteration!=null?e.alteration:''}`, x, 136, 12, `red`)
+        // this.createText(g, `tie=${e.isTiedToPrevious}`, x, 148, 12, `red`)
+        // this.createText(g, `x=${x}`, x, 160, 12, `red`)
     }
 
 }

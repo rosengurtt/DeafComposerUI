@@ -1,11 +1,12 @@
 import { TimeSignature } from './time-signature'
+import {KeySignature} from './key-signature'
 
 export class Bar {
     id: number
     barNumber: number
     ticksFromBeginningOfSong: number
     timeSignature: TimeSignature
-    keySignature: number
+    keySignature: KeySignature
     tempoInMicrosecondsPerQuarterNote: number
     hasTriplets: boolean
 

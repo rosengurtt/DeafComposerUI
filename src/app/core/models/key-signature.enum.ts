@@ -1,4 +1,4 @@
-export enum KeySignature {
+export enum KeySignatureEnum {
     noAlterations = 0,
     oneSharp = 1,
     twoSharps = 2,

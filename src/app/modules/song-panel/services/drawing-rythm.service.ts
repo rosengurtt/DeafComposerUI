@@ -10,11 +10,11 @@ import { StaffElements } from './staff-utilities/staff-elements'
 import { DrawingCalculations } from './staff-utilities/drawing-calculations'
 import { Normalization } from './staff-utilities/normalization'
 import { BeatDrawingInfo } from 'src/app/core/models/beat-drawing-info'
-import { State } from 'src/app/core/state/app.state'
 import { SoundEventType } from 'src/app/core/models/sound-event-type.enum'
-import { KeySignature } from 'src/app/core/models/key-signature.enum'
-import { Clef } from 'src/app/core/models/clef.enum'
 import { Alteration } from 'src/app/core/models/alteration.enum'
+import { keyframes } from '@angular/animations'
+import { ScaleType } from 'src/app/core/models/scale-type.enum'
+import { KeySignature } from 'src/app/core/models/key-signature'
 
 @Injectable()
 export class DrawingRythmService {
@@ -53,7 +53,7 @@ export class DrawingRythmService {
         this.song = song
         this.simplification = new SongSimplification(song.songSimplifications[simplificationNo])
         this.bars = song.bars
-        console.log(song.bars)
+        console.log(this.bars)
         // Order notes by start time
         const aux = [... this.simplification.notes]
             .sort((i, j) => i.startSinceBeginningOfSongInTicks - j.startSinceBeginningOfSongInTicks)
@@ -70,6 +70,8 @@ export class DrawingRythmService {
             this.eventsToDrawForAllVoices.push(DrawingCalculations.getEventsToDraw(song, simplificationNo, v))
         }
         this.eventsToDraw = this.eventsToDrawForAllVoices[voice]
+        this.AddAlterationsToSoundEvents()
+        console.log(this.eventsToDraw)
 
         this.allNoteStarts = DrawingCalculations.getAllNoteStarts(song, simplificationNo, this.eventsToDrawForAllVoices)
 
@@ -79,6 +81,9 @@ export class DrawingRythmService {
 
         let startTieX: number | null = null
         for (const bar of this.bars) {
+            if (bar.barNumber==22){
+                let lolo=1
+            }
 
             // if it is the last bar and it has no notes, don't show it
             if (bar.barNumber == this.bars.length &&
@@ -95,57 +100,186 @@ export class DrawingRythmService {
     // It populates the alteration field of the note sound events held in the global variable eventsToDraw
     // When a note has to be draw with a sharp, flat or 
     private AddAlterationsToSoundEvents() {
+        // The alterations added in this bar, affect the next bar in this way:
+        // - if we have the same note altered in the next bar, we still have to add the sharp or flat
+        // - but if the natural note is played, we have to add a cancel, as if it had a previous sharp or flat in this bar
+        // So we have to keep track of the alterations added (not the ones in a key signature) in one bar, and cancel them
+        // in the next bar if needed, even when the next bar may have no alterations at all
+        let alterationsAddedInThisBar = new Set<number>()
+        let alterationsAddedInPreviousBar = new Set<number>()
         for (let bar of this.bars) {
             // alterations "have memory" If C3 for example has a sharp, then we don't put sharps again in C3 until
             // it is played without alteration or the bar has ended. The first time it is played without alteration after a sharp we add
             // a cancel sign and the next time it is altered we add a sharp again
             // The memory works only on that pitch. If a different C is played (for example C4) after the initial sharp on C3 
             // we have to add a sharp the first time to C4
-            let currentAlterations = new Set<number>()
-            const barDuration = bar.timeSignature.numerator * 4 / bar.timeSignature.denominator * 96
-            const barStart = bar.ticksFromBeginningOfSong
-            const barEnd = barStart + barDuration
-            const keySig = bar.keySignature
-            let eventsInThisBar = this.eventsToDraw
-                .filter(e => e.startTick >= barStart && e.startTick < barEnd)
-                .sort((a, b) => a.startTick - b.startTick)
-            const unalteredPitches = this.getPitchesOfKeySignature(bar.keySignature)
+            // currentAlterations is the variable where we save that memory. When the bar starts, the alterations of the key signature
+            // are applied by default, so they should be added
+            let currentAlterations = new Set([...this.GetKeySignatureAlterations(bar.keySignature.key), ...alterationsAddedInPreviousBar])
+            alterationsAddedInThisBar = new Set<number>()
+            let eventsInThisBar = this.getBarEvents(bar)
+            const unalteredPitches = this.getPitchesOfKeySignature(bar.keySignature.key)
+
             for (const e of eventsInThisBar) {
                 if (e.type == SoundEventType.rest) continue
-                // If key signature has sharps we add sharps
-                // If the key is C and we have F#. C# or G# we add sharps
-                if (keySig > 0 ||
-                    keySig == 0 && (unalteredPitches.has(6) || unalteredPitches.has(1) || unalteredPitches.has(8))) {
-                    // if this note is not in the scale and there are no previous alterations in this bar for this pitch, 
-                    // add an alteration to it and store the fact in the currentAlterations array
-                    if (!unalteredPitches.has(e.pitch % 12) && !currentAlterations.has(e.pitch)) {
-                        e.alteration = Alteration.sharp
-                        currentAlterations.add(e.pitch)
-                    }
-                    // if this pitch is in the scale and there was an alteration for the corresponding note in the scale, cancel the 
-                    // previous alterations
-                    if (unalteredPitches.has(e.pitch % 12) && currentAlterations.has(e.pitch + 1)) {
-                        e.alteration = Alteration.cancel
-                        currentAlterations.delete(e.pitch + 1)
-                    }
+
+                if (bar.keySignature.scale == ScaleType.major) {
+                    this.processAlterationsOfMajorScale(e, bar, currentAlterations, alterationsAddedInPreviousBar,
+                        alterationsAddedInThisBar, new Set(eventsInThisBar.map(y => y.pitch)), unalteredPitches)
                 }
                 else {
-                    // if this note is not in the scale and there are no previous alterations in this bar for this pitch, 
-                    // add an alteration to it and store the fact in the currentAlterations array
-                    if (!unalteredPitches.has(e.pitch % 12) && !currentAlterations.has(e.pitch)) {
-                        e.alteration = Alteration.flat
-                        currentAlterations.add(e.pitch)
-                    }
-                    // if this pitch is in the scale and there was an alteration for the corresponding note in the scale, cancel the 
-                    // previous alterations
-                    if (unalteredPitches.has(e.pitch % 12) && currentAlterations.has(e.pitch - 1)) {
-                        e.alteration = Alteration.cancel
-                        currentAlterations.delete(e.pitch - 1)
-                    }
+                    this.processAlterationsOfMinorScale(e, bar, currentAlterations, alterationsAddedInPreviousBar,
+                        alterationsAddedInThisBar, new Set(eventsInThisBar.map(y => y.pitch)), unalteredPitches)
                 }
             }
-
+            alterationsAddedInPreviousBar = alterationsAddedInThisBar
         }
+    }
+
+    private processAlterationsOfMajorScale(e: SoundEvent, bar: Bar, currentAlterations: Set<number>, alterationsAddedInPreviousBar: Set<number>,
+        alterationsAddedInThisBar: Set<number>, pitchesOfThisBar: Set<number>, unalteredPitches) {            
+        const keySiganatureAlterations = this.GetKeySignatureAlterations(bar.keySignature.key)
+        // If key signature has sharps we add sharps
+        // If the key is C and we have F#. C# or G# we add sharps
+        if (bar.keySignature.key > 0 ||
+            bar.keySignature.key == 0 && this.areAlteredPitchesSharp(new Set([...pitchesOfThisBar, ...alterationsAddedInPreviousBar]))) {
+            // if this note is not in the scale and there are no previous alterations in this bar for this pitch, 
+            // add an alteration to it and store the fact in the currentAlterations array
+            if (!unalteredPitches.has(e.pitch % 12) && !alterationsAddedInThisBar.has(e.pitch) && !keySiganatureAlterations.has(e.pitch)) {
+                e.alteration = Alteration.sharp
+                currentAlterations.add(e.pitch)
+                alterationsAddedInThisBar.add(e.pitch)
+            }
+            // if this pitch is in the scale and there was an alteration for the corresponding note in the scale, cancel the 
+            // previous alteration for this pitch
+            if (unalteredPitches.has(e.pitch % 12) &&
+                ((currentAlterations.has(e.pitch + 1)) || alterationsAddedInPreviousBar.has(e.pitch + 1))) {
+                e.alteration = Alteration.cancel
+                currentAlterations.delete(e.pitch + 1)
+                alterationsAddedInPreviousBar.delete(e.pitch + 1)
+                alterationsAddedInThisBar.delete(e.pitch + 1)
+            }
+        }
+        // if the key signature has flats or key is C and we have Bb or Eb add flats
+        else {
+
+            // if this note is not in the scale and there are no previous alterations in this bar for this pitch, 
+            // add an alteration to it and store the fact in the currentAlterations array
+            if (!unalteredPitches.has(e.pitch % 12) && !alterationsAddedInThisBar.has(e.pitch) && !keySiganatureAlterations.has(e.pitch)) {
+                e.alteration = Alteration.flat
+                currentAlterations.add(e.pitch)
+                alterationsAddedInThisBar.add(e.pitch)
+            }
+            // if this pitch is in the scale and there was an alteration for the corresponding note in the scale, cancel the 
+            // previous alteration for this pitch
+            if (unalteredPitches.has(e.pitch % 12) &&
+                (currentAlterations.has(e.pitch - 1) || alterationsAddedInPreviousBar.has(e.pitch - 1))) {
+                e.alteration = Alteration.cancel
+                currentAlterations.delete(e.pitch - 1)
+                alterationsAddedInPreviousBar.delete(e.pitch - 1)
+                alterationsAddedInThisBar.delete(e.pitch - 1)
+            }
+        }
+    }
+    private getTonicOfScaleFromKeySignature(keySig: KeySignature): number {
+        if (keySig.scale == ScaleType.minor) return (69 + keySig.key * 7) % 12
+        return (60 + keySig.key * 7) % 12
+    }
+    private processAlterationsOfMinorScale(e: SoundEvent, bar: Bar, currentAlterations: Set<number>, alterationsAddedInPreviousBar: Set<number>,
+        alterationsAddedInThisBar: Set<number>, pitchesOfThisBar: Set<number>, unalteredPitches) {
+        // In a minor scale, it is comon to raise the 6th and the 7th. In those cases we use sharps, regardless of the current key signature
+        const tonic = this.getTonicOfScaleFromKeySignature(bar.keySignature)
+        const majorSixth = (tonic + 9) % 12
+        const majorSeventh = (tonic + 11) % 12
+        const keySiganatureAlterations = this.GetKeySignatureAlterations(bar.keySignature.key)
+        // If key signature has sharps we add sharps
+        // If the key is C and we have F#. C# or G# we add sharps
+        if (bar.keySignature.key > 0 || e.pitch % 12 == majorSixth || e.pitch == majorSeventh ||
+            bar.keySignature.key == 0 && this.areAlteredPitchesSharp(new Set([...pitchesOfThisBar, ...alterationsAddedInPreviousBar]))) {
+
+            // if this note is not in the scale and there are no previous alterations in this bar for this pitch, 
+            // add an alteration to it and store the fact in the currentAlterations array
+        const keySiganatureAlterations = this.GetKeySignatureAlterations(bar.keySignature.key)
+            if (!unalteredPitches.has(e.pitch % 12) && !alterationsAddedInThisBar.has(e.pitch) && !keySiganatureAlterations.has(e.pitch)) {
+                e.alteration = Alteration.sharp
+                currentAlterations.add(e.pitch)
+                alterationsAddedInThisBar.add(e.pitch)
+            }
+            // if this pitch is in the scale and there was an alteration for the corresponding note in the scale, cancel the 
+            // previous alteration for this pitch
+            if (unalteredPitches.has(e.pitch % 12) &&
+                ((currentAlterations.has(e.pitch + 1)) || alterationsAddedInPreviousBar.has(e.pitch + 1))) {
+                e.alteration = Alteration.cancel
+                currentAlterations.delete(e.pitch + 1)
+                alterationsAddedInPreviousBar.delete(e.pitch + 1)
+                alterationsAddedInThisBar.delete(e.pitch + 1)
+            }
+        }
+        // if the key signature has flats or key is C and we have Bb or Eb add flats
+        else {
+
+            // if this note is not in the scale and there are no previous alterations in this bar for this pitch, 
+            // add an alteration to it and store the fact in the currentAlterations array
+            if (!unalteredPitches.has(e.pitch % 12) && !alterationsAddedInThisBar.has(e.pitch) && !keySiganatureAlterations.has(e.pitch)) {
+                e.alteration = Alteration.flat
+                currentAlterations.add(e.pitch)
+                alterationsAddedInThisBar.add(e.pitch)
+            }
+            // if this pitch is in the scale and there was an alteration for the corresponding note in the scale, cancel the 
+            // previous alteration for this pitch
+            if (unalteredPitches.has(e.pitch % 12) &&
+                (currentAlterations.has(e.pitch - 1) || alterationsAddedInPreviousBar.has(e.pitch - 1))) {
+                e.alteration = Alteration.cancel
+                currentAlterations.delete(e.pitch - 1)
+                alterationsAddedInPreviousBar.delete(e.pitch - 1)
+                alterationsAddedInThisBar.delete(e.pitch - 1)
+            }
+        }
+    }
+
+
+
+    // The most common added sharps in a C scale are F# C# and G# 
+    // So if the key signature is C and we have the pitch 6, it is probably a F# and not a Gb
+    // We use this information to decide if we are going to add sharps or flats for notes not in the scale
+    private areAlteredPitchesSharp(pitches: Set<number>): boolean {
+        const pitchesMod12 = new Set(Array.from(pitches.values(), x => x % 12))
+        if (pitchesMod12.has(6) || pitchesMod12.has(1) || pitchesMod12.has(8)) return true
+        return false
+    }
+    private getBarEvents(bar: Bar) {
+        const barDuration = bar.timeSignature.numerator * 4 / bar.timeSignature.denominator * 96
+        const barStart = bar.ticksFromBeginningOfSong
+        const barEnd = barStart + barDuration
+        return this.eventsToDraw
+            .filter(e => e.startTick >= barStart && e.startTick < barEnd)
+            .sort((a, b) => a.startTick - b.startTick)
+    }
+
+    private GetKeySignatureAlterations(keySignature: number): Set<number> {
+        let retObj = new Set<number>()
+        const fSharpPitches = Array.from(new Array(11), (val, index) => 6 + index * 12)
+        const cSharpPitches = Array.from(new Array(11), (val, index) => 1 + index * 12)
+        const gSharpPitches = Array.from(new Array(11), (val, index) => 8 + index * 12)
+        const dSharpPitches = Array.from(new Array(11), (val, index) => 3 + index * 12)
+        const aSharpPitches = Array.from(new Array(11), (val, index) => 10 + index * 12)
+        const eSharpPitches = Array.from(new Array(11), (val, index) => 4 + index * 12)
+        const bSharpPitches = Array.from(new Array(11), (val, index) => 0 + index * 12)
+        if (keySignature > 0)
+            retObj = new Set([...retObj, ...fSharpPitches])
+        if (keySignature > 1)
+            retObj = new Set([...retObj, ...cSharpPitches])
+        if (keySignature > 2)
+            retObj = new Set([...retObj, ...gSharpPitches])
+        if (keySignature > 3)
+            retObj = new Set([...retObj, ...dSharpPitches])
+        if (keySignature > 4)
+            retObj = new Set([...retObj, ...aSharpPitches])
+        if (keySignature > 5)
+            retObj = new Set([...retObj, ...eSharpPitches])
+        if (keySignature > 6)
+            retObj = new Set([...retObj, ...bSharpPitches])
+        return retObj
     }
 
 
