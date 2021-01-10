@@ -37,6 +37,7 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
   @Input() simplification: number
   @Input() resetEvent: Observable<boolean>
   @Input() moveProgressBarEvent: Observable<number>
+  @Input() songSliderPosition: number
   @Output() displaceChange = new EventEmitter<Coordenadas>()
   @Output() muteStatusChange = new EventEmitter<{ track: number, status: boolean }>()
 
@@ -53,6 +54,7 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
   muteIcon = "volume_up"
   songViewType: typeof SongViewType = SongViewType
   totalVoices: number
+  totalWidthOfRythmDrawing: number
 
   constructor(private drawingPianoRollService: DrawingPianoRollService,
     private drawingRythmService: DrawingRythmService) {
@@ -87,11 +89,12 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
           this.drawingPianoRollService.drawPianoRollGraphic(this.trackId, svgBoxId, this.song, this.simplification);
         }
         else {
-          this.drawingRythmService.drawMusicNotationGraphic(this.trackId, svgBoxId, this.song, this.simplification);
+          this.totalWidthOfRythmDrawing = this.drawingRythmService.drawMusicNotationGraphic(this.trackId, svgBoxId, this.song, this.simplification);
         }
         redrawSvgBox = true
       }
       switch (propName) {
+        case 'songSliderPosition':
         case 'displacement':
         case 'scale':
         case 'songId':
@@ -104,9 +107,10 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
   }
 
 
-  updateSvgBox(minX: number | null = null, minY: number | null = null, width: number | null = null, height: number | null = null): void {
+  updateSvgBox(): void {
     const svgBoxId = `${this.svgBoxIdPrefix}_${this.songId}_${this.trackId}`
     const svgBox = document.getElementById(svgBoxId)
+    let minX: number; let minY: number; let width: number; let height: number
     if (!svgBox) return
     switch (this.viewType) {
       case SongViewType.pianoRoll:
@@ -116,8 +120,8 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
         height = this.scale * 128
         break;
       case SongViewType.rythmMusicNotation:
-        minX = minX == null ? this.displacement.x : minX
-        minY = minY == null ? this.displacement.y : minY
+        minX = this.songSliderPosition / this.song.songStats.durationInSeconds * this.totalWidthOfRythmDrawing 
+        minY = 0
         width = width == null ? 1200 * this.scale * 2 : width
         height = height == null ? 128 * this.scale * 2 : height
         break;
@@ -179,12 +183,15 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
       // that is why we use tolerance. The value of 2000 was obtained experimenting
       let tolerance = 2000
       if (displacement && displacement > this.displacement.x + tolerance) {
-        let coor = new Coordenadas(-(displacement - this.displacement.x - tolerance/2) / 50, 0)
+        let coor = new Coordenadas(-(displacement - this.displacement.x - tolerance / 2) / 50, 0)
         this.displaceChange.emit(coor)
       }
     }
   }
 
+  changeDisplacement(x: number) {
+    console.log("estoy en changeDisplacement")
+  }
 
 }
 

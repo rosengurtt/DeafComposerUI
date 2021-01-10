@@ -43,6 +43,7 @@ export class DrawingRythmService {
         svgBoxId: string,
         song: Song,
         simplificationNo: number): number {
+
         this.svgBox = document.getElementById(svgBoxId)
         if (!this.svgBox) {
             return
@@ -53,7 +54,6 @@ export class DrawingRythmService {
         this.song = song
         this.simplification = new SongSimplification(song.songSimplifications[simplificationNo])
         this.bars = song.bars
-        console.log(this.bars)
         // Order notes by start time
         const aux = [... this.simplification.notes]
             .sort((i, j) => i.startSinceBeginningOfSongInTicks - j.startSinceBeginningOfSongInTicks)
@@ -71,7 +71,6 @@ export class DrawingRythmService {
         }
         this.eventsToDraw = this.eventsToDrawForAllVoices[voice]
         this.AddAlterationsToSoundEvents()
-        console.log(this.eventsToDraw)
 
         this.allNoteStarts = DrawingCalculations.getAllNoteStarts(song, simplificationNo, this.eventsToDrawForAllVoices)
 
@@ -81,10 +80,6 @@ export class DrawingRythmService {
 
         let startTieX: number | null = null
         for (const bar of this.bars) {
-            if (bar.barNumber==22){
-                let lolo=1
-            }
-
             // if it is the last bar and it has no notes, don't show it
             if (bar.barNumber == this.bars.length &&
                 this.simplification.notes.filter(n => n.endSinceBeginningOfSongInTicks > bar.ticksFromBeginningOfSong).length == 0)
@@ -95,6 +90,7 @@ export class DrawingRythmService {
             startTieX = beatDrawingInfo.startTieX
         }
         StaffElements.drawPentagram(this.svgBox, x)
+        return x
     }
 
     // It populates the alteration field of the note sound events held in the global variable eventsToDraw

@@ -3,7 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router'
 import { Song } from '../../core/models/song'
 import { Store } from '@ngrx/store'
 import { State } from '../../core/state/app.state'
-import { getDisplacementBySongId, getMutedTracks, getPlayingSong, getScaleBySongId, getSongSimplificationSelected, getSongUnderAnalysisById, getSongViewType } from './state'
+import { getDisplacementBySongId, getMutedTracks, getPlayingSong, getScaleBySongId, getSongSimplificationSelected, getSongSliderPosition, getSongUnderAnalysisById, getSongViewType } from './state'
 import { Observable, Subscription, timer } from 'rxjs'
 import { SongPanelPageActions } from './state/actions'
 import { Coordenadas } from 'src/app/core/models/coordenadas'
@@ -23,7 +23,8 @@ export class SongPanelShellComponent implements OnInit {
     timerSubscription: Subscription
     mutedTracks$: Observable<number[]>
     viewType$: Observable<SongViewType>
-    songSimplificationVersion$ : Observable<number>
+    songSimplificationVersion$: Observable<number>
+    songSliderPosition$: Observable<number>
 
     constructor(
         private mainStore: Store<State>,
@@ -40,6 +41,7 @@ export class SongPanelShellComponent implements OnInit {
             this.mutedTracks$ = this.mainStore.select(getMutedTracks)
             this.viewType$ = this.mainStore.select(getSongViewType)
             this.songSimplificationVersion$ = this.mainStore.select(getSongSimplificationSelected)
+            this.songSliderPosition$ = this.mainStore.select(getSongSliderPosition)
         })
     }
     displacementChanged(value: Coordenadas): void {
@@ -77,9 +79,12 @@ export class SongPanelShellComponent implements OnInit {
         this.mainStore.dispatch(SongPanelPageActions.removeSong({ song: song }))
     }
     songViewTypeChanged(viewType: SongViewType) {
-        this.mainStore.dispatch(SongPanelPageActions.ChangeViewType({ viewType: viewType }))
+        this.mainStore.dispatch(SongPanelPageActions.changeViewType({ viewType: viewType }))
     }
-    songSimplificationChanged(songSimplificationVersion: number){
-        this.mainStore.dispatch(SongPanelPageActions.SelectSongSimplification({songSimplificationVersion:  songSimplificationVersion }))  
+    songSimplificationChanged(songSimplificationVersion: number) {
+        this.mainStore.dispatch(SongPanelPageActions.selectSongSimplification({ songSimplificationVersion: songSimplificationVersion }))
+    }
+    songSliderPositionChanged(songSliderPosition: number) {
+        this.mainStore.dispatch(SongPanelPageActions.songSliderPositionChange({ songSliderPosition: songSliderPosition }))
     }
 }

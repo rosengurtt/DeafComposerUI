@@ -15,6 +15,7 @@ const initialState: SongPanelState = {
     playingSong: null,
     tracksMuted: [],
     viewType: SongViewType.pianoRoll,
+    songSliderPosition: 0,
     error: ''
 }
 export class reduxSacamela {
@@ -102,14 +103,19 @@ export const songPanelReducer = createReducer<SongPanelState>(
         newState.tracksMuted = []
         return newState
     }),
-    on(SongPanelPageActions.ChangeViewType, (state, action): SongPanelState => {
+    on(SongPanelPageActions.changeViewType, (state, action): SongPanelState => {
         let newState = cloneDeep(state)
         newState.viewType = action.viewType
         return newState
     }),
-    on(SongPanelPageActions.SelectSongSimplification, (state, action): SongPanelState => {
+    on(SongPanelPageActions.selectSongSimplification, (state, action): SongPanelState => {
         let newState = cloneDeep(state)
         newState.simplificationVersionSelected = action.songSimplificationVersion
+        return newState
+    }),
+    on(SongPanelPageActions.songSliderPositionChange, (state, action): SongPanelState => {
+        let newState = cloneDeep(state)
+        newState.songSliderPosition = action.songSliderPosition
         return newState
     }),
 );

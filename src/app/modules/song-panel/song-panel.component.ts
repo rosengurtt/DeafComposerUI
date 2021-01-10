@@ -10,6 +10,7 @@ import { Router } from '@angular/router'
 import { SongViewType } from 'src/app/core/models/SongViewTypes.enum'
 import { MatIconRegistry } from '@angular/material/icon'
 import { DomSanitizer } from '@angular/platform-browser'
+import { getSupportedInputTypes } from '@angular/cdk/platform'
 
 declare var MIDIjs: any
 
@@ -29,6 +30,7 @@ export class SongPanelComponent implements OnInit, OnChanges, OnDestroy, AfterVi
   @Input() mutedTracks: number[]
   @Input() viewType: SongViewType
   @Input() songSimplificationVersion: number
+  @Input() songSliderPosition: number
 
   @Output() closePage = new EventEmitter<Song>()
   @Output() displacementChanged = new EventEmitter<Coordenadas>()
@@ -41,9 +43,12 @@ export class SongPanelComponent implements OnInit, OnChanges, OnDestroy, AfterVi
   @Output() unmuteAllTracks = new EventEmitter()
   @Output() songViewTypeChanged = new EventEmitter<SongViewType>()
   @Output() songSimplificationChanged = new EventEmitter<number>()
+  @Output() songSliderPositionChanged = new EventEmitter<number>()
 
   resetEventSubject: Subject<boolean> = new Subject<boolean>()
   moveProgressBarSubject: Subject<number> = new Subject<number>()
+  songSliderPositionChangeSubject: Subject<number> = new Subject<number>()
+  
   tracks: number[]
   sliderMax: number
   sliderStep = 1
@@ -65,7 +70,7 @@ export class SongPanelComponent implements OnInit, OnChanges, OnDestroy, AfterVi
   }
 
   ngOnInit() {
-    MIDIjs.stop()
+    this.reset()
     this.setTracks()
   }
   ngAfterViewInit(): void {
@@ -86,6 +91,7 @@ export class SongPanelComponent implements OnInit, OnChanges, OnDestroy, AfterVi
       if (propName == "playingSong" && this.slider) {
         this.slider.value = this.playingSong?.elapsedMilliSeconds / 1000
         this.moveProgressBarSubject.next(this.playingSong?.elapsedMilliSeconds / 1000)
+        this.songSliderPositionChangeSubject.next(this.songSliderPosition)
       }
     }
   }
@@ -98,6 +104,8 @@ export class SongPanelComponent implements OnInit, OnChanges, OnDestroy, AfterVi
     MIDIjs.stop()
     this.scaleChanged.emit(1)
     this.displacementChanged.emit(new Coordenadas(0, 0))
+    this.sliderHasBeenMoved = true
+    this.songSliderPositionChanged.emit(0)
     if (unmuteAlltracks) this.unmuteAllTracks.emit()
     this.songStoppedPlaying.emit()
     this.resetEventSubject.next(unmuteAlltracks)
@@ -139,6 +147,7 @@ export class SongPanelComponent implements OnInit, OnChanges, OnDestroy, AfterVi
   };
   sliderMoved(event: MatSliderChange): void {
     this.sliderHasBeenMoved = true
+    this.songSliderPositionChanged.emit(event.value)
   }
   muteStatusChange(muteChange) {
     this.reset(false)

@@ -22,6 +22,7 @@ export abstract class StaffElements {
     // A tie may span several beats
     public static drawBeat(g: Element, x: number, bar: Bar, beat: number, beatGraphNeeds: BeatGraphNeeds, eventsToDraw: SoundEvent[], tieStartX: number | null): BeatDrawingInfo {
         const timeSig = bar.timeSignature
+
         // if (timeSig.numerator == 3 && timeSig.denominator == 8)
         //     return this.drawBeatOf3_8bar(g, x, bar, beat, beatGraphNeeds, eventsToDraw, tieStartX)
         if (timeSig.numerator % 3 == 0 && timeSig.denominator == 8)
@@ -40,14 +41,19 @@ export abstract class StaffElements {
         }
         let tieEndX: number | null = null
 
+        if (bar.barNumber==22){
+            let lolo=1
+        }
 
         for (let i = 0; i < beatEvents.length; i++) {
             const e: SoundEvent = beatEvents[i]
             let deltaX = DrawingCalculations.calculateXofEventInsideBeat(e, beatGraphNeeds, beatStartTick)
 
             if (e.type == SoundEventType.note) {
-                // if there is a single note, we don't have to care about beams, just draw it
-                if (beatEvents.filter(x => x.type == SoundEventType.note).length == 1) {
+                const notesSimultaneousToThisOne = beatEvents.filter(x => x.startTick == e.startTick && x.endTick == e.endTick && x.pitch != e.pitch)
+                // if there is a single note, or there are some but they are simultaneous to this one,
+                // we don't have to care about beams, just draw it
+                if (beatEvents.filter(x => x.type == SoundEventType.note && !notesSimultaneousToThisOne.includes(x)).length == 1) {
                     const graph = this.drawSingleNote(g, e, x + deltaX)
                     e.graphic.push(graph)
                     e.x = x + deltaX
@@ -274,7 +280,7 @@ export abstract class StaffElements {
     // Draws a circle and a stem. The idea is that regardless of a note being a quarter, and eight or a
     // sixteenth, we draw it as a quarter, and then we add the needed beams to convert it to an eight or whatever
     public static drawBasicNote(svgBox: Element, x: number, e: SoundEvent, isCircleFull = true): Element {
-        this.writeEventInfo(svgBox,  e,x)
+        this.writeEventInfo(svgBox, e, x)
         let group = document.createElementNS(this.svgns, 'g')
         svgBox.appendChild(group)
         this.drawNoteCircle(group, x, isCircleFull)
@@ -310,7 +316,7 @@ export abstract class StaffElements {
     }
 
     public static drawSingleNote(svgBox: Element, e: SoundEvent, x: number): Element {
-        this.writeEventInfo(svgBox,  e,x)
+        this.writeEventInfo(svgBox, e, x)
         let group = document.createElementNS(this.svgns, 'g')
         svgBox.appendChild(group)
         switch (e.duration) {
@@ -562,7 +568,7 @@ export abstract class StaffElements {
         return deltaX
     }
 
-    
+
     public static createText(g: Element, text: string, x: number, y: number, fontSize: number, color: string,
         textLength: number | null = null, fontWeight: string = 'normal'): void {
         const textElement: any = document.createElementNS(this.svgns, 'text')
@@ -583,7 +589,7 @@ export abstract class StaffElements {
         // this.createText(g, `st=${e.startTick}`, x, 100, 12, `red`)
         // this.createText(g, `pit=${e.pitch}`, x, 112, 12, `red`)
         // this.createText(g, `dur=${e.durationInTicks}`, x, 124, 12, `red`)
-        // this.createText(g, `alt=${e.alteration!=null?e.alteration:''}`, x, 136, 12, `red`)
+        // this.createText(g, `alt=${e.alteration != null ? e.alteration : ''}`, x, 136, 12, `red`)
         // this.createText(g, `tie=${e.isTiedToPrevious}`, x, 148, 12, `red`)
         // this.createText(g, `x=${x}`, x, 160, 12, `red`)
     }

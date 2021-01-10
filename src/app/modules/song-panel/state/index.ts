@@ -1,6 +1,7 @@
 
 import { createFeatureSelector, createSelector } from '@ngrx/store'
 import { Song } from 'src/app/core/models/song'
+import { SongUnderAnalysis } from 'src/app/core/models/song-under-analysis'
 import { StringifiedMap } from 'src/app/core/utilities/stringified-map'
 import { PlayingSong } from 'src/app/core/models/playing-song'
 import { SongViewType } from 'src/app/core/models/SongViewTypes.enum'
@@ -14,6 +15,7 @@ export interface SongPanelState {
     playingSong: PlayingSong
     tracksMuted: number[]
     viewType: SongViewType
+    songSliderPosition: number
     error: string
 }
 
@@ -65,4 +67,9 @@ export const getSongViewType = createSelector(
 export const getSongSimplificationSelected = createSelector(
     getSongPanelFeatureState,
     state => state.simplificationVersionSelected
+)
+
+export const getSongSliderPosition = createSelector(
+    getSongPanelFeatureState,
+    state => state.songSliderPosition
 )

@@ -7,6 +7,7 @@
     [mutedTracks]="mutedTracks$ | async"
     [viewType]="viewType$ | async"
     [songSimplificationVersion]="songSimplificationVersion$ | async"
+    [songSliderPosition]="songSliderPosition$ | async"
 
     
     (displacementChanged) = "displacementChanged($any($event))"
@@ -20,5 +21,6 @@
     (closePage) = "closePage($any($event))"
     (songViewTypeChanged) = "songViewTypeChanged($any($event))"
     (songSimplificationChanged) = "songSimplificationChanged($any($event))"
+    (songSliderPositionChanged) = "songSliderPositionChanged($any($event))"
     >
 </dc-song-panel>
