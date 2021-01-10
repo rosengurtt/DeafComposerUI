@@ -19,6 +19,7 @@ export class SoundEvent {
     graphic: Element[]          // In musical notation this array has the staff objects that are displayed for this note
     // They are an array because a single note can be shown as several tied notes
     x: number                   // This represents the distance of the graphic element from the left border of the svg box
+    y: number
     get durationInTicks() {
         return this.endTick - this.startTick
     }
@@ -40,6 +41,7 @@ export class SoundEvent {
         this.duration = duration
         this.graphic = []
         this.x = 0
+        this.y = 0
         if (isTiedToPrevious) this.isTiedToPrevious = isTiedToPrevious
         else this.isTiedToPrevious = false
         if (isAccented) this.isAccented = isAccented

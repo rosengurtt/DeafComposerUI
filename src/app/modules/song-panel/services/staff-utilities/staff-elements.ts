@@ -41,8 +41,8 @@ export abstract class StaffElements {
         }
         let tieEndX: number | null = null
 
-        if (bar.barNumber==22){
-            let lolo=1
+        if (bar.barNumber == 22) {
+            let lolo = 1
         }
 
         for (let i = 0; i < beatEvents.length; i++) {
@@ -82,6 +82,46 @@ export abstract class StaffElements {
         this.drawBeatBeams(g, x, beatStartTick, beatGraphNeeds, beatEvents)
 
         return new BeatDrawingInfo(tieStartX, DrawingCalculations.calculateWidthInPixelsOfBeat(beatGraphNeeds))
+    }
+
+    // When we draw a note in the pentagram, y=0 is the A inside the G clef pentagram. We have to calculate
+    // the number of pixels to move the note up or down so it shows in the correct place for the pitch#
+    // The same pitch may be shown for ex as an A# or a Bb, depending on the alterations being used at that
+    // point of the song. So we need that information too. 
+    // alterations is an array that defines the alteration of each pitch, so  if alterations[37] is 
+    // Alteration.Flat, it will be displayed as a Db, if it is Alteration.Sharp it will be displayed as C#
+    private static getYofPitch(pitch: number, alterations: Map<number, Alteration>): number {
+        let yOfPitches = new Map<number, number>()
+        let majorScalePitches = [0, 2, 4, 5, 7, 9, 11]
+        let pitchesNotInMajorScale = [1, 3, 6, 8, 10]
+
+        // G cleff and up
+        for (let i = 5; i < 8; i++) {
+            for (const j of majorScalePitches) {
+                let p = 12 * i + j
+                let y = 30 - 6 * j - (i - 5) * 42  // 30 is the y of C4, 42 is the distance to the next C (C5)
+                yOfPitches.set(p, y)
+            }
+            for (const j of pitchesNotInMajorScale) {
+                let p= 12 * i + j
+                let y = alterations.get(p) == Alteration.sharp ? 30 - 6 * j - (i - 5) * 42 : 24 - 6 * j - (i - 5) * 42
+                yOfPitches.set(p, y)
+            }
+        }
+        // F cleff and down
+        for (let i = 2; i < 5; i++) {
+            for (const j of majorScalePitches) {
+                let p= 12 * i + j
+                let y = 100 - 6 * j - (i - 4) * 42  // 100 is the y of C3
+                yOfPitches.set(p, y)
+            }
+            for (const j of pitchesNotInMajorScale) {
+                let p = 12 * i + j
+                let y = alterations.get(p) == Alteration.sharp ? 100 - 6 * j - (i - 4) * 42: 94 - 6 * j - (i - 4) * 42
+                yOfPitches.set(p, y)
+            }
+        }
+        return yOfPitches.get(pitch)
     }
 
 
