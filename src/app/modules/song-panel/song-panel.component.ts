@@ -39,7 +39,7 @@ export class SongPanelComponent implements OnInit, OnChanges, OnDestroy, AfterVi
   @Output() songStoppedPlaying = new EventEmitter()
   @Output() songPaused = new EventEmitter()
   @Output() songResumed = new EventEmitter()
-  @Output() muteStatusChanged = new EventEmitter<{ track: number, status: boolean }>()
+  @Output() muteStatusChanged = new EventEmitter<{ songId: number, track: number, status: boolean }>()
   @Output() unmuteAllTracks = new EventEmitter()
   @Output() songViewTypeChanged = new EventEmitter<SongViewType>()
   @Output() songSimplificationChanged = new EventEmitter<number>()
@@ -48,7 +48,7 @@ export class SongPanelComponent implements OnInit, OnChanges, OnDestroy, AfterVi
   resetEventSubject: Subject<boolean> = new Subject<boolean>()
   moveProgressBarSubject: Subject<number> = new Subject<number>()
   songSliderPositionChangeSubject: Subject<number> = new Subject<number>()
-  
+
   tracks: number[]
   sliderMax: number
   sliderStep = 1
@@ -70,7 +70,7 @@ export class SongPanelComponent implements OnInit, OnChanges, OnDestroy, AfterVi
   }
 
   ngOnInit() {
-    this.reset()
+    this.reset(false)
     this.setTracks()
   }
   ngAfterViewInit(): void {
@@ -109,8 +109,9 @@ export class SongPanelComponent implements OnInit, OnChanges, OnDestroy, AfterVi
     if (unmuteAlltracks) this.unmuteAllTracks.emit()
     this.songStoppedPlaying.emit()
     this.resetEventSubject.next(unmuteAlltracks)
-    this.slider.value = 0
+    if (this.slider) this.slider.value = 0 // during onInit we do a reset, but the slider doesn't exist yet
   }
+
 
   play(): void {
     if (this.playingSong && this.playingSong.isPaused && !this.sliderHasBeenMoved) {
@@ -165,6 +166,10 @@ export class SongPanelComponent implements OnInit, OnChanges, OnDestroy, AfterVi
   changeSimplification(value) {
     this.songSimplificationChanged.emit(value)
     this.cdr.detectChanges();
+  }
+  getMuteStatus(trackId: number) {
+    if (this.mutedTracks.filter(x => x == trackId).length > 0) return true
+    return false
   }
 }
 

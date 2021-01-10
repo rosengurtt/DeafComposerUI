@@ -1,5 +1,5 @@
 import { ThrowStmt } from '@angular/compiler'
-import { Component, OnInit, Input, OnChanges, SimpleChanges, AfterViewInit, ViewChild, Output, EventEmitter } from '@angular/core'
+import { Component, OnInit, Input, OnChanges, SimpleChanges, AfterViewInit, ViewChild, Output, EventEmitter, ComponentFactoryResolver } from '@angular/core'
 import { Observable, Subscription } from 'rxjs'
 import { Coordenadas } from 'src/app/core/models/coordenadas'
 import { Instrument } from 'src/app/core/models/midi/midi-codes/instrument.enum'
@@ -38,8 +38,9 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
   @Input() resetEvent: Observable<boolean>
   @Input() moveProgressBarEvent: Observable<number>
   @Input() songSliderPosition: number
+  @Input() muteStatus: number
   @Output() displaceChange = new EventEmitter<Coordenadas>()
-  @Output() muteStatusChange = new EventEmitter<{ track: number, status: boolean }>()
+  @Output() muteStatusChange = new EventEmitter<{ songId: number, track: number, status: boolean }>()
 
   svgBoxId: string
   progressBarId: string
@@ -61,7 +62,31 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
 
   }
   ngAfterViewInit(): void {
-    this.svgBoxId = `${this.svgBoxIdPrefix}_${this.songId}_${this.trackId}`
+    this.initializePage()
+    // this.svgBoxId = `${this.svgBoxIdPrefix}_${this.songId}_${this.trackId}`
+    // this.progressBarId = `${this.progressBarIdPrefix}${this.songId}_${this.trackId}`
+    // this.drawingPianoRollService.drawPianoRollGraphic(this.trackId, this.svgBoxId, this.song, this.simplification);
+    // this.updateSvgBox()
+    // this.resetEventSubscritpion = this.resetEvent.subscribe(x => this.reset(x))
+    // this.moveProgressBarEventSubscritpion = this.moveProgressBarEvent.subscribe(x => this.moveProgressBar(x))
+  }
+
+  ngOnInit() {
+    // let typescriptSacamela = new SongSimplification(this.song.songSimplifications[this.simplification])
+    // let instrumentCode = typescriptSacamela.getInstrumentOfVoice(this.trackId)
+    // this.instrument = Instrument[instrumentCode]
+    // this.totalVoices = typescriptSacamela.numberOfVoices
+  }
+  initializePage() {
+    console.log(`el mute status de ${this.trackId} es ${this.muteStatus}`)
+    if (this.muteStatus) this.muteIcon = "volume_off"
+    else this.muteIcon = "volume_up"
+    let typescriptSacamela = new SongSimplification(this.song.songSimplifications[this.simplification])
+    let instrumentCode = typescriptSacamela.getInstrumentOfVoice(this.trackId)
+    this.instrument = Instrument[instrumentCode]
+    this.totalVoices = typescriptSacamela.numberOfVoices
+
+    this.svgBoxId = `${this.svgBoxIdPrefix}_${this.trackId}`
     this.progressBarId = `${this.progressBarIdPrefix}${this.songId}_${this.trackId}`
     this.drawingPianoRollService.drawPianoRollGraphic(this.trackId, this.svgBoxId, this.song, this.simplification);
     this.updateSvgBox()
@@ -69,27 +94,21 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
     this.moveProgressBarEventSubscritpion = this.moveProgressBarEvent.subscribe(x => this.moveProgressBar(x))
   }
 
-  ngOnInit() {
-    let typescriptSacamela = new SongSimplification(this.song.songSimplifications[this.simplification])
-    let instrumentCode = typescriptSacamela.getInstrumentOfVoice(this.trackId)
-    this.instrument = Instrument[instrumentCode]
-    this.totalVoices = typescriptSacamela.numberOfVoices
-  }
-
-
 
 
   ngOnChanges(changes: SimpleChanges): void {
     var redrawSvgBox = false
 
     for (const propName in changes) {
+      if (propName == "songId") {
+        this.initializePage()
+      }
       if (propName == "viewType") {
-        const svgBoxId = `${this.svgBoxIdPrefix}_${this.songId}_${this.trackId}`
         if (this.viewType == SongViewType.pianoRoll) {
-          this.drawingPianoRollService.drawPianoRollGraphic(this.trackId, svgBoxId, this.song, this.simplification);
+          this.drawingPianoRollService.drawPianoRollGraphic(this.trackId, this.svgBoxId, this.song, this.simplification);
         }
         else {
-          this.totalWidthOfRythmDrawing = this.drawingRythmService.drawMusicNotationGraphic(this.trackId, svgBoxId, this.song, this.simplification);
+          this.totalWidthOfRythmDrawing = this.drawingRythmService.drawMusicNotationGraphic(this.trackId, this.svgBoxId, this.song, this.simplification);
         }
         redrawSvgBox = true
       }
@@ -108,8 +127,7 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
 
 
   updateSvgBox(): void {
-    const svgBoxId = `${this.svgBoxIdPrefix}_${this.songId}_${this.trackId}`
-    const svgBox = document.getElementById(svgBoxId)
+    const svgBox = document.getElementById(this.svgBoxId)
     let minX: number; let minY: number; let width: number; let height: number
     if (!svgBox) return
     switch (this.viewType) {
@@ -120,7 +138,7 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
         height = this.scale * 128
         break;
       case SongViewType.rythmMusicNotation:
-        minX = this.songSliderPosition / this.song.songStats.durationInSeconds * this.totalWidthOfRythmDrawing 
+        minX = this.songSliderPosition / this.song.songStats.durationInSeconds * this.totalWidthOfRythmDrawing
         minY = 0
         width = width == null ? 1200 * this.scale * 2 : width
         height = height == null ? 128 * this.scale * 2 : height
@@ -155,11 +173,11 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
   changeMuteStatus(): void {
     if (this.muteIcon === "volume_up") {
       this.muteIcon = "volume_off"
-      this.muteStatusChange.emit({ track: this.trackId, status: false })
+      this.muteStatusChange.emit({ songId: this.songId, track: this.trackId, status: false })
     }
     else {
       this.muteIcon = "volume_up"
-      this.muteStatusChange.emit({ track: this.trackId, status: true })
+      this.muteStatusChange.emit({ songId: this.songId, track: this.trackId, status: true })
     }
   }
 
@@ -189,9 +207,6 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
     }
   }
 
-  changeDisplacement(x: number) {
-    console.log("estoy en changeDisplacement")
-  }
 
 }
 

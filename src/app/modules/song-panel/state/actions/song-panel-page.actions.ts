@@ -41,20 +41,21 @@ export const resumePlayingSong = createAction(
 )
 export const trackMutedStatusChange = createAction(
   '[Songs-Panel Page] Track muted',
-  props<{ track: number, status: boolean }>()
+  props<{ songId: number, track: number, status: boolean }>()
 )
 export const unmuteAllTracks = createAction(
-  '[Songs-Panel Page] Unmute all tracks'
+  '[Songs-Panel Page] Unmute all tracks',
+  props<{ songId: number }>()
 )
 export const changeViewType = createAction(
   '[Songs-Panel Page] Change View Type',
-  props<{ viewType: SongViewType }>()
+  props<{ songId: number, viewType: SongViewType }>()
 )
 export const selectSongSimplification = createAction(
   '[Songs-Panel Page] Select Song Simplfication',
-  props<{ songSimplificationVersion: number }>()
+  props<{ songId: number,  songSimplificationVersion: number }>()
 )
 export const songSliderPositionChange = createAction(
   '[Songs-Panel Page] Song Slider Position Change',
-  props<{ songSliderPosition: number }>()
+  props<{ songId: number, songSliderPosition: number }>()
 )

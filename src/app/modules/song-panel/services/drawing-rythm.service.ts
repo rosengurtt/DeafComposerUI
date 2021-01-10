@@ -133,7 +133,7 @@ export class DrawingRythmService {
     }
 
     private processAlterationsOfMajorScale(e: SoundEvent, bar: Bar, currentAlterations: Set<number>, alterationsAddedInPreviousBar: Set<number>,
-        alterationsAddedInThisBar: Set<number>, pitchesOfThisBar: Set<number>, unalteredPitches) {            
+        alterationsAddedInThisBar: Set<number>, pitchesOfThisBar: Set<number>, unalteredPitches) {
         const keySiganatureAlterations = this.GetKeySignatureAlterations(bar.keySignature.key)
         // If key signature has sharps we add sharps
         // If the key is C and we have F#. C# or G# we add sharps
@@ -195,7 +195,7 @@ export class DrawingRythmService {
 
             // if this note is not in the scale and there are no previous alterations in this bar for this pitch, 
             // add an alteration to it and store the fact in the currentAlterations array
-        const keySiganatureAlterations = this.GetKeySignatureAlterations(bar.keySignature.key)
+            const keySiganatureAlterations = this.GetKeySignatureAlterations(bar.keySignature.key)
             if (!unalteredPitches.has(e.pitch % 12) && !alterationsAddedInThisBar.has(e.pitch) && !keySiganatureAlterations.has(e.pitch)) {
                 e.alteration = Alteration.sharp
                 currentAlterations.add(e.pitch)
@@ -322,6 +322,7 @@ export class DrawingRythmService {
     }
 
     public paintAllNotesBlack() {
+        if (!this.eventsToDraw) return
         for (const e of this.eventsToDraw) {
             for (const g of e.graphic) {
                 for (let i = 0; i < g.children.length; i++) {

@@ -3,7 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router'
 import { Song } from '../../core/models/song'
 import { Store } from '@ngrx/store'
 import { State } from '../../core/state/app.state'
-import { getDisplacementBySongId, getMutedTracks, getPlayingSong, getScaleBySongId, getSongSimplificationSelected, getSongSliderPosition, getSongUnderAnalysisById, getSongViewType } from './state'
+import { getDisplacementBySongId, getMutedTracks, getPlayingSong, getScaleBySongId, getSongSimplificationSelected, getSongSliderPositionForSongId, getSongUnderAnalysisById, getSongViewType } from './state'
 import { Observable, Subscription, timer } from 'rxjs'
 import { SongPanelPageActions } from './state/actions'
 import { Coordenadas } from 'src/app/core/models/coordenadas'
@@ -35,13 +35,13 @@ export class SongPanelShellComponent implements OnInit {
             this.songId = +params.get('songId');
 
             this.song$ = this.mainStore.select(getSongUnderAnalysisById, { id: this.songId })
-            this.displacement$ = this.mainStore.select(getDisplacementBySongId, { id: this.songId })
-            this.scale$ = this.mainStore.select(getScaleBySongId, { id: this.songId })
+            this.displacement$ = this.mainStore.select(getDisplacementBySongId, { songId: this.songId })
+            this.scale$ = this.mainStore.select(getScaleBySongId, { songId: this.songId })
             this.playingSong$ = this.mainStore.select(getPlayingSong)
-            this.mutedTracks$ = this.mainStore.select(getMutedTracks)
-            this.viewType$ = this.mainStore.select(getSongViewType)
-            this.songSimplificationVersion$ = this.mainStore.select(getSongSimplificationSelected)
-            this.songSliderPosition$ = this.mainStore.select(getSongSliderPosition)
+            this.mutedTracks$ = this.mainStore.select(getMutedTracks, { songId: this.songId })
+            this.viewType$ = this.mainStore.select(getSongViewType, { songId: this.songId })
+            this.songSimplificationVersion$ = this.mainStore.select(getSongSimplificationSelected, { songId: this.songId })
+            this.songSliderPosition$ = this.mainStore.select(getSongSliderPositionForSongId, { songId: this.songId })
         })
     }
     displacementChanged(value: Coordenadas): void {
@@ -73,18 +73,18 @@ export class SongPanelShellComponent implements OnInit {
         this.mainStore.dispatch(SongPanelPageActions.trackMutedStatusChange(trackMuteStatus))
     }
     unmuteAllTracks() {
-        this.mainStore.dispatch(SongPanelPageActions.unmuteAllTracks())
+        this.mainStore.dispatch(SongPanelPageActions.unmuteAllTracks({ songId: this.songId }))
     }
     closePage(song: Song) {
         this.mainStore.dispatch(SongPanelPageActions.removeSong({ song: song }))
     }
     songViewTypeChanged(viewType: SongViewType) {
-        this.mainStore.dispatch(SongPanelPageActions.changeViewType({ viewType: viewType }))
+        this.mainStore.dispatch(SongPanelPageActions.changeViewType({ songId: this.songId, viewType: viewType }))
     }
     songSimplificationChanged(songSimplificationVersion: number) {
-        this.mainStore.dispatch(SongPanelPageActions.selectSongSimplification({ songSimplificationVersion: songSimplificationVersion }))
+        this.mainStore.dispatch(SongPanelPageActions.selectSongSimplification({ songId: this.songId, songSimplificationVersion: songSimplificationVersion }))
     }
     songSliderPositionChanged(songSliderPosition: number) {
-        this.mainStore.dispatch(SongPanelPageActions.songSliderPositionChange({ songSliderPosition: songSliderPosition }))
+        this.mainStore.dispatch(SongPanelPageActions.songSliderPositionChange({ songId: this.songId, songSliderPosition: songSliderPosition }))
     }
 }

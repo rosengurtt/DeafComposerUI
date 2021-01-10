@@ -5,17 +5,12 @@ import { cloneDeep } from 'lodash-es'
 import { StringifiedMap } from 'src/app/core/utilities/stringified-map'
 import { Coordenadas } from 'src/app/core/models/coordenadas'
 import { SongViewType } from 'src/app/core/models/SongViewTypes.enum'
+import { SongUnderAnalysis } from 'src/app/core/models/song-under-analysis'
 
 
 const initialState: SongPanelState = {
     songsUnderAnalysis: [],
-    simplificationVersionSelected: 1,
-    displacement: null,
-    scale: null,
     playingSong: null,
-    tracksMuted: [],
-    viewType: SongViewType.pianoRoll,
-    songSliderPosition: 0,
     error: ''
 }
 export class reduxSacamela {
@@ -32,27 +27,24 @@ export const songPanelReducer = createReducer<SongPanelState>(
     initialState,
     on(SongPanelPageActions.addSong, (state, action): SongPanelState => {
         let newState = cloneDeep(state)
-        newState.songsUnderAnalysis = [...state.songsUnderAnalysis, action.song]
-        newState.displacement = StringifiedMap.set(state.displacement, action.song.id, new Coordenadas(0, 0))
-        newState.scale = StringifiedMap.set(state.scale, action.song.id, 1)
+        newState.songsUnderAnalysis = [...state.songsUnderAnalysis, new SongUnderAnalysis(action.song)]
         return newState
     }),
     on(SongPanelPageActions.removeSong, (state, action): SongPanelState => {
         let newState = cloneDeep(state)
-        newState.songsUnderAnalysis = state.songsUnderAnalysis.filter(song => song.id !== action.song.id)
-        newState.viewType = SongViewType.pianoRoll
+        newState.songsUnderAnalysis = state.songsUnderAnalysis.filter(s => s.song.id !== action.song.id)
         return newState
     }),
 
     on(SongPanelPageActions.displacementChange, (state, action): SongPanelState => {
         let newState = cloneDeep(state)
-        newState.displacement = StringifiedMap.set(state.displacement, action.songId, action.displacement)
+        newState.songsUnderAnalysis.filter(s => s.song.id == action.songId)[0].displacement = action.displacement
         return newState
     }),
 
     on(SongPanelPageActions.scaleChange, (state, action): SongPanelState => {
         let newState = cloneDeep(state)
-        newState.scale = StringifiedMap.set(state.scale, action.songId, action.scale)
+        newState.songsUnderAnalysis.filter(s => s.song.id == action.songId)[0].scale = action.scale
         return newState
     }),
     on(SongPanelPageActions.startPlayingSong, (state, action): SongPanelState => {
@@ -62,7 +54,7 @@ export const songPanelReducer = createReducer<SongPanelState>(
     }),
     on(SongPanelPageActions.elapsedSecondPlayingSong, (state, action): SongPanelState => {
         let newState = cloneDeep(state)
-        if (state.playingSong ) {
+        if (state.playingSong) {
             if (state.playingSong.elapsedMilliSeconds + 500 >= state.playingSong.durationInSeconds * 1000)
                 newState.playingSong = null
             else
@@ -87,35 +79,35 @@ export const songPanelReducer = createReducer<SongPanelState>(
     }),
     on(SongPanelPageActions.trackMutedStatusChange, (state, action): SongPanelState => {
         let newState = cloneDeep(state)
-        let currentMutedTracks = cloneDeep(state.tracksMuted)
+        let songita = newState.songsUnderAnalysis.filter(s => s.song.id == action.songId)[0]
+        let currentMutedTracks = cloneDeep(songita.tracksMuted)
         // If track was in list of muted tracks and now is not muted, remove it
         if (currentMutedTracks.includes(action.track) && action.status === true)
             currentMutedTracks = currentMutedTracks.filter(x => x !== action.track)
         // If track was not in the list of muted tracks and now is muted, add it
         if (!currentMutedTracks.includes(action.track) && action.status === false)
             currentMutedTracks.push(action.track)
-        newState.tracksMuted = currentMutedTracks
-
+        songita.tracksMuted = currentMutedTracks
         return newState
     }),
     on(SongPanelPageActions.unmuteAllTracks, (state, action): SongPanelState => {
         let newState = cloneDeep(state)
-        newState.tracksMuted = []
+        newState.songsUnderAnalysis.filter(s => s.song.id == action.songId)[0].tracksMuted = []
         return newState
     }),
     on(SongPanelPageActions.changeViewType, (state, action): SongPanelState => {
         let newState = cloneDeep(state)
-        newState.viewType = action.viewType
+        newState.songsUnderAnalysis.filter(s => s.song.id == action.songId)[0].viewType = action.viewType
         return newState
     }),
     on(SongPanelPageActions.selectSongSimplification, (state, action): SongPanelState => {
         let newState = cloneDeep(state)
-        newState.simplificationVersionSelected = action.songSimplificationVersion
+        newState.songsUnderAnalysis.filter(s => s.song.id == action.songId)[0].simplificationVersionSelected = action.songSimplificationVersion
         return newState
     }),
     on(SongPanelPageActions.songSliderPositionChange, (state, action): SongPanelState => {
         let newState = cloneDeep(state)
-        newState.songSliderPosition = action.songSliderPosition
+        newState.songsUnderAnalysis.filter(s => s.song.id == action.songId)[0].songSliderPosition = action.songSliderPosition
         return newState
     }),
 );
