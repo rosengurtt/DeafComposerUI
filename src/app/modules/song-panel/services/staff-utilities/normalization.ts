@@ -3,6 +3,7 @@ import { Note } from '../../../../core/models/note'
 import { Bar } from '../../../../core/models/bar'
 import { SoundEvent } from 'src/app/core/models/sound-event'
 import { NoteDuration } from 'src/app/core/models/note-duration'
+import {GenericStaffDrawingUtilities} from './generic-staff-drawing-utilities'
 
 export class Normalization {
     private static ticksPerQuarterNote = 96
@@ -159,25 +160,21 @@ export class Normalization {
             return [e]
         let retObj = <SoundEvent[]>[]
         let lastStartPoint = e.startTick
-        let pointBar = this.getBarOfTick(bars, lastStartPoint)
+        let pointBar = GenericStaffDrawingUtilities.getBarOfTick(bars, lastStartPoint)
         for (const p of splitPoints) {
             const eventDuration = this.getEventDuration(bars, lastStartPoint, p)
             retObj.push(new SoundEvent(e.type, e.pitch, pointBar, lastStartPoint, p, eventDuration, lastStartPoint == e.startTick ? e.isTiedToPrevious : true))
             // Get the bar for the event that starts in point p         
             lastStartPoint = p
-            pointBar = this.getBarOfTick(bars, lastStartPoint)
+            pointBar = GenericStaffDrawingUtilities.getBarOfTick(bars, lastStartPoint)
         }
         const eventDuration = this.getEventDuration(bars, lastStartPoint, e.endTick)
         retObj.push(new SoundEvent(e.type, e.pitch, pointBar, lastStartPoint, e.endTick, eventDuration, true))
         return retObj
     }
-    // Returns the bar number (first bar=1) in which a tick is located
-    // If a tick is in the separation of 2 bars, it returns the second
-    private static getBarOfTick(bars: Bar[], tick: number): number {
-        return bars.filter(b => b.ticksFromBeginningOfSong <= tick).length
-    }
+
     public static getEventDuration(bars: Bar[], startTick: number, endTick: number): NoteDuration {
-        const bar = this.getBarOfTick(bars, startTick)
+        const bar = GenericStaffDrawingUtilities.getBarOfTick(bars, startTick)
         const timeSignature = bars[bar - 1].timeSignature
         const beatDurationInTicks = 4 / timeSignature.denominator * 96
         const eventDurationInTicks = endTick - startTick

@@ -15,6 +15,7 @@ import { Alteration } from 'src/app/core/models/alteration.enum'
 import { keyframes } from '@angular/animations'
 import { ScaleType } from 'src/app/core/models/scale-type.enum'
 import { KeySignature } from 'src/app/core/models/key-signature'
+import {GenericStaffDrawingUtilities} from './staff-utilities/generic-staff-drawing-utilities'
 
 @Injectable()
 export class DrawingRythmService {
@@ -111,7 +112,7 @@ export class DrawingRythmService {
             // we have to add a sharp the first time to C4
             // currentAlterations is the variable where we save that memory. When the bar starts, the alterations of the key signature
             // are applied by default, so they should be added
-            let currentAlterations = new Set([...this.GetKeySignatureAlterations(bar.keySignature.key), ...alterationsAddedInPreviousBar])
+            let currentAlterations = new Set([...GenericStaffDrawingUtilities.GetKeySignatureAlteredPitches(bar.keySignature.key), ...alterationsAddedInPreviousBar])
             alterationsAddedInThisBar = new Set<number>()
             let eventsInThisBar = this.getBarEvents(bar)
             const unalteredPitches = this.getPitchesOfKeySignature(bar.keySignature.key)
@@ -134,7 +135,7 @@ export class DrawingRythmService {
 
     private processAlterationsOfMajorScale(e: SoundEvent, bar: Bar, currentAlterations: Set<number>, alterationsAddedInPreviousBar: Set<number>,
         alterationsAddedInThisBar: Set<number>, pitchesOfThisBar: Set<number>, unalteredPitches) {
-        const keySiganatureAlterations = this.GetKeySignatureAlterations(bar.keySignature.key)
+        const keySiganatureAlterations = GenericStaffDrawingUtilities.GetKeySignatureAlteredPitches(bar.keySignature.key)
         // If key signature has sharps we add sharps
         // If the key is C and we have F#. C# or G# we add sharps
         if (bar.keySignature.key > 0 ||
@@ -187,7 +188,7 @@ export class DrawingRythmService {
         const tonic = this.getTonicOfScaleFromKeySignature(bar.keySignature)
         const majorSixth = (tonic + 9) % 12
         const majorSeventh = (tonic + 11) % 12
-        const keySiganatureAlterations = this.GetKeySignatureAlterations(bar.keySignature.key)
+        const keySiganatureAlterations = GenericStaffDrawingUtilities.GetKeySignatureAlteredPitches(bar.keySignature.key)
         // If key signature has sharps we add sharps
         // If the key is C and we have F#. C# or G# we add sharps
         if (bar.keySignature.key > 0 || e.pitch % 12 == majorSixth || e.pitch == majorSeventh ||
@@ -195,7 +196,7 @@ export class DrawingRythmService {
 
             // if this note is not in the scale and there are no previous alterations in this bar for this pitch, 
             // add an alteration to it and store the fact in the currentAlterations array
-            const keySiganatureAlterations = this.GetKeySignatureAlterations(bar.keySignature.key)
+            const keySiganatureAlterations = GenericStaffDrawingUtilities.GetKeySignatureAlteredPitches(bar.keySignature.key)
             if (!unalteredPitches.has(e.pitch % 12) && !alterationsAddedInThisBar.has(e.pitch) && !keySiganatureAlterations.has(e.pitch)) {
                 e.alteration = Alteration.sharp
                 currentAlterations.add(e.pitch)
@@ -252,31 +253,6 @@ export class DrawingRythmService {
             .sort((a, b) => a.startTick - b.startTick)
     }
 
-    private GetKeySignatureAlterations(keySignature: number): Set<number> {
-        let retObj = new Set<number>()
-        const fSharpPitches = Array.from(new Array(11), (val, index) => 6 + index * 12)
-        const cSharpPitches = Array.from(new Array(11), (val, index) => 1 + index * 12)
-        const gSharpPitches = Array.from(new Array(11), (val, index) => 8 + index * 12)
-        const dSharpPitches = Array.from(new Array(11), (val, index) => 3 + index * 12)
-        const aSharpPitches = Array.from(new Array(11), (val, index) => 10 + index * 12)
-        const eSharpPitches = Array.from(new Array(11), (val, index) => 4 + index * 12)
-        const bSharpPitches = Array.from(new Array(11), (val, index) => 0 + index * 12)
-        if (keySignature > 0)
-            retObj = new Set([...retObj, ...fSharpPitches])
-        if (keySignature > 1)
-            retObj = new Set([...retObj, ...cSharpPitches])
-        if (keySignature > 2)
-            retObj = new Set([...retObj, ...gSharpPitches])
-        if (keySignature > 3)
-            retObj = new Set([...retObj, ...dSharpPitches])
-        if (keySignature > 4)
-            retObj = new Set([...retObj, ...aSharpPitches])
-        if (keySignature > 5)
-            retObj = new Set([...retObj, ...eSharpPitches])
-        if (keySignature > 6)
-            retObj = new Set([...retObj, ...bSharpPitches])
-        return retObj
-    }
 
 
     // When drawing notes in the pentagram, we need to know which notes will need an alteration added

@@ -7,6 +7,7 @@ import { Note } from '../../../../core/models/note'
 import { SongSimplification } from '../../../../core/models/song-simplification'
 import { Bar } from '../../../../core/models/bar'
 import { Normalization } from './normalization'
+import {GenericStaffDrawingUtilities} from './generic-staff-drawing-utilities'
 
 export class DrawingCalculations {
     private static ticksPerQuarterNote = 96
@@ -50,7 +51,7 @@ export class DrawingCalculations {
         // in this loop we add rest events when there are significant empty spaces between consecutive notes
         for (let i = 0; i < voiceNotes.length; i++) {
             let n = voiceNotes[i]
-            let currentBar = this.getBarOfTick(bars, endOfLastComputedNote)
+            let currentBar = GenericStaffDrawingUtilities.getBarOfTick(bars, endOfLastComputedNote)
             if (currentBar==24){
                 let parenlasrotativas=1
             }
@@ -63,7 +64,7 @@ export class DrawingCalculations {
                 endOfLastComputedNote = n.startSinceBeginningOfSongInTicks
             }
             // Get the bar in which the note is
-            const noteBar = this.getBarOfTick(bars, n.startSinceBeginningOfSongInTicks)
+            const noteBar = GenericStaffDrawingUtilities.getBarOfTick(bars, n.startSinceBeginningOfSongInTicks)
             const eventDuration = Normalization.getEventDuration(bars, n.startSinceBeginningOfSongInTicks, n.endSinceBeginningOfSongInTicks)
             soundEvents.push(new SoundEvent(SoundEventType.note, n.pitch, noteBar, n.startSinceBeginningOfSongInTicks, n.endSinceBeginningOfSongInTicks, eventDuration))
             if (i < voiceNotes.length - 1)
@@ -117,14 +118,6 @@ export class DrawingCalculations {
         bars.forEach(b => startNotesSet.add(b.ticksFromBeginningOfSong))
         return Array.from(startNotesSet)
     }
-
-    // Returns the bar number (first bar=1) in which a tick is located
-    // If a tick is in the separation of 2 bars, it returns the second
-    private static getBarOfTick(bars: Bar[], tick: number): number {
-        return bars.filter(b => b.ticksFromBeginningOfSong <= tick).length
-    }
-
-
 
 
     // A rest can be divided in a sequence of rests. For example if a rest extends to the next bar, we split it

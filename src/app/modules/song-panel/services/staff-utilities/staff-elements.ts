@@ -9,6 +9,7 @@ import { BeatDrawingInfo } from 'src/app/core/models/beat-drawing-info'
 import { KeySignatureEnum } from 'src/app/core/models/key-signature.enum'
 import { Alteration } from 'src/app/core/models/alteration.enum'
 import { KeySignature } from 'src/app/core/models/key-signature'
+import { GenericStaffDrawingUtilities } from './generic-staff-drawing-utilities'
 
 export abstract class StaffElements {
     private static svgns = 'http://www.w3.org/2000/svg'
@@ -90,7 +91,8 @@ export abstract class StaffElements {
     // point of the song. So we need that information too. 
     // alterations is an array that defines the alteration of each pitch, so  if alterations[37] is 
     // Alteration.Flat, it will be displayed as a Db, if it is Alteration.Sharp it will be displayed as C#
-    private static getYofPitch(pitch: number, alterations: Map<number, Alteration>): number {
+    private static getYofNote(e: SoundEvent, bars: Bar[], eventsToDraw: SoundEvent[]): number {
+        const alterations = this.getAlterationsAtTick(bars, e.startTick, eventsToDraw)
         let yOfPitches = new Map<number, number>()
         let majorScalePitches = [0, 2, 4, 5, 7, 9, 11]
         let pitchesNotInMajorScale = [1, 3, 6, 8, 10]
@@ -103,7 +105,7 @@ export abstract class StaffElements {
                 yOfPitches.set(p, y)
             }
             for (const j of pitchesNotInMajorScale) {
-                let p= 12 * i + j
+                let p = 12 * i + j
                 let y = alterations.get(p) == Alteration.sharp ? 30 - 6 * j - (i - 5) * 42 : 24 - 6 * j - (i - 5) * 42
                 yOfPitches.set(p, y)
             }
@@ -111,17 +113,54 @@ export abstract class StaffElements {
         // F cleff and down
         for (let i = 2; i < 5; i++) {
             for (const j of majorScalePitches) {
-                let p= 12 * i + j
+                let p = 12 * i + j
                 let y = 100 - 6 * j - (i - 4) * 42  // 100 is the y of C3
                 yOfPitches.set(p, y)
             }
             for (const j of pitchesNotInMajorScale) {
                 let p = 12 * i + j
-                let y = alterations.get(p) == Alteration.sharp ? 100 - 6 * j - (i - 4) * 42: 94 - 6 * j - (i - 4) * 42
+                let y = alterations.get(p) == Alteration.sharp ? 100 - 6 * j - (i - 4) * 42 : 94 - 6 * j - (i - 4) * 42
                 yOfPitches.set(p, y)
             }
         }
-        return yOfPitches.get(pitch)
+        return yOfPitches.get(e.pitch)
+    }
+
+    // When we are drawing notes in the pentagram, the vertical location when we put a note may depend on the alterations
+    // affecting the notes at that point. For ex if the key is D, they key signature has 2 sharps, and if we have a note
+    // with pitch 61, we have to draw it as C#, not Db. If the key signature has no alterations, but there was a previous
+    // alteration in this bar or the previous bar for this note, we have to use that alteration info to decide which note
+    // to draw. There may be also a precise alteration for this particular note shown in the pentagram.
+    // This method returns the status of alterations at a moment of the song for a specific voice. If the alterations
+    // added to the eventsToDraw object are correct, then we should have all the alterations info we need to draw any
+    // note at any tick
+    private static getAlterationsAtTick(bars: Bar[], tick: number, eventsToDraw: SoundEvent[]): Map<number, Alteration> {
+        const barNumber = GenericStaffDrawingUtilities.getBarOfTick(bars, tick)
+        const keySig = bars[barNumber].keySignature
+
+        const retObj = GenericStaffDrawingUtilities.GetAlterationsOfKey(keySig.key)
+
+        const recentAlterations = this.getAlterationsOfLast2BarsAtTick(bars, tick, eventsToDraw)
+
+        recentAlterations.forEach((value, key) => retObj.set(key, value))
+        return retObj
+    }
+
+    // Returns the alterations that don't belong to the key signature that have been added in the current and previous
+    // bar that affect the current note location in the pentagram
+    // For ex if a note with pitch 65 (F# or Gb) was played in a bar with a key signature of C with and shown with a
+    // sharp alteration (F#)  then a subsequent note with pitch 65 in the same bar or the next bar will be displayed as 
+    // an F#, not a Gb
+    // We have to look at the latest alteration affecting the note, because there can be cancellations after a sharp
+    // or a flat alteration
+    private static getAlterationsOfLast2BarsAtTick(bars: Bar[], tick: number, eventsToDraw: SoundEvent[]): Map<number, Alteration> {
+        const barNumber = GenericStaffDrawingUtilities.getBarOfTick(bars, tick)
+        let start = barNumber > 1 ? bars[barNumber - 1].ticksFromBeginningOfSong : 0
+        let eventsWithAlterationsInTheLast2Bars = eventsToDraw.filter(e => e.startTick >= start && e.startTick < tick && e.alteration != null)
+        let retObj = new Map<number, Alteration>()
+        for (let e of eventsWithAlterationsInTheLast2Bars)
+            retObj.set(e.pitch, e.alteration)
+        return retObj
     }
 
 

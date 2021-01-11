@@ -78,7 +78,6 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
     // this.totalVoices = typescriptSacamela.numberOfVoices
   }
   initializePage() {
-    console.log(`el mute status de ${this.trackId} es ${this.muteStatus}`)
     if (this.muteStatus) this.muteIcon = "volume_off"
     else this.muteIcon = "volume_up"
     let typescriptSacamela = new SongSimplification(this.song.songSimplifications[this.simplification])
