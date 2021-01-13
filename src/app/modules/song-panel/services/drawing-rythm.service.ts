@@ -356,7 +356,7 @@ export class DrawingRythmService {
         for (let beat = 1; beat <= totalBeats; beat++) {
             let beatGraphNeeds: BeatGraphNeeds
             beatGraphNeeds = this.getBeatGraphicNeeds(bar, beat)
-            const beatDrawInfo = StaffElements.drawBeat(this.svgBox, x + deltaX, bar, beat, beatGraphNeeds, this.eventsToDraw, startTieX)
+            const beatDrawInfo = StaffElements.drawBeat(this.svgBox, x + deltaX, bar, beat, beatGraphNeeds, this.eventsToDraw, this.bars, startTieX)
             deltaX += beatDrawInfo.deltaX
             startTieX = beatDrawInfo.startTieX
         }

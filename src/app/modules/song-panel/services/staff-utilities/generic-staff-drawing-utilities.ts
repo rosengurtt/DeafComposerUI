@@ -1,6 +1,8 @@
 import { Bar } from "src/app/core/models/bar";
 import { Alteration } from 'src/app/core/models/alteration.enum'
 import { keys } from "lodash-es";
+import { SoundEvent } from "src/app/core/models/sound-event";
+import { SoundEventType } from "src/app/core/models/sound-event-type.enum";
 
 export abstract class GenericStaffDrawingUtilities {
     // Returns the bar number (first bar=1) in which a tick is located
@@ -86,15 +88,125 @@ export abstract class GenericStaffDrawingUtilities {
             Array.from(new Array(11), (val, index) => retObj.set(3 + index * 12, Alteration.flat))
         if (key < -2)
             Array.from(new Array(11), (val, index) => retObj.set(8 + index * 12, Alteration.flat))
-        if (key <-3)
+        if (key < -3)
             Array.from(new Array(11), (val, index) => retObj.set(1 + index * 12, Alteration.flat))
-        if (key <-4)
+        if (key < -4)
             Array.from(new Array(11), (val, index) => retObj.set(6 + index * 12, Alteration.flat))
-        if (key <-5)
+        if (key < -5)
             Array.from(new Array(11), (val, index) => retObj.set(0 + index * 12, Alteration.flat))
         if (key < -6)
             Array.from(new Array(11), (val, index) => retObj.set(5 + index * 12, Alteration.flat))
 
+        return retObj
+    }
+
+    // When we draw a note in the pentagram, y=0 is the A inside the G clef pentagram. We have to calculate
+    // the number of pixels to move the note up or down so it shows in the correct place for the pitch#
+    // The same pitch may be shown for ex as an A# or a Bb, depending on the alterations being used at that
+    // point of the song. So we need that information too. 
+    // alterations is an array that defines the alteration of each pitch, so  if alterations[37] is 
+    // Alteration.Flat, it will be displayed as a Db, if it is Alteration.Sharp it will be displayed as C#
+    public static getYofNote(e: SoundEvent, bars: Bar[], eventsToDraw: SoundEvent[]): number {
+        const alterations = this.getAlterationsAtTick(bars, e.startTick, eventsToDraw)
+        let majorScalePitches = [0, 2, 4, 5, 7, 9, 11]
+        const basicPitch = e.pitch % 12
+        const octave = ((e.pitch - basicPitch) / 12) - 1    // C4 that is the central C in the piano has pitch 60 and octave 4 starts in C4
+        const octaveHeightInPixels = 42
+        const yOfC4inGclef = 30
+        const yOfC3inFclef = 100
+        let y: number
+
+
+        // F clef
+        if (octave < 4) {
+            // Simpler case, pitch is in C scale with no alterations
+            if (majorScalePitches.includes(basicPitch))
+                y = yOfC3inFclef - 6 * basicPitch - (octave - 3) * octaveHeightInPixels
+
+            // Case when pitch is not in C scale, so there is an alteration for sure
+            else
+                y = alterations.get(e.pitch) == Alteration.sharp ?
+                    yOfC3inFclef - 6 * (basicPitch - 1) - (octave - 3) * octaveHeightInPixels :
+                    yOfC3inFclef - 6 * (basicPitch + 1) - (octave - 3) * octaveHeightInPixels
+        }
+        // G clef
+        else {
+            // Simpler case, pitch is in C scale with no alterations
+            if (majorScalePitches.includes(basicPitch))
+                y = yOfC4inGclef - 6 * basicPitch - (octave - 4) * octaveHeightInPixels
+
+            // Case when pitch is not in C scale, so there is an alteration for sure
+            else
+                y = alterations.get(e.pitch) == Alteration.sharp ?
+                    yOfC4inGclef - 6 * (basicPitch - 1) - (octave - 4) * octaveHeightInPixels :
+                    yOfC4inGclef - 6 * (basicPitch + 1) - (octave - 4) * octaveHeightInPixels
+        }
+
+        // We consider now the special cases of E-F and B-C. These are special because pitch 4 may be a natural E or a Fb.
+        // pitch 5 can be a natural F or an E#, so depending on the alterations they can be drawn higher or lower (apart from the fact
+        // that we may have to draw an alteration)
+        // The y we calculated initially assumed that pitch 4 was a natural E, pitch F a natural F, etc We make corrections now if that
+        // was not the case
+
+        // Case where pitch 5 is an E# and not an F. We have to move down our initial calcualtion 6 pixels
+        if (e.pitch % 12 == 5 && alterations.get(e.pitch) == Alteration.sharp) {
+            y = y + 6
+        }
+        // Case where pitch 4 is an Fb. We have to move it up 6 pixels
+        else if (e.pitch % 12 == 4 && alterations.get(e.pitch) == Alteration.flat) {
+            y = y - 6
+        }
+        // Case pitch 0 is a B#                
+        if (e.pitch % 12 == 0 && alterations.get(e.pitch) == Alteration.sharp) {
+            y = y + 6
+        }
+        // Case pitch 11 is a Cb
+        else if (e.pitch % 12 == 11 && alterations.get(e.pitch) == Alteration.flat) {
+            y = y - 6
+        }
+        return y
+    }
+
+    // When drawing rests, the vertical location of the rest is not as important as with notes, it can be a bit higher
+    // or lower without changing the meaning. But it should be more or less at the same height as previous notes 
+    public static getYofRest(e: SoundEvent, eventsToDraw: SoundEvent[]): number {
+        const previousNotes = eventsToDraw.filter(x => x.type == SoundEventType.note && x.x != null)
+        // Calculate average
+        return previousNotes.map(x => x.y).reduce((a, b) => a + b, 0) / previousNotes.length
+    }
+    // When we are drawing notes in the pentagram, the vertical location when we put a note may depend on the alterations
+    // affecting the notes at that point. For ex if the key is D, they key signature has 2 sharps, and if we have a note
+    // with pitch 61, we have to draw it as C#, not Db. If the key signature has no alterations, but there was a previous
+    // alteration in this bar or the previous bar for this note, we have to use that alteration info to decide which note
+    // to draw. There may be also a precise alteration for this particular note shown in the pentagram.
+    // This method returns the status of alterations at a moment of the song for a specific voice. If the alterations
+    // added to the eventsToDraw object are correct, then we should have all the alterations info we need to draw any
+    // note at any tick
+    private static getAlterationsAtTick(bars: Bar[], tick: number, eventsToDraw: SoundEvent[]): Map<number, Alteration> {
+        const barNumber = GenericStaffDrawingUtilities.getBarOfTick(bars, tick)
+        const keySig = bars[barNumber - 1].keySignature
+
+        const retObj = GenericStaffDrawingUtilities.GetAlterationsOfKey(keySig.key)
+
+        const recentAlterations = this.getAlterationsOfLast2BarsAtTick(bars, tick, eventsToDraw)
+
+        recentAlterations.forEach((value, key) => retObj.set(key, value))
+        return retObj
+    }
+    // Returns the alterations that don't belong to the key signature that have been added in the current and previous
+    // bar that affect the current note location in the pentagram
+    // For ex if a note with pitch 65 (F# or Gb) was played in a bar with a key signature of C with and shown with a
+    // sharp alteration (F#)  then a subsequent note with pitch 65 in the same bar or the next bar will be displayed as 
+    // an F#, not a Gb
+    // We have to look at the latest alteration affecting the note, because there can be cancellations after a sharp
+    // or a flat alteration
+    private static getAlterationsOfLast2BarsAtTick(bars: Bar[], tick: number, eventsToDraw: SoundEvent[]): Map<number, Alteration> {
+        const barNumber = GenericStaffDrawingUtilities.getBarOfTick(bars, tick)
+        let start = barNumber > 1 ? bars[barNumber - 1].ticksFromBeginningOfSong : 0
+        let eventsWithAlterationsInTheLast2Bars = eventsToDraw.filter(e => e.startTick >= start && e.startTick < tick && e.alteration != null)
+        let retObj = new Map<number, Alteration>()
+        for (let e of eventsWithAlterationsInTheLast2Bars)
+            retObj.set(e.pitch, e.alteration)
         return retObj
     }
 }

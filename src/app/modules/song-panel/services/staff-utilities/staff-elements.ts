@@ -21,13 +21,13 @@ export abstract class StaffElements {
     // and the second 4, we don't connect the 8 together  
     // When we have a tie between beats, we pass in the tieStartX parameter the start point of a tie that started in a previous beat
     // A tie may span several beats
-    public static drawBeat(g: Element, x: number, bar: Bar, beat: number, beatGraphNeeds: BeatGraphNeeds, eventsToDraw: SoundEvent[], tieStartX: number | null): BeatDrawingInfo {
+    public static drawBeat(g: Element, x: number, bar: Bar, beat: number, beatGraphNeeds: BeatGraphNeeds, eventsToDraw: SoundEvent[], bars: Bar[], tieStartX: number | null): BeatDrawingInfo {
         const timeSig = bar.timeSignature
 
         // if (timeSig.numerator == 3 && timeSig.denominator == 8)
         //     return this.drawBeatOf3_8bar(g, x, bar, beat, beatGraphNeeds, eventsToDraw, tieStartX)
         if (timeSig.numerator % 3 == 0 && timeSig.denominator == 8)
-            return this.drawBeatOfbarWithTimeSig3x8(g, x, bar, beat, beatGraphNeeds, eventsToDraw, tieStartX)
+            return this.drawBeatOfbarWithTimeSig3x8(g, x, bar, beat, beatGraphNeeds, eventsToDraw, bars, tieStartX)
         const beatDurationInTicks = 96 * 4 / timeSig.denominator
         const beatStartTick = bar.ticksFromBeginningOfSong + (beat - 1) * beatDurationInTicks
         const beatEndTick = beatStartTick + beatDurationInTicks
@@ -42,32 +42,32 @@ export abstract class StaffElements {
         }
         let tieEndX: number | null = null
 
-        if (bar.barNumber == 22) {
-            let lolo = 1
-        }
 
         for (let i = 0; i < beatEvents.length; i++) {
             const e: SoundEvent = beatEvents[i]
             let deltaX = DrawingCalculations.calculateXofEventInsideBeat(e, beatGraphNeeds, beatStartTick)
+            e.x = x + deltaX
 
             if (e.type == SoundEventType.note) {
+                e.y = GenericStaffDrawingUtilities.getYofNote(e, bars, eventsToDraw)
                 const notesSimultaneousToThisOne = beatEvents.filter(x => x.startTick == e.startTick && x.endTick == e.endTick && x.pitch != e.pitch)
                 // if there is a single note, or there are some but they are simultaneous to this one,
                 // we don't have to care about beams, just draw it
                 if (beatEvents.filter(x => x.type == SoundEventType.note && !notesSimultaneousToThisOne.includes(x)).length == 1) {
-                    const graph = this.drawSingleNote(g, e, x + deltaX)
+                    const graph = this.drawSingleNote(g, e)
                     e.graphic.push(graph)
-                    e.x = x + deltaX
                 }
                 // if there are several notes, draw a 'quarter' that later will be converted to whatever it is by adding beams
                 else {
-                    const graph = StaffElements.drawBasicNote(g, x + deltaX, e)
+                    const graph = StaffElements.drawBasicNote(g, e)
                     e.graphic.push(graph)
-                    e.x = x + deltaX
                 }
             }
             // if it is a rest, draw the rest
-            else this.drawRest(g, e.duration, x + deltaX)
+            else {
+                e.y = GenericStaffDrawingUtilities.getYofRest(e, eventsToDraw)
+                this.drawRest(g, e)
+            }
 
             // Take care of ties
 
@@ -85,87 +85,9 @@ export abstract class StaffElements {
         return new BeatDrawingInfo(tieStartX, DrawingCalculations.calculateWidthInPixelsOfBeat(beatGraphNeeds))
     }
 
-    // When we draw a note in the pentagram, y=0 is the A inside the G clef pentagram. We have to calculate
-    // the number of pixels to move the note up or down so it shows in the correct place for the pitch#
-    // The same pitch may be shown for ex as an A# or a Bb, depending on the alterations being used at that
-    // point of the song. So we need that information too. 
-    // alterations is an array that defines the alteration of each pitch, so  if alterations[37] is 
-    // Alteration.Flat, it will be displayed as a Db, if it is Alteration.Sharp it will be displayed as C#
-    private static getYofNote(e: SoundEvent, bars: Bar[], eventsToDraw: SoundEvent[]): number {
-        const alterations = this.getAlterationsAtTick(bars, e.startTick, eventsToDraw)
-        let yOfPitches = new Map<number, number>()
-        let majorScalePitches = [0, 2, 4, 5, 7, 9, 11]
-        let pitchesNotInMajorScale = [1, 3, 6, 8, 10]
-
-        // G cleff and up
-        for (let i = 5; i < 8; i++) {
-            for (const j of majorScalePitches) {
-                let p = 12 * i + j
-                let y = 30 - 6 * j - (i - 5) * 42  // 30 is the y of C4, 42 is the distance to the next C (C5)
-                yOfPitches.set(p, y)
-            }
-            for (const j of pitchesNotInMajorScale) {
-                let p = 12 * i + j
-                let y = alterations.get(p) == Alteration.sharp ? 30 - 6 * j - (i - 5) * 42 : 24 - 6 * j - (i - 5) * 42
-                yOfPitches.set(p, y)
-            }
-        }
-        // F cleff and down
-        for (let i = 2; i < 5; i++) {
-            for (const j of majorScalePitches) {
-                let p = 12 * i + j
-                let y = 100 - 6 * j - (i - 4) * 42  // 100 is the y of C3
-                yOfPitches.set(p, y)
-            }
-            for (const j of pitchesNotInMajorScale) {
-                let p = 12 * i + j
-                let y = alterations.get(p) == Alteration.sharp ? 100 - 6 * j - (i - 4) * 42 : 94 - 6 * j - (i - 4) * 42
-                yOfPitches.set(p, y)
-            }
-        }
-        return yOfPitches.get(e.pitch)
-    }
-
-    // When we are drawing notes in the pentagram, the vertical location when we put a note may depend on the alterations
-    // affecting the notes at that point. For ex if the key is D, they key signature has 2 sharps, and if we have a note
-    // with pitch 61, we have to draw it as C#, not Db. If the key signature has no alterations, but there was a previous
-    // alteration in this bar or the previous bar for this note, we have to use that alteration info to decide which note
-    // to draw. There may be also a precise alteration for this particular note shown in the pentagram.
-    // This method returns the status of alterations at a moment of the song for a specific voice. If the alterations
-    // added to the eventsToDraw object are correct, then we should have all the alterations info we need to draw any
-    // note at any tick
-    private static getAlterationsAtTick(bars: Bar[], tick: number, eventsToDraw: SoundEvent[]): Map<number, Alteration> {
-        const barNumber = GenericStaffDrawingUtilities.getBarOfTick(bars, tick)
-        const keySig = bars[barNumber].keySignature
-
-        const retObj = GenericStaffDrawingUtilities.GetAlterationsOfKey(keySig.key)
-
-        const recentAlterations = this.getAlterationsOfLast2BarsAtTick(bars, tick, eventsToDraw)
-
-        recentAlterations.forEach((value, key) => retObj.set(key, value))
-        return retObj
-    }
-
-    // Returns the alterations that don't belong to the key signature that have been added in the current and previous
-    // bar that affect the current note location in the pentagram
-    // For ex if a note with pitch 65 (F# or Gb) was played in a bar with a key signature of C with and shown with a
-    // sharp alteration (F#)  then a subsequent note with pitch 65 in the same bar or the next bar will be displayed as 
-    // an F#, not a Gb
-    // We have to look at the latest alteration affecting the note, because there can be cancellations after a sharp
-    // or a flat alteration
-    private static getAlterationsOfLast2BarsAtTick(bars: Bar[], tick: number, eventsToDraw: SoundEvent[]): Map<number, Alteration> {
-        const barNumber = GenericStaffDrawingUtilities.getBarOfTick(bars, tick)
-        let start = barNumber > 1 ? bars[barNumber - 1].ticksFromBeginningOfSong : 0
-        let eventsWithAlterationsInTheLast2Bars = eventsToDraw.filter(e => e.startTick >= start && e.startTick < tick && e.alteration != null)
-        let retObj = new Map<number, Alteration>()
-        for (let e of eventsWithAlterationsInTheLast2Bars)
-            retObj.set(e.pitch, e.alteration)
-        return retObj
-    }
-
 
     // Draws beats of bars with a time signature of 3x/8 like 3/8, 6/8 or 12/8
-    public static drawBeatOfbarWithTimeSig3x8(g: Element, x: number, bar: Bar, beat: number, beatGraphNeeds: BeatGraphNeeds, eventsToDraw: SoundEvent[], tieStartX: number | null): BeatDrawingInfo {
+    public static drawBeatOfbarWithTimeSig3x8(g: Element, x: number, bar: Bar, beat: number, beatGraphNeeds: BeatGraphNeeds, eventsToDraw: SoundEvent[], bars: Bar[], tieStartX: number | null): BeatDrawingInfo {
         // we draw the beats in groups of 3, so we make drawings in beat 1, 4, 7 and 10
         if ((beat - 1) % 3 != 0) return new BeatDrawingInfo(tieStartX, 0)
 
@@ -187,27 +109,30 @@ export abstract class StaffElements {
         for (let i = 0; i < beatEvents.length; i++) {
             const e: SoundEvent = beatEvents[i]
             let deltaX = DrawingCalculations.calculateXofEventInsideBeat(e, beatGraphNeeds, beatStartTick)
+            e.x = x + deltaX
 
             if (e.type == SoundEventType.note) {
+                e.y = GenericStaffDrawingUtilities.getYofNote(e, bars, eventsToDraw)
                 // if there is a single note, we don't have to care about beams, just draw it
                 if (beatEvents.filter(x => x.type == SoundEventType.note).length == 1 ||
                     // if there are 2 notes and one of them is a quarter
                     (beatEvents.filter(x => x.type == SoundEventType.note).length == 2 &&
                         beatEvents.filter(x => x.type == SoundEventType.note && x.duration == NoteDuration.quarter).length > 0)
                 ) {
-                    const graph = this.drawSingleNote(g, e, x + deltaX)
+                    const graph = this.drawSingleNote(g, e)
                     e.graphic.push(graph)
-                    e.x = x + deltaX
                 }
                 // if there are several notes, draw a 'quarter' that later will be converted to whatever it is by adding beams
                 else {
-                    const graph = StaffElements.drawBasicNote(g, x + deltaX, e)
+                    const graph = StaffElements.drawBasicNote(g, e)
                     e.graphic.push(graph)
-                    e.x = x + deltaX
                 }
             }
             // if it is a rest, draw the rest
-            else this.drawRest(g, e.duration, x + deltaX)
+            else {
+                e.y = GenericStaffDrawingUtilities.getYofRest(e, eventsToDraw)
+                this.drawRest(g, e)
+            }
 
             // Take care of ties
             // If the note is tied to previous, draw the tie
@@ -222,44 +147,52 @@ export abstract class StaffElements {
         return new BeatDrawingInfo(tieStartX, DrawingCalculations.calculateWidthInPixelsOfBeat(beatGraphNeeds))
     }
 
-
-
     // When a beat has several eights and/or sixteens, etc. we have to draw a beam connecting them
     // This method draws them
     private static drawBeatBeams(g: Element, x: number, beatStartTick: number, beatGraphNeeds: BeatGraphNeeds, beatEvents: SoundEvent[]): void {
-        const thisBeatNoteEvents = beatEvents.filter(x => x.type == SoundEventType.note)
+        const thisBeatNoteEvents = beatEvents.filter(x => x.type == SoundEventType.note).sort((a, b) => a.startTick - b.startTick)
+        if (!thisBeatNoteEvents || thisBeatNoteEvents.length == 0) return
+        const firstX = thisBeatNoteEvents[0].x
+        const firstY = thisBeatNoteEvents[0].y - 25
+        const lastX = thisBeatNoteEvents[thisBeatNoteEvents.length - 1].x
+        const lastY = thisBeatNoteEvents[thisBeatNoteEvents.length - 1].y - 25
+
         for (let i = 0; i < thisBeatNoteEvents.length - 1; i++) {
-            const startX = DrawingCalculations.calculateXofEventInsideBeat(thisBeatNoteEvents[i], beatGraphNeeds, beatStartTick)
-            const endX = DrawingCalculations.calculateXofEventInsideBeat(thisBeatNoteEvents[i + 1], beatGraphNeeds, beatStartTick)
+            const eventito = thisBeatNoteEvents[i]
+            const nextEvent = thisBeatNoteEvents[i + 1]
+            const startX = DrawingCalculations.calculateXofEventInsideBeat(eventito, beatGraphNeeds, beatStartTick)
+            const endX = DrawingCalculations.calculateXofEventInsideBeat(nextEvent, beatGraphNeeds, beatStartTick)
+            const startY = firstY + ((lastY - firstY) / (lastX - firstX)) * (startX - firstX)
+            const endY = firstY + ((lastY - firstY) / (lastX - firstX)) * (endX - firstX)
 
-            if (this.isNoteShorterThan(thisBeatNoteEvents[i], NoteDuration.quarter) && this.isNoteShorterThan(thisBeatNoteEvents[i + 1], NoteDuration.quarter)) {
+            if (this.isNoteShorterThan(eventito, NoteDuration.quarter) && this.isNoteShorterThan(nextEvent, NoteDuration.quarter)) {
 
-                this.drawBeam(g, x + startX, x + endX, NoteDuration.eight)
+                this.drawBeam(g, x + startX, startY, x + endX, endY, NoteDuration.eight)
             }
-            if (this.isNoteShorterThan(thisBeatNoteEvents[i], NoteDuration.eight) && this.isNoteShorterThan(thisBeatNoteEvents[i + 1], NoteDuration.eight)) {
+            if (this.isNoteShorterThan(eventito, NoteDuration.eight) && this.isNoteShorterThan(nextEvent, NoteDuration.eight)) {
 
-                this.drawBeam(g, x + startX, x + endX, NoteDuration.sixteenth)
+                this.drawBeam(g, x + startX, startY, x + endX, endY, NoteDuration.sixteenth)
             }
-            if (this.isNoteShorterThan(thisBeatNoteEvents[i], NoteDuration.sixteenth) && this.isNoteShorterThan(thisBeatNoteEvents[i + 1], NoteDuration.sixteenth))
-                this.drawBeam(g, x + startX, x + endX, NoteDuration.thirtysecond)
-            if (this.isNoteShorterThan(thisBeatNoteEvents[i], NoteDuration.thirtysecond) && this.isNoteShorterThan(thisBeatNoteEvents[i + 1], NoteDuration.thirtysecond))
-                this.drawBeam(g, x + startX, x + endX, NoteDuration.sixtyfourth)
+            if (this.isNoteShorterThan(eventito, NoteDuration.sixteenth) && this.isNoteShorterThan(nextEvent, NoteDuration.sixteenth))
+                this.drawBeam(g, x + startX, startY, x + endX, endY, NoteDuration.thirtysecond)
+            if (this.isNoteShorterThan(eventito, NoteDuration.thirtysecond) && this.isNoteShorterThan(nextEvent, NoteDuration.thirtysecond))
+                this.drawBeam(g, x + startX, startY, x + endX, endY, NoteDuration.sixtyfourth)
         }
     }
 
-    private static drawBeam(g: Element, startX: number, endX: number, duration: NoteDuration): void {
+    private static drawBeam(g: Element, startX: number, startY: number, endX: number, endY: number, duration: NoteDuration): void {
         switch (duration) {
             case NoteDuration.eight:
-                this.drawPath(g, "black", 1, `M ${startX + 19},40 L ${endX + 19},40 z`)
+                this.drawPath(g, "black", 1, `M ${startX + 19},${40 + startY} L ${endX + 19},${40 + endY} z`)
                 break;
             case NoteDuration.sixteenth:
-                this.drawPath(g, "black", 1, `M ${startX + 19},46 L ${endX + 19},46 z`)
+                this.drawPath(g, "black", 1, `M ${startX + 19},${46 + startY} L ${endX + 19},${46 + endY} z`)
                 break;
             case NoteDuration.thirtysecond:
-                this.drawPath(g, "black", 1, `M ${startX + 19},52 L ${endX + 19},52 z`)
+                this.drawPath(g, "black", 1, `M ${startX + 19},${52 + startY} L ${endX + 19},${52 + endY} z`)
                 break;
             case NoteDuration.sixtyfourth:
-                this.drawPath(g, "black", 1, `M ${startX + 19},58 L ${endX + 19},58 z`)
+                this.drawPath(g, "black", 1, `M ${startX + 19},${58 + startY} L ${endX + 19},${58 + endY} z`)
                 break;
         }
     }
@@ -358,28 +291,75 @@ export abstract class StaffElements {
 
     // Draws a circle and a stem. The idea is that regardless of a note being a quarter, and eight or a
     // sixteenth, we draw it as a quarter, and then we add the needed beams to convert it to an eight or whatever
-    public static drawBasicNote(svgBox: Element, x: number, e: SoundEvent, isCircleFull = true): Element {
-        this.writeEventInfo(svgBox, e, x)
+    public static drawBasicNote(svgBox: Element, e: SoundEvent, isCircleFull = true): Element {
+        this.writeEventInfo(svgBox, e)
         let group = document.createElementNS(this.svgns, 'g')
         svgBox.appendChild(group)
-        this.drawNoteCircle(group, x, isCircleFull)
-        //this.drawEllipse(group, x + 13, 81, 7, 5, 'black', 2, `rotate(-25 ${x + 13} 81)`, isCircleFull)
-        this.drawStem(group, x)
+        this.drawNoteCircle(group, e.x, e.y, isCircleFull)
+        this.drawStem(group, e.x, e.y)
         if (e.alteration != null) {
             switch (<Alteration>e.alteration) {
                 case Alteration.flat:
-                    this.drawFlat(group, x, 0)
+                    this.drawFlat(group, e.x, e.y)
                     break
                 case Alteration.cancel:
-                    this.drawCancelAlteration(group, x, 0)
+                    this.drawCancelAlteration(group, e.x, e.y)
                     break
                 case Alteration.sharp:
-                    this.drawSharp(group, x, 0)
+                    this.drawSharp(group, e.x, e.y)
                     break
             }
         }
         return group
     }
+
+    public static drawSingleNote(svgBox: Element, e: SoundEvent): Element {
+        this.writeEventInfo(svgBox, e)
+        let group = document.createElementNS(this.svgns, 'g')
+        svgBox.appendChild(group)
+        switch (e.duration) {
+            case NoteDuration.whole:
+                this.drawNoteCircle(group, e.x, e.y, false)
+                break;
+            case NoteDuration.half:
+                this.drawCircleAndStem(group, e.x, e.y, false)
+                break;
+            case NoteDuration.quarter:
+                this.drawCircleAndStem(group, e.x, e.y)
+                break;
+            case NoteDuration.eight:
+                this.drawCircleAndStem(group, e.x, e.y)
+                this.drawSubStems(group, e.x, 1, 1)
+                break;
+            case NoteDuration.sixteenth:
+                this.drawCircleAndStem(group, e.x, e.y)
+                this.drawSubStems(group, e.x, 2, 1)
+                break;
+            case NoteDuration.thirtysecond:
+                this.drawCircleAndStem(group, e.x, e.y)
+                this.drawSubStems(group, e.x, 3, 1)
+                break;
+            case NoteDuration.sixtyfourth:
+                this.drawCircleAndStem(group, e.x, e.y)
+                this.drawSubStems(group, e.x, 4, 1)
+                break;
+        }
+        if (e.alteration != null) {
+            switch (<Alteration>e.alteration) {
+                case Alteration.flat:
+                    this.drawFlat(group, e.x, e.y)
+                    break
+                case Alteration.cancel:
+                    this.drawCancelAlteration(group, e.x, e.y)
+                    break
+                case Alteration.sharp:
+                    this.drawSharp(group, e.x, e.y)
+                    break
+            }
+        }
+        return group
+    }
+
 
     private static drawQuarterRest(g: Element, x: number) {
         this.drawPath(g, 'black', 12, `M ${8 + x},40 V 79 z`)
@@ -394,71 +374,24 @@ export abstract class StaffElements {
 
     }
 
-    public static drawSingleNote(svgBox: Element, e: SoundEvent, x: number): Element {
-        this.writeEventInfo(svgBox, e, x)
+    public static drawRest(svgBox: Element, e: SoundEvent): void {
         let group = document.createElementNS(this.svgns, 'g')
         svgBox.appendChild(group)
-        switch (e.duration) {
-            case NoteDuration.whole:
-                this.drawNoteCircle(group, x, false)
-                break;
-            case NoteDuration.half:
-                this.drawCircleAndStem(group, x, false)
-                break;
-            case NoteDuration.quarter:
-                this.drawCircleAndStem(group, x)
-                break;
-            case NoteDuration.eight:
-                this.drawCircleAndStem(group, x)
-                this.drawSubStems(group, x, 1, 1)
-                break;
-            case NoteDuration.sixteenth:
-                this.drawCircleAndStem(group, x)
-                this.drawSubStems(group, x, 2, 1)
-                break;
-            case NoteDuration.thirtysecond:
-                this.drawCircleAndStem(group, x)
-                this.drawSubStems(group, x, 3, 1)
-                break;
-            case NoteDuration.sixtyfourth:
-                this.drawCircleAndStem(group, x)
-                this.drawSubStems(group, x, 4, 1)
-                break;
-        }
-        if (e.alteration != null) {
-            switch (<Alteration>e.alteration) {
-                case Alteration.flat:
-                    this.drawFlat(group, x, 0)
-                    break
-                case Alteration.cancel:
-                    this.drawCancelAlteration(group, x, 0)
-                    break
-                case Alteration.sharp:
-                    this.drawSharp(group, x, 0)
-                    break
-            }
-        }
-        return group
-    }
-
-    public static drawRest(svgBox: Element, type: NoteDuration, x: number): void {
-        let group = document.createElementNS(this.svgns, 'g')
-        svgBox.appendChild(group)
-        if (type == NoteDuration.whole) {
+        if (e.duration == NoteDuration.whole) {
             for (let i = 0; i < 4; i++)
-                this.drawQuarterRest(group, x + i * this.standardWidth)
+                this.drawQuarterRest(group, e.x + i * this.standardWidth)
             return
         }
-        if (type == NoteDuration.half) {
-            this.drawQuarterRest(group, x)
-            this.drawQuarterRest(group, x + this.standardWidth)
+        if (e.duration == NoteDuration.half) {
+            this.drawQuarterRest(group, e.x)
+            this.drawQuarterRest(group, e.x + this.standardWidth)
             return
         }
-        if (type == NoteDuration.quarter)
-            this.drawQuarterRest(group, x)
+        if (e.duration == NoteDuration.quarter)
+            this.drawQuarterRest(group, e.x)
         else {
-            this.drawRestStem(group, x, type)
-            this.drawRestSubStems(group, x, type)
+            this.drawRestStem(group, e.x, e.duration)
+            this.drawRestSubStems(group, e.x, e.duration)
         }
     }
     private static drawRestStem(g: Element, x: number, type: NoteDuration) {
@@ -501,17 +434,17 @@ export abstract class StaffElements {
         this.drawPath(g, 'black', 2, `M${x1},${y1} Q ${(x1 + x2) / 2},${y1 + 4} ${x2},${y2} z`)
     }
 
-    private static drawNoteCircle(g: Element, x: number, isCircleFull = true) {
-        this.drawEllipse(g, x + 13, 81, 7, 5, 'black', 2, `rotate(-25 ${x + 13} 81)`, isCircleFull)
+    private static drawNoteCircle(g: Element, x: number, y, number, isCircleFull = true) {
+        this.drawEllipse(g, x + 13, 81 + y, 7, 5, 'black', 2, `rotate(-25 ${x + 13} ${81 + y})`, isCircleFull)
     }
 
-    private static drawCircleAndStem(parent: Element, x: number, isCircleFull = true) {
-        this.drawNoteCircle(parent, x, isCircleFull)
-        this.drawStem(parent, x)
+    private static drawCircleAndStem(parent: Element, x: number, y: number, isCircleFull = true) {
+        this.drawNoteCircle(parent, x, y, isCircleFull)
+        this.drawStem(parent, x, y)
     }
 
-    private static drawStem(g: Element, x: number) {
-        this.drawPath(g, 'black', 2, `M ${x + 19},40 V 78 z`)
+    private static drawStem(g: Element, x: number, y: number) {
+        this.drawPath(g, 'black', 2, `M ${x + 19},${40 + y} V ${78 + y} z`)
     }
 
     private static drawSubStems(g: Element, x: number, qtySubstems: number, qtyNotes: number) {
@@ -664,13 +597,13 @@ export abstract class StaffElements {
         g.appendChild(textElement)
     }
 
-    private static writeEventInfo(g: Element, e: SoundEvent, x: number) {
-        // this.createText(g, `st=${e.startTick}`, x, 100, 12, `red`)
-        // this.createText(g, `pit=${e.pitch}`, x, 112, 12, `red`)
-        // this.createText(g, `dur=${e.durationInTicks}`, x, 124, 12, `red`)
-        // this.createText(g, `alt=${e.alteration != null ? e.alteration : ''}`, x, 136, 12, `red`)
-        // this.createText(g, `tie=${e.isTiedToPrevious}`, x, 148, 12, `red`)
-        // this.createText(g, `x=${x}`, x, 160, 12, `red`)
+    private static writeEventInfo(g: Element, e: SoundEvent) {
+        // this.createText(g, `st=${e.startTick}`, e.x, 100, 12, `red`)
+        // this.createText(g, `pit=${e.pitch}`, e.x, 112, 12, `red`)
+        // this.createText(g, `dur=${e.durationInTicks}`, e.x, 124, 12, `red`)
+        // this.createText(g, `alt=${e.alteration != null ? e.alteration : ''}`, e.x, 136, 12, `red`)
+        // this.createText(g, `tie=${e.isTiedToPrevious}`, e.x, 148, 12, `red`)
+        // this.createText(g, `x=${x}`, e.x, 160, 12, `red`)
     }
 
 }
