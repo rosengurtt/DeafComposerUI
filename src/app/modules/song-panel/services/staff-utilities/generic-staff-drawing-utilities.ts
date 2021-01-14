@@ -120,8 +120,9 @@ export abstract class GenericStaffDrawingUtilities {
         // F clef
         if (octave < 4) {
             // Simpler case, pitch is in C scale with no alterations
-            if (majorScalePitches.includes(basicPitch))
-                y = yOfC3inFclef - 6 * basicPitch - (octave - 3) * octaveHeightInPixels
+            if (majorScalePitches.includes(basicPitch)){
+                y = yOfC3inFclef - 6 * majorScalePitches.indexOf(basicPitch) - (octave - 3) * octaveHeightInPixels
+            }
 
             // Case when pitch is not in C scale, so there is an alteration for sure
             else
@@ -133,7 +134,7 @@ export abstract class GenericStaffDrawingUtilities {
         else {
             // Simpler case, pitch is in C scale with no alterations
             if (majorScalePitches.includes(basicPitch))
-                y = yOfC4inGclef - 6 * basicPitch - (octave - 4) * octaveHeightInPixels
+                y = yOfC4inGclef - 6 * majorScalePitches.indexOf(basicPitch) - (octave - 4) * octaveHeightInPixels
 
             // Case when pitch is not in C scale, so there is an alteration for sure
             else

@@ -16,6 +16,7 @@ import { keyframes } from '@angular/animations'
 import { ScaleType } from 'src/app/core/models/scale-type.enum'
 import { KeySignature } from 'src/app/core/models/key-signature'
 import {GenericStaffDrawingUtilities} from './staff-utilities/generic-staff-drawing-utilities'
+import {Pentagram} from './staff-utilities/pentagram'
 
 @Injectable()
 export class DrawingRythmService {
@@ -76,7 +77,7 @@ export class DrawingRythmService {
         this.allNoteStarts = DrawingCalculations.getAllNoteStarts(song, simplificationNo, this.eventsToDrawForAllVoices)
 
         let x = 0
-        x += StaffElements.drawClefs(this.svgBox, x)
+        x += Pentagram.drawClefs(this.svgBox, x)
         //  x += StaffElements.drawKeySignature(this.svgBox, KeySignature.sevenFlats, x)
 
         let startTieX: number | null = null
@@ -90,7 +91,7 @@ export class DrawingRythmService {
             x += beatDrawingInfo.deltaX
             startTieX = beatDrawingInfo.startTieX
         }
-        StaffElements.drawPentagram(this.svgBox, x)
+        Pentagram.drawPentagram(this.svgBox, x)
         return x
     }
 
@@ -347,11 +348,11 @@ export class DrawingRythmService {
         const totalBeats = timeSig.numerator
         let deltaX = 0
 
-        if (StaffElements.mustDrawKeySignature(bar.barNumber, this.bars))
-            deltaX += StaffElements.drawKeySignature(this.svgBox, x + deltaX, keySig)
+        if (Pentagram.mustDrawKeySignature(bar.barNumber, this.bars))
+            deltaX += Pentagram.drawKeySignature(this.svgBox, x + deltaX, keySig)
 
-        if (StaffElements.mustDrawTimeSignature(bar.barNumber, this.bars))
-            deltaX += StaffElements.drawTimeSignature(this.svgBox, x + deltaX, timeSig)
+        if (Pentagram.mustDrawTimeSignature(bar.barNumber, this.bars))
+            deltaX += Pentagram.drawTimeSignature(this.svgBox, x + deltaX, timeSig)
 
         for (let beat = 1; beat <= totalBeats; beat++) {
             let beatGraphNeeds: BeatGraphNeeds
@@ -360,8 +361,8 @@ export class DrawingRythmService {
             deltaX += beatDrawInfo.deltaX
             startTieX = beatDrawInfo.startTieX
         }
-        deltaX += StaffElements.drawBarLine(this.svgBox, x + deltaX)
-        StaffElements.drawBarNumber(this.svgBox, x + deltaX / 2 - 10, bar.barNumber)
+        deltaX += Pentagram.drawBarLine(this.svgBox, x + deltaX)
+        Pentagram.drawBarNumber(this.svgBox, x + deltaX / 2 - 10, bar.barNumber)
         return new BeatDrawingInfo(startTieX, deltaX)
 
     }
