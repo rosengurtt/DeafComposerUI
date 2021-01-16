@@ -3,8 +3,26 @@ import { TimeSignature } from 'src/app/core/models/time-signature'
 import { Bar } from 'src/app/core/models/bar'
 import { Notes } from './notes'
 import { KeySignature } from 'src/app/core/models/key-signature'
+import { SoundEvent } from 'src/app/core/models/sound-event'
+import { SoundEventType } from 'src/app/core/models/sound-event-type.enum'
+import { Alteration } from 'src/app/core/models/alteration.enum'
 
 export abstract class Pentagram {
+    private static G6 = 91
+    private static G6b = 90
+    private static E6 = 88
+    private static E6b = 87
+    private static C6 = 84
+    private static C6b = 83
+    private static G5sharp = 80
+    private static G5 = 79
+    private static D4 = 62
+    private static B3 = 59
+    private static F2 = 41
+    private static E2 = 40
+    private static C2sharp = 37
+    private static A1sharp = 34
+    private static F1sharp = 30
 
     public static drawPentagram(g: Element, length: number): void {
         BasicShapes.drawPath(g, 'black', 1, `M 5,52 H ${length}`)
@@ -155,4 +173,76 @@ export abstract class Pentagram {
         return deltaX
     }
 
+    // When a note is too high or too low to fit in the pentagram, it is drawn with short extra lines
+    // This method adds any extra lines needed for a note
+    public static addExtraLines(g: Element, e: SoundEvent): void {
+        // if it is a rest don't draw extra lines
+        if (e.type == SoundEventType.rest) return
+
+        const noteLocation = this.getNoteLocationInPentagram(e)
+        switch (noteLocation) {
+            case PentagramLocation.InsidePentagram:
+                return
+            case PentagramLocation.AboveGclef:
+                if (e.pitch == this.G5sharp && e.alterationApplied == Alteration.sharp) return  //G5# doesn't need extra line
+                this.drawExtraLine(g, noteLocation, 1, e.x)
+                if (e.pitch > this.C6 || e.pitch === this.C6b && e.alterationApplied === Alteration.flat)
+                    this.drawExtraLine(g, noteLocation, 2, e.x)
+                if (e.pitch >= this.E6 || e.pitch === this.E6b && e.alterationApplied === Alteration.flat)
+                    this.drawExtraLine(g, noteLocation, 3, e.x)
+                if (e.pitch >= this.G6 || e.pitch === this.G6b && e.alterationApplied === Alteration.flat)
+                    this.drawExtraLine(g, noteLocation, 4, e.x)
+                break
+            case PentagramLocation.Betweenclefs:
+                this.drawExtraLine(g, noteLocation, 1, e.x)
+                break
+            case PentagramLocation.BelowFclef:
+                if (e.pitch < this.E2 || e.pitch === this.E2 && e.alterationApplied !== Alteration.flat)
+                    this.drawExtraLine(g, noteLocation, 1, e.x)
+                if (e.pitch < this.C2sharp || e.pitch === this.C2sharp && e.alterationApplied === Alteration.sharp)
+                    this.drawExtraLine(g, noteLocation, 2, e.x)
+                if (e.pitch < this.A1sharp || e.pitch === this.A1sharp && e.alterationApplied === Alteration.sharp)
+                    this.drawExtraLine(g, noteLocation, 3, e.x)
+                if (e.pitch < this.F1sharp || e.pitch === this.F1sharp && e.alterationApplied === Alteration.sharp)
+                    this.drawExtraLine(g, noteLocation, 4, e.x)
+                break
+        }
+    }
+    private static drawExtraLine(g: Element, loc: PentagramLocation, i: number, x: number) {
+        let y: number
+        switch (loc) {
+            case PentagramLocation.AboveGclef:
+                y = 52 - 12 * i
+                break
+            case PentagramLocation.Betweenclefs:
+                y = 100 + 12 * i
+                break
+            case PentagramLocation.BelowFclef:
+                y = 200 + 12 * i
+                break
+        }
+        BasicShapes.drawPath(g, 'black', 1, `M ${x - 5},${y} h ${35} z`)
+        this.writeEctraLineInfo(g, x, y, loc, i)
+    }
+    private static getNoteLocationInPentagram(e: SoundEvent): PentagramLocation {
+        if (e.pitch > this.G5) return PentagramLocation.AboveGclef
+        if (e.pitch < this.F2) return PentagramLocation.BelowFclef
+        if (e.pitch > this.B3 && e.pitch < this.D4) return PentagramLocation.Betweenclefs
+        return PentagramLocation.InsidePentagram
+    }
+    private static writeEctraLineInfo(g: Element, x: number, y: number, i: number, loc: PentagramLocation): void {
+        // BasicShapes.createText(g, `x=${x}`, x, 100, 12, `red`)
+        // BasicShapes.createText(g, `y=${y}`, x, 112, 12, `red`)
+        // BasicShapes.createText(g, `i=${i}`, x, 124, 12, `red`)
+        // BasicShapes.createText(g, `loc=${loc}`, x, 148, 12, `red`)
+    }
+
+
+
+}
+enum PentagramLocation {
+    InsidePentagram,
+    AboveGclef,
+    Betweenclefs,
+    BelowFclef
 }

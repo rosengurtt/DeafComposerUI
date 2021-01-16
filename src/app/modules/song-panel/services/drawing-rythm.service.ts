@@ -15,8 +15,8 @@ import { Alteration } from 'src/app/core/models/alteration.enum'
 import { keyframes } from '@angular/animations'
 import { ScaleType } from 'src/app/core/models/scale-type.enum'
 import { KeySignature } from 'src/app/core/models/key-signature'
-import {GenericStaffDrawingUtilities} from './staff-utilities/generic-staff-drawing-utilities'
-import {Pentagram} from './staff-utilities/pentagram'
+import { GenericStaffDrawingUtilities } from './staff-utilities/generic-staff-drawing-utilities'
+import { Pentagram } from './staff-utilities/pentagram'
 
 @Injectable()
 export class DrawingRythmService {
@@ -72,13 +72,13 @@ export class DrawingRythmService {
             this.eventsToDrawForAllVoices.push(DrawingCalculations.getEventsToDraw(song, simplificationNo, v))
         }
         this.eventsToDraw = this.eventsToDrawForAllVoices[voice]
-        this.AddAlterationsToSoundEvents()
+        this.AddShownAlterationsToSoundEvents()
+        this.AddAppliedAlterationToSoundEvents()
 
         this.allNoteStarts = DrawingCalculations.getAllNoteStarts(song, simplificationNo, this.eventsToDrawForAllVoices)
 
         let x = 0
         x += Pentagram.drawClefs(this.svgBox, x)
-        //  x += StaffElements.drawKeySignature(this.svgBox, KeySignature.sevenFlats, x)
 
         let startTieX: number | null = null
         for (const bar of this.bars) {
@@ -92,12 +92,30 @@ export class DrawingRythmService {
             startTieX = beatDrawingInfo.startTieX
         }
         Pentagram.drawPentagram(this.svgBox, x)
+        this.eventsToDraw.forEach(x => Pentagram.addExtraLines(this.svgBox, x))
         return x
     }
 
-    // It populates the alteration field of the note sound events held in the global variable eventsToDraw
-    // When a note has to be draw with a sharp, flat or 
-    private AddAlterationsToSoundEvents() {
+    // When a note is not a note of the C major scale, we need to know if it is considered a flat or a sharp to decide where we
+    // we draw it. A ntoe can also have the pitch of a C major scale note, but actually be considered a different note, like when we
+    // have a key signature with 6 sharps and the pitch corresponding to the F note is actually treated as an E sharp, not an F
+    // We store in the variable AlterationApplied the information of what alteration is being applied to this pitch. So if we have a
+    // note with a pitch of 61, and an AlterationApplied of sharp, then we draw it as a C#. If it has an alteration of flat, we draw
+    // it as a Db
+    private AddAppliedAlterationToSoundEvents() {
+        for (let e of this.eventsToDraw.filter(x => x.type == SoundEventType.note)) {
+            const alterationsAtTick = GenericStaffDrawingUtilities.getAlterationsAtTick(this.bars, e.startTick, this.eventsToDraw)
+            if (alterationsAtTick.has(e.pitch))
+                e.alterationApplied = alterationsAtTick.get(e.pitch)
+            else
+                e.alterationApplied = null
+        }
+    }
+
+    // It populates the alterationShown field of the note sound events held in the global variable eventsToDraw
+    // The alterationShown field is used to decide if we add an alteration (a sharp a flat or a natural (that I call "cancel")
+    // next to the note when drawn in the pentagram
+    private AddShownAlterationsToSoundEvents() {
         // The alterations added in this bar, affect the next bar in this way:
         // - if we have the same note altered in the next bar, we still have to add the sharp or flat
         // - but if the natural note is played, we have to add a cancel, as if it had a previous sharp or flat in this bar
@@ -144,7 +162,7 @@ export class DrawingRythmService {
             // if this note is not in the scale and there are no previous alterations in this bar for this pitch, 
             // add an alteration to it and store the fact in the currentAlterations array
             if (!unalteredPitches.has(e.pitch % 12) && !alterationsAddedInThisBar.has(e.pitch) && !keySiganatureAlterations.has(e.pitch)) {
-                e.alteration = Alteration.sharp
+                e.alterationShown = Alteration.sharp
                 currentAlterations.add(e.pitch)
                 alterationsAddedInThisBar.add(e.pitch)
             }
@@ -152,7 +170,7 @@ export class DrawingRythmService {
             // previous alteration for this pitch
             if (unalteredPitches.has(e.pitch % 12) &&
                 ((currentAlterations.has(e.pitch + 1)) || alterationsAddedInPreviousBar.has(e.pitch + 1))) {
-                e.alteration = Alteration.cancel
+                e.alterationShown = Alteration.cancel
                 currentAlterations.delete(e.pitch + 1)
                 alterationsAddedInPreviousBar.delete(e.pitch + 1)
                 alterationsAddedInThisBar.delete(e.pitch + 1)
@@ -164,7 +182,7 @@ export class DrawingRythmService {
             // if this note is not in the scale and there are no previous alterations in this bar for this pitch, 
             // add an alteration to it and store the fact in the currentAlterations array
             if (!unalteredPitches.has(e.pitch % 12) && !alterationsAddedInThisBar.has(e.pitch) && !keySiganatureAlterations.has(e.pitch)) {
-                e.alteration = Alteration.flat
+                e.alterationShown = Alteration.flat
                 currentAlterations.add(e.pitch)
                 alterationsAddedInThisBar.add(e.pitch)
             }
@@ -172,7 +190,7 @@ export class DrawingRythmService {
             // previous alteration for this pitch
             if (unalteredPitches.has(e.pitch % 12) &&
                 (currentAlterations.has(e.pitch - 1) || alterationsAddedInPreviousBar.has(e.pitch - 1))) {
-                e.alteration = Alteration.cancel
+                e.alterationShown = Alteration.cancel
                 currentAlterations.delete(e.pitch - 1)
                 alterationsAddedInPreviousBar.delete(e.pitch - 1)
                 alterationsAddedInThisBar.delete(e.pitch - 1)
@@ -199,7 +217,7 @@ export class DrawingRythmService {
             // add an alteration to it and store the fact in the currentAlterations array
             const keySiganatureAlterations = GenericStaffDrawingUtilities.GetKeySignatureAlteredPitches(bar.keySignature.key)
             if (!unalteredPitches.has(e.pitch % 12) && !alterationsAddedInThisBar.has(e.pitch) && !keySiganatureAlterations.has(e.pitch)) {
-                e.alteration = Alteration.sharp
+                e.alterationShown = Alteration.sharp
                 currentAlterations.add(e.pitch)
                 alterationsAddedInThisBar.add(e.pitch)
             }
@@ -207,7 +225,7 @@ export class DrawingRythmService {
             // previous alteration for this pitch
             if (unalteredPitches.has(e.pitch % 12) &&
                 ((currentAlterations.has(e.pitch + 1)) || alterationsAddedInPreviousBar.has(e.pitch + 1))) {
-                e.alteration = Alteration.cancel
+                e.alterationShown = Alteration.cancel
                 currentAlterations.delete(e.pitch + 1)
                 alterationsAddedInPreviousBar.delete(e.pitch + 1)
                 alterationsAddedInThisBar.delete(e.pitch + 1)
@@ -219,7 +237,7 @@ export class DrawingRythmService {
             // if this note is not in the scale and there are no previous alterations in this bar for this pitch, 
             // add an alteration to it and store the fact in the currentAlterations array
             if (!unalteredPitches.has(e.pitch % 12) && !alterationsAddedInThisBar.has(e.pitch) && !keySiganatureAlterations.has(e.pitch)) {
-                e.alteration = Alteration.flat
+                e.alterationShown = Alteration.flat
                 currentAlterations.add(e.pitch)
                 alterationsAddedInThisBar.add(e.pitch)
             }
@@ -227,15 +245,13 @@ export class DrawingRythmService {
             // previous alteration for this pitch
             if (unalteredPitches.has(e.pitch % 12) &&
                 (currentAlterations.has(e.pitch - 1) || alterationsAddedInPreviousBar.has(e.pitch - 1))) {
-                e.alteration = Alteration.cancel
+                e.alterationShown = Alteration.cancel
                 currentAlterations.delete(e.pitch - 1)
                 alterationsAddedInPreviousBar.delete(e.pitch - 1)
                 alterationsAddedInThisBar.delete(e.pitch - 1)
             }
         }
     }
-
-
 
     // The most common added sharps in a C scale are F# C# and G# 
     // So if the key signature is C and we have the pitch 6, it is probably a F# and not a Gb
@@ -253,8 +269,6 @@ export class DrawingRythmService {
             .filter(e => e.startTick >= barStart && e.startTick < barEnd)
             .sort((a, b) => a.startTick - b.startTick)
     }
-
-
 
     // When drawing notes in the pentagram, we need to know which notes will need an alteration added
     // The notes that belong to the scale defined by the key signature are the ones that don't have alterations

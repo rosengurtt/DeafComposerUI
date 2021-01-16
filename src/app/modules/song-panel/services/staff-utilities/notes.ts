@@ -56,8 +56,8 @@ export abstract class Notes {
         svgBox.appendChild(group)
         this.drawNoteCircle(group, e.x, e.y, isCircleFull)
         this.drawStem(group, e.x, e.y)
-        if (e.alteration != null) {
-            switch (<Alteration>e.alteration) {
+        if (e.alterationShown != null) {
+            switch (<Alteration>e.alterationShown) {
                 case Alteration.flat:
                     Notes.drawFlat(group, e.x, e.y)
                     break
@@ -103,8 +103,8 @@ export abstract class Notes {
                 this.drawSubStems(group, e.x, 4, 1)
                 break;
         }
-        if (e.alteration != null) {
-            switch (<Alteration>e.alteration) {
+        if (e.alterationShown != null) {
+            switch (<Alteration>e.alterationShown) {
                 case Alteration.flat:
                     Notes.drawFlat(group, e.x, e.y)
                     break
@@ -196,7 +196,7 @@ export abstract class Notes {
         // BasicShapes.createText(g, `st=${e.startTick}`, e.x, 100, 12, `red`)
         // BasicShapes.createText(g, `pit=${e.pitch}`, e.x, 112, 12, `red`)
         // BasicShapes.createText(g, `dur=${e.durationInTicks}`, e.x, 124, 12, `red`)
-        // BasicShapes.createText(g, `alt=${e.alteration != null ? e.alteration : ''}`, e.x, 136, 12, `red`)
+        // BasicShapes.createText(g, `alt=${e.alterationShown != null ? e.alterationShown : ''}`, e.x, 136, 12, `red`)
         // BasicShapes.createText(g, `tie=${e.isTiedToPrevious}`, e.x, 148, 12, `red`)
         // BasicShapes.createText(g, `x=${e.x}`, e.x, 160, 12, `red`)
         // BasicShapes.createText(g, `y=${e.y}`, e.x, 172, 12, `red`)

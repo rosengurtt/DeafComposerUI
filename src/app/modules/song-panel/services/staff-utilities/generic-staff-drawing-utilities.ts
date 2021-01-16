@@ -108,39 +108,42 @@ export abstract class GenericStaffDrawingUtilities {
     // Alteration.Flat, it will be displayed as a Db, if it is Alteration.Sharp it will be displayed as C#
     public static getYofNote(e: SoundEvent, bars: Bar[], eventsToDraw: SoundEvent[]): number {
         const alterations = this.getAlterationsAtTick(bars, e.startTick, eventsToDraw)
+        let alterationOfNote = (e.alterationShown != null && e.alterationShown != Alteration.cancel) ? e.alterationShown : alterations.get(e.pitch)
+        if (e.alterationShown === Alteration.cancel) alterationOfNote = null
         let majorScalePitches = [0, 2, 4, 5, 7, 9, 11]
         const basicPitch = e.pitch % 12
         const octave = ((e.pitch - basicPitch) / 12) - 1    // C4 that is the central C in the piano has pitch 60 and octave 4 starts in C4
         const octaveHeightInPixels = 42
         const yOfC4inGclef = 30
         const yOfC3inFclef = 100
+        const linesSeparation = 12
         let y: number
 
 
         // F clef
         if (octave < 4) {
             // Simpler case, pitch is in C scale with no alterations
-            if (majorScalePitches.includes(basicPitch)){
-                y = yOfC3inFclef - 6 * majorScalePitches.indexOf(basicPitch) - (octave - 3) * octaveHeightInPixels
+            if (majorScalePitches.includes(basicPitch)) {
+                y = yOfC3inFclef - linesSeparation / 2 * majorScalePitches.indexOf(basicPitch) - (octave - 3) * octaveHeightInPixels
             }
 
             // Case when pitch is not in C scale, so there is an alteration for sure
             else
-                y = alterations.get(e.pitch) == Alteration.sharp ?
-                    yOfC3inFclef - 6 * (basicPitch - 1) - (octave - 3) * octaveHeightInPixels :
-                    yOfC3inFclef - 6 * (basicPitch + 1) - (octave - 3) * octaveHeightInPixels
+                y = alterationOfNote == Alteration.sharp ?
+                    yOfC3inFclef - linesSeparation / 2 * (basicPitch - 1) - (octave - 3) * octaveHeightInPixels :
+                    yOfC3inFclef - linesSeparation / 2 * (basicPitch + 1) - (octave - 3) * octaveHeightInPixels
         }
         // G clef
         else {
             // Simpler case, pitch is in C scale with no alterations
             if (majorScalePitches.includes(basicPitch))
-                y = yOfC4inGclef - 6 * majorScalePitches.indexOf(basicPitch) - (octave - 4) * octaveHeightInPixels
+                y = yOfC4inGclef - linesSeparation / 2 * majorScalePitches.indexOf(basicPitch) - (octave - 4) * octaveHeightInPixels
 
             // Case when pitch is not in C scale, so there is an alteration for sure
             else
-                y = alterations.get(e.pitch) == Alteration.sharp ?
-                    yOfC4inGclef - 6 * (basicPitch - 1) - (octave - 4) * octaveHeightInPixels :
-                    yOfC4inGclef - 6 * (basicPitch + 1) - (octave - 4) * octaveHeightInPixels
+                y = alterationOfNote == Alteration.sharp ?
+                    yOfC4inGclef - linesSeparation / 2 * majorScalePitches.indexOf(basicPitch - 1) - (octave - 4) * octaveHeightInPixels :
+                    yOfC4inGclef - linesSeparation / 2 * majorScalePitches.indexOf(basicPitch + 1) - (octave - 4) * octaveHeightInPixels
         }
 
         // We consider now the special cases of E-F and B-C. These are special because pitch 4 may be a natural E or a Fb.
@@ -150,20 +153,20 @@ export abstract class GenericStaffDrawingUtilities {
         // was not the case
 
         // Case where pitch 5 is an E# and not an F. We have to move down our initial calcualtion 6 pixels
-        if (e.pitch % 12 == 5 && alterations.get(e.pitch) == Alteration.sharp) {
-            y = y + 6
+        if (e.pitch % 12 == 5 && alterationOfNote == Alteration.sharp) {
+            y = y + linesSeparation / 2
         }
         // Case where pitch 4 is an Fb. We have to move it up 6 pixels
-        else if (e.pitch % 12 == 4 && alterations.get(e.pitch) == Alteration.flat) {
-            y = y - 6
+        else if (e.pitch % 12 == 4 && alterationOfNote == Alteration.flat) {
+            y = y - linesSeparation / 2
         }
         // Case pitch 0 is a B#                
-        if (e.pitch % 12 == 0 && alterations.get(e.pitch) == Alteration.sharp) {
-            y = y + 6
+        if (e.pitch % 12 == 0 && alterationOfNote == Alteration.sharp) {
+            y = y + linesSeparation / 2
         }
         // Case pitch 11 is a Cb
-        else if (e.pitch % 12 == 11 && alterations.get(e.pitch) == Alteration.flat) {
-            y = y - 6
+        else if (e.pitch % 12 == 11 && alterationOfNote == Alteration.flat) {
+            y = y - linesSeparation / 2
         }
         return y
     }
@@ -183,7 +186,7 @@ export abstract class GenericStaffDrawingUtilities {
     // This method returns the status of alterations at a moment of the song for a specific voice. If the alterations
     // added to the eventsToDraw object are correct, then we should have all the alterations info we need to draw any
     // note at any tick
-    private static getAlterationsAtTick(bars: Bar[], tick: number, eventsToDraw: SoundEvent[]): Map<number, Alteration> {
+    public static getAlterationsAtTick(bars: Bar[], tick: number, eventsToDraw: SoundEvent[]): Map<number, Alteration> {
         const barNumber = GenericStaffDrawingUtilities.getBarOfTick(bars, tick)
         const keySig = bars[barNumber - 1].keySignature
 
@@ -204,10 +207,10 @@ export abstract class GenericStaffDrawingUtilities {
     private static getAlterationsOfLast2BarsAtTick(bars: Bar[], tick: number, eventsToDraw: SoundEvent[]): Map<number, Alteration> {
         const barNumber = GenericStaffDrawingUtilities.getBarOfTick(bars, tick)
         let start = barNumber > 1 ? bars[barNumber - 1].ticksFromBeginningOfSong : 0
-        let eventsWithAlterationsInTheLast2Bars = eventsToDraw.filter(e => e.startTick >= start && e.startTick < tick && e.alteration != null)
+        let eventsWithAlterationsInTheLast2Bars = eventsToDraw.filter(e => e.startTick >= start && e.startTick < tick && e.alterationShown != null)
         let retObj = new Map<number, Alteration>()
         for (let e of eventsWithAlterationsInTheLast2Bars)
-            retObj.set(e.pitch, e.alteration)
+            retObj.set(e.pitch, e.alterationShown)
         return retObj
     }
 }

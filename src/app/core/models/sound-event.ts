@@ -14,7 +14,11 @@ export class SoundEvent {
     duration: NoteDuration
     isTiedToPrevious: boolean
     isAccented: boolean
-    alteration: Alteration | null
+    // alterationShown is used for indicating the alteration shown next to the note in the pentagram
+    alterationShown: Alteration | null
+    // alteration applied is used for indicating how the note is played. When the key signature has sharp for ex. the note may
+    // be played with a sharp, even when the note itself is not displayed with a sharp
+    alterationApplied: Alteration | null
     pitch: number | null
     graphic: Element[]          // In musical notation this array has the staff objects that are displayed for this note
     // They are an array because a single note can be shown as several tied notes
@@ -46,6 +50,8 @@ export class SoundEvent {
         else this.isTiedToPrevious = false
         if (isAccented) this.isAccented = isAccented
         else isAccented = false
+        this.alterationShown = null
+        this.alterationApplied = null
     }
 
 
