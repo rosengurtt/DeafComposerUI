@@ -109,6 +109,10 @@ export class DrawingRythmService {
                 e.alterationApplied = alterationsAtTick.get(e.pitch)
             else
                 e.alterationApplied = null
+            if (e.alterationShown == Alteration.sharp || e.alterationShown == Alteration.flat)
+                e.alterationApplied = e.alterationShown
+            if (e.alterationShown == Alteration.cancel)
+                e.alterationApplied = null
         }
     }
 
@@ -210,9 +214,8 @@ export class DrawingRythmService {
         const keySiganatureAlterations = GenericStaffDrawingUtilities.GetKeySignatureAlteredPitches(bar.keySignature.key)
         // If key signature has sharps we add sharps
         // If the key is C and we have F#. C# or G# we add sharps
-        if (bar.keySignature.key > 0 || e.pitch % 12 == majorSixth || e.pitch == majorSeventh ||
+        if (bar.keySignature.key > 0 || e.pitch % 12 == majorSixth || e.pitch % 12 == majorSeventh ||
             bar.keySignature.key == 0 && this.areAlteredPitchesSharp(new Set([...pitchesOfThisBar, ...alterationsAddedInPreviousBar]))) {
-
             // if this note is not in the scale and there are no previous alterations in this bar for this pitch, 
             // add an alteration to it and store the fact in the currentAlterations array
             const keySiganatureAlterations = GenericStaffDrawingUtilities.GetKeySignatureAlteredPitches(bar.keySignature.key)
@@ -233,7 +236,6 @@ export class DrawingRythmService {
         }
         // if the key signature has flats or key is C and we have Bb or Eb add flats
         else {
-
             // if this note is not in the scale and there are no previous alterations in this bar for this pitch, 
             // add an alteration to it and store the fact in the currentAlterations array
             if (!unalteredPitches.has(e.pitch % 12) && !alterationsAddedInThisBar.has(e.pitch) && !keySiganatureAlterations.has(e.pitch)) {

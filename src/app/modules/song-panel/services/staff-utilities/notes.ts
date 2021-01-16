@@ -35,37 +35,40 @@ export abstract class Notes {
         return deltaX
     }
 
-    public static drawStem(g: Element, x: number, y: number) {
-        BasicShapes.drawPath(g, 'black', 2, `M ${x + 19},${30 + y} V ${78 + y} z`)
+    public static drawStem(g: Element, x: number, bottomY: number, topY: number = null) {
+        const zero = 30
+        const defaultStemLength = 48
+        if (topY === null) topY = bottomY + defaultStemLength
+        BasicShapes.drawPath(g, 'black', 2, `M ${x + 19},${zero + bottomY} V ${zero + topY} z`)
     }
 
-    public static drawCircleAndStem(parent: Element, x: number, y: number, isCircleFull = true) {
-        this.drawNoteCircle(parent, x, y, isCircleFull)
-        this.drawStem(parent, x, y)
+    public static drawCircleAndStem(parent: Element, x: number, bottomY: number, topY: number = null, isCircleFull = true) {
+        this.drawNoteCircle(parent, x, bottomY, isCircleFull)
+        this.drawStem(parent, x, bottomY, topY)
     }
 
-    public static drawNoteCircle(g: Element, x: number, y, number, isCircleFull = true) {
+    public static drawNoteCircle(g: Element, x: number, y: number, isCircleFull = true) {
         BasicShapes.drawEllipse(g, x + 13, 81 + y, 7, 5, 'black', 2, `rotate(-25 ${x + 13} ${81 + y})`, isCircleFull)
     }
 
     // Draws a circle and a stem. The idea is that regardless of a note being a quarter, and eight or a
     // sixteenth, we draw it as a quarter, and then we add the needed beams to convert it to an eight or whatever
     public static drawBasicNote(svgBox: Element, e: SoundEvent, isCircleFull = true): Element {
-        this.writeEventInfo(svgBox,e)
+        this.writeEventInfo(svgBox, e)
         let group = document.createElementNS(this.svgns, 'g')
         svgBox.appendChild(group)
-        this.drawNoteCircle(group, e.x, e.y, isCircleFull)
-        this.drawStem(group, e.x, e.y)
+        this.drawNoteCircle(group, e.x, e.bottomY, isCircleFull)
+        this.drawStem(group, e.x, e.bottomY)
         if (e.alterationShown != null) {
             switch (<Alteration>e.alterationShown) {
                 case Alteration.flat:
-                    Notes.drawFlat(group, e.x, e.y)
+                    Notes.drawFlat(group, e.x, e.bottomY)
                     break
                 case Alteration.cancel:
-                    Notes.drawCancelAlteration(group, e.x, e.y)
+                    Notes.drawCancelAlteration(group, e.x, e.bottomY)
                     break
                 case Alteration.sharp:
-                    Notes.drawSharp(group, e.x, e.y)
+                    Notes.drawSharp(group, e.x, e.bottomY)
                     break
             }
         }
@@ -73,60 +76,65 @@ export abstract class Notes {
     }
 
     public static drawSingleNote(svgBox: Element, e: SoundEvent): Element {
-        this.writeEventInfo(svgBox,e)
+        if (e.startTick==6720){
+            let lolo=true
+        }
+        this.writeEventInfo(svgBox, e)
         let group = document.createElementNS(this.svgns, 'g')
         svgBox.appendChild(group)
         switch (e.duration) {
             case NoteDuration.whole:
-                this.drawNoteCircle(group, e.x, e.y, false)
+                this.drawNoteCircle(group, e.x, e.bottomY, false)
                 break;
             case NoteDuration.half:
-                this.drawCircleAndStem(group, e.x, e.y, false)
+                this.drawCircleAndStem(group, e.x, e.bottomY, null, false)
                 break;
             case NoteDuration.quarter:
-                this.drawCircleAndStem(group, e.x, e.y)
+                this.drawCircleAndStem(group, e.x, e.bottomY)
                 break;
             case NoteDuration.eight:
-                this.drawCircleAndStem(group, e.x, e.y)
-                this.drawSubStems(group, e.x, 1, 1)
+                this.drawCircleAndStem(group, e.x, e.bottomY)
+                this.drawSubStems(group, e.x, e.bottomY, 1, 1)
                 break;
             case NoteDuration.sixteenth:
-                this.drawCircleAndStem(group, e.x, e.y)
-                this.drawSubStems(group, e.x, 2, 1)
+                this.drawCircleAndStem(group, e.x, e.bottomY)
+                this.drawSubStems(group, e.x, e.bottomY, 2, 1)
                 break;
             case NoteDuration.thirtysecond:
-                this.drawCircleAndStem(group, e.x, e.y)
-                this.drawSubStems(group, e.x, 3, 1)
+                this.drawCircleAndStem(group, e.x, e.bottomY)
+                this.drawSubStems(group, e.x, e.bottomY, 3, 1)
                 break;
             case NoteDuration.sixtyfourth:
-                this.drawCircleAndStem(group, e.x, e.y)
-                this.drawSubStems(group, e.x, 4, 1)
+                this.drawCircleAndStem(group, e.x, e.bottomY)
+                this.drawSubStems(group, e.x, e.bottomY, 4, 1)
                 break;
         }
         if (e.alterationShown != null) {
             switch (<Alteration>e.alterationShown) {
                 case Alteration.flat:
-                    Notes.drawFlat(group, e.x, e.y)
+                    Notes.drawFlat(group, e.x, e.bottomY)
                     break
                 case Alteration.cancel:
-                    Notes.drawCancelAlteration(group, e.x, e.y)
+                    Notes.drawCancelAlteration(group, e.x, e.bottomY)
                     break
                 case Alteration.sharp:
-                    Notes.drawSharp(group, e.x, e.y)
+                    Notes.drawSharp(group, e.x, e.bottomY)
                     break
             }
         }
         return group
     }
 
-    private static drawSubStems(g: Element, x: number, qtySubstems: number, qtyNotes: number) {
+    private static drawSubStems(g: Element, x: number, y:number, qtySubstems: number, qtyNotes: number) {
         if (qtyNotes == 1) {
             for (let i = 0; i < qtySubstems; i++) {
-                BasicShapes.drawPath(g, 'black', 1, `M${x + 10},${44 + 6 * i} Q ${x + 14},${47 + 6 * i} ${x + 19},${40 + 6 * i} z`)
+                BasicShapes.drawPath(g, 'black', 1, `M${x + 10},${32 + y + 6 * i} Q ${x + 14},${35 + y + 6 * i} ${x + 19},${28 + y + 6 * i} z`)
+             //   BasicShapes.drawPath(g, 'black', 1, `M${x + 10},${44 + y + 6 * i} Q ${x + 14},${47 + y + 6 * i} ${x + 19},${40 + y + 6 * i} z`)
             }
         }
         for (let i = 0; i < qtySubstems; i++) {
-            BasicShapes.drawPath(g, 'black', 2, `M${x + 19},${40 + 4 * i} L ${x + qtyNotes * 20},${40 + 4 * i} z`)
+            BasicShapes.drawPath(g, 'black', 2, `M${x + 19},${28 + y + 4 * i} L ${x + qtyNotes * 20},${28 + y + 4 * i} z`)
+            //BasicShapes.drawPath(g, 'black', 2, `M${x + 19},${40 + y + 4 * i} L ${x + qtyNotes * 20},${40 + y + 4 * i} z`)
         }
     }
 
@@ -134,8 +142,6 @@ export abstract class Notes {
     public static drawTie(svgBox: Element, x1: number, x2: number, y: number) {
         BasicShapes.drawPath(svgBox, 'black', 2, `M ${x1},${100 + y} Q ${(x1 + x2) / 2},${115 + y} ${x2},${100 + y} z`)
         BasicShapes.drawPath(svgBox, 'white', 7, `M ${x1},${97 + y} Q ${(x1 + x2) / 2},${105 + y} ${x2},${97 + y} z`)
-        // BasicShapes.drawPath(svgBox, 'black', 2, `M ${x1},95 Q ${(x1 + x2) / 2},110 ${x2},95 z`)
-        // BasicShapes.drawPath(svgBox, 'white', 7, `M ${x1},92 Q ${(x1 + x2) / 2},100 ${x2},92 z`)
     }
 
 
@@ -145,17 +151,27 @@ export abstract class Notes {
         const thisBeatNoteEvents = beatEvents.filter(x => x.type == SoundEventType.note).sort((a, b) => a.startTick - b.startTick)
         if (!thisBeatNoteEvents || thisBeatNoteEvents.length == 0) return
         const firstX = thisBeatNoteEvents[0].x - x
-        const firstY = thisBeatNoteEvents[0].y
+        const firstBottomY = thisBeatNoteEvents[0].bottomY
         const lastX = thisBeatNoteEvents[thisBeatNoteEvents.length - 1].x - x
-        const lastY = thisBeatNoteEvents[thisBeatNoteEvents.length - 1].y
+        const lastBottomY = thisBeatNoteEvents[thisBeatNoteEvents.length - 1].bottomY
+        const shortestStem = this.calculateShortestStem(firstX + x, firstBottomY, lastX + x, lastBottomY, thisBeatNoteEvents)
+        const defaultStemLength = 48
+        // verticalDisplacement is the value we will have to extend the stems of the first and last notes, so all the stems of the 
+        // intermediate notes are at least as long as defaultStemLength minus 6
+        const verticalDisplacement = shortestStem
 
         for (let i = 0; i < thisBeatNoteEvents.length - 1; i++) {
             const eventito = thisBeatNoteEvents[i]
             const nextEvent = thisBeatNoteEvents[i + 1]
             const startX = DrawingCalculations.calculateXofEventInsideBeat(eventito, beatGraphNeeds, beatStartTick)
             const endX = DrawingCalculations.calculateXofEventInsideBeat(nextEvent, beatGraphNeeds, beatStartTick)
-            const startY = firstY + ((lastY - firstY) / (lastX - firstX)) * (startX - firstX)
-            const endY = firstY + ((lastY - firstY) / (lastX - firstX)) * (endX - firstX)
+            const startY = firstBottomY + ((lastBottomY - firstBottomY) / (lastX - firstX)) * (startX - firstX) - verticalDisplacement
+            const endY = firstBottomY + ((lastBottomY - firstBottomY) / (lastX - firstX)) * (endX - firstX) - verticalDisplacement
+            // if verticalDisplacement > 0 we have to extend the stems so they reach the top beam
+            eventito.topY = startY
+            this.drawStem(g, eventito.x, eventito.bottomY, eventito.topY)
+            nextEvent.topY = endY
+            this.drawStem(g, nextEvent.x, nextEvent.bottomY, nextEvent.topY)
 
             if (this.isNoteShorterThan(eventito, NoteDuration.quarter) && this.isNoteShorterThan(nextEvent, NoteDuration.quarter))
                 this.drawBeam(g, x + startX, startY, x + endX, endY, NoteDuration.eight)
@@ -166,6 +182,25 @@ export abstract class Notes {
             if (this.isNoteShorterThan(eventito, NoteDuration.thirtysecond) && this.isNoteShorterThan(nextEvent, NoteDuration.thirtysecond))
                 this.drawBeam(g, x + startX, startY, x + endX, endY, NoteDuration.sixtyfourth)
         }
+    }
+
+    // When we draw the beams between notes, depending on the vertical location of the note, some stems will be shorter than others
+    // For esthetic reasons we want to avoid the situation when a stem is too short or even negative (that would happen when the circle
+    // of the note is above the beams) So we need to find the length of the shortest stem and ensure that we draw the beams in such
+    // a way that all stems are of acceptable length
+    // We calcualate for each note the number of pixels that the intermediate note is above or below the line that connects the first 
+    // and last notes. Positive numbers are notes that are above the line and viceversa. This is because a higher y value means the note
+    // is lower, since y coordinates in a screen grow when going down
+    // We want the biggest positive value. This will be the note that will have the shortest stem
+    private static calculateShortestStem(firstX: number, firstBottomY: number, lastX: number, lastBottomY: number, beatEvents: SoundEvent[]): number {
+        // we intersect the line defined by (firstX,firstBottomY) and (lastX, lastBottomY) with the vertical in each note
+        // we then calculate the distance between that point and the bottomY value of the note. This is the value we are after
+        let stemsLengths: number[] = []
+        for (let e of beatEvents) {
+            const intersection = firstBottomY + ((lastBottomY - firstBottomY) / (lastX - firstX)) * (e.x - firstX)
+            stemsLengths.push(intersection - e.bottomY)
+        }
+        return Math.max(...stemsLengths)
     }
 
     public static drawBeam(g: Element, startX: number, startY: number, endX: number, endY: number, duration: NoteDuration): void {
@@ -191,7 +226,7 @@ export abstract class Notes {
         // We have defined the enum with longest durations first, so the higher the enum, the shorter the note
         return event.duration > duration
     }
-    
+
     private static writeEventInfo(g: Element, e: SoundEvent): void {
         // BasicShapes.createText(g, `st=${e.startTick}`, e.x, 100, 12, `red`)
         // BasicShapes.createText(g, `pit=${e.pitch}`, e.x, 112, 12, `red`)
@@ -199,12 +234,12 @@ export abstract class Notes {
         // BasicShapes.createText(g, `alt=${e.alterationShown != null ? e.alterationShown : ''}`, e.x, 136, 12, `red`)
         // BasicShapes.createText(g, `tie=${e.isTiedToPrevious}`, e.x, 148, 12, `red`)
         // BasicShapes.createText(g, `x=${e.x}`, e.x, 160, 12, `red`)
-        // BasicShapes.createText(g, `y=${e.y}`, e.x, 172, 12, `red`)
+        // BasicShapes.createText(g, `y=${e.bottomY}`, e.x, 172, 12, `red`)
     }
     private static writeBeamInfo(g: Element, startX: number, endX: number, startY: number, endY: number): void {
-        // BasicShapes.createText(g, `startX=${startX}`, startX, 184, 12, `red`)
-        // BasicShapes.createText(g, `endX=${endX}`, startX, 196, 12, `red`)
-        // BasicShapes.createText(g, `startY=${startY}`, startX, 208, 12, `red`)
-        // BasicShapes.createText(g, `endY=${endY}`, startX, 220, 12, `red`)
+        BasicShapes.createText(g, `startX=${startX}`, startX, 184, 12, `red`)
+        BasicShapes.createText(g, `endX=${endX}`, startX, 196, 12, `red`)
+        BasicShapes.createText(g, `startY=${startY}`, startX, 208, 12, `red`)
+        BasicShapes.createText(g, `endY=${endY}`, startX, 220, 12, `red`)
     }
 }

@@ -17,6 +17,9 @@ export abstract class Pentagram {
     private static G5sharp = 80
     private static G5 = 79
     private static D4 = 62
+    private static C4sharp = 61
+    private static C4 = 60
+    private static C4b = 59
     private static B3 = 59
     private static F2 = 41
     private static E2 = 40
@@ -67,7 +70,8 @@ export abstract class Pentagram {
     }
 
     public static drawBarLine(svgBox: Element, x: number): number {
-        BasicShapes.drawPath(svgBox, 'black', 2, `M ${x + 10},20 V 100 z`)
+        BasicShapes.drawPath(svgBox, 'black', 2, `M ${x + 10},40 V 112 z`)
+        BasicShapes.drawPath(svgBox, 'black', 2, `M ${x + 10},140 V 212 z`)
         return 50
     }
     public static drawBarNumber(g: Element, x: number, barNumber: number): number {
@@ -179,6 +183,9 @@ export abstract class Pentagram {
         // if it is a rest don't draw extra lines
         if (e.type == SoundEventType.rest) return
 
+        if (e.startTick==816){
+            let lolo=true
+        }
         const noteLocation = this.getNoteLocationInPentagram(e)
         switch (noteLocation) {
             case PentagramLocation.InsidePentagram:
@@ -194,7 +201,10 @@ export abstract class Pentagram {
                     this.drawExtraLine(g, noteLocation, 4, e.x)
                 break
             case PentagramLocation.Betweenclefs:
-                this.drawExtraLine(g, noteLocation, 1, e.x)
+                if (e.pitch === this.C4 || e.pitch == this.C4sharp &&
+                    e.alterationApplied === Alteration.sharp ||
+                    e.pitch == this.C4b && e.alterationApplied == Alteration.flat)
+                    this.drawExtraLine(g, noteLocation, 1, e.x)
                 break
             case PentagramLocation.BelowFclef:
                 if (e.pitch < this.E2 || e.pitch === this.E2 && e.alterationApplied !== Alteration.flat)

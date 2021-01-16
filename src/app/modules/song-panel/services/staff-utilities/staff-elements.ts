@@ -33,8 +33,8 @@ export abstract class StaffElements {
 
         // Check if first note has a tie that comes from a previous beat        
         if (beatEvents[0]?.isTiedToPrevious && beatEvents[0]?.type == SoundEventType.note) {
-            beatEvents[0].y = GenericStaffDrawingUtilities.getYofNote(beatEvents[0], bars, eventsToDraw)
-            Notes.drawTie(g, tieStartX, x, beatEvents[0].y)
+            beatEvents[0].bottomY = GenericStaffDrawingUtilities.getBottomYofNote(beatEvents[0], bars, eventsToDraw)
+            Notes.drawTie(g, tieStartX, x, beatEvents[0].bottomY)
             tieStartX = x
         }
         let tieEndX: number | null = null
@@ -46,7 +46,7 @@ export abstract class StaffElements {
             e.x = x + deltaX
 
             if (e.type == SoundEventType.note) {
-                e.y = GenericStaffDrawingUtilities.getYofNote(e, bars, eventsToDraw)
+                e.bottomY = GenericStaffDrawingUtilities.getBottomYofNote(e, bars, eventsToDraw)
                 const notesSimultaneousToThisOne = beatEvents.filter(x => x.startTick == e.startTick && x.endTick == e.endTick && x.pitch != e.pitch)
                 // if there is a single note, or there are some but they are simultaneous to this one,
                 // we don't have to care about beams, just draw it
@@ -62,7 +62,7 @@ export abstract class StaffElements {
             }
             // if it is a rest, draw the rest
             else {
-                e.y = GenericStaffDrawingUtilities.getYofRest(e, eventsToDraw)
+                e.bottomY = GenericStaffDrawingUtilities.getYofRest(e, eventsToDraw)
                 Rests.drawRest(g, e)
             }
 
@@ -71,7 +71,7 @@ export abstract class StaffElements {
             // If the note is tied to previous, draw the tie
             if (e.type == SoundEventType.note && e.isTiedToPrevious) {
                 tieEndX = x + deltaX
-                Notes.drawTie(g, tieStartX, tieEndX, e.y)
+                Notes.drawTie(g, tieStartX, tieEndX, e.bottomY)
             }
             // Update the start point for the next tie
             tieStartX = x + deltaX
@@ -97,8 +97,8 @@ export abstract class StaffElements {
 
         // Check if first note has a tie that comes from a previous beat        
         if (beatEvents[0]?.isTiedToPrevious && beatEvents[0]?.type == SoundEventType.note) {
-            beatEvents[0].y = GenericStaffDrawingUtilities.getYofNote(beatEvents[0], bars, eventsToDraw)
-            Notes.drawTie(g, tieStartX, x, beatEvents[0].y)
+            beatEvents[0].bottomY = GenericStaffDrawingUtilities.getBottomYofNote(beatEvents[0], bars, eventsToDraw)
+            Notes.drawTie(g, tieStartX, x, beatEvents[0].bottomY)
             tieStartX = x
         }
         let tieEndX: number | null = null
@@ -110,7 +110,7 @@ export abstract class StaffElements {
             e.x = x + deltaX
 
             if (e.type == SoundEventType.note) {
-                e.y = GenericStaffDrawingUtilities.getYofNote(e, bars, eventsToDraw)
+                e.bottomY = GenericStaffDrawingUtilities.getBottomYofNote(e, bars, eventsToDraw)
                 // if there is a single note, we don't have to care about beams, just draw it
                 if (beatEvents.filter(x => x.type == SoundEventType.note).length == 1 ||
                     // if there are 2 notes and one of them is a quarter
@@ -128,7 +128,7 @@ export abstract class StaffElements {
             }
             // if it is a rest, draw the rest
             else {
-                e.y = GenericStaffDrawingUtilities.getYofRest(e, eventsToDraw)
+                e.bottomY = GenericStaffDrawingUtilities.getYofRest(e, eventsToDraw)
                 Rests.drawRest(g, e)
             }
 
@@ -136,7 +136,7 @@ export abstract class StaffElements {
             // If the note is tied to previous, draw the tie
             if (e.type == SoundEventType.note && e.isTiedToPrevious) {
                 tieEndX = x + deltaX
-                Notes.drawTie(g, tieStartX, tieEndX, e.y)
+                Notes.drawTie(g, tieStartX, tieEndX, e.bottomY)
             }
             // Update the start point for the next tie
             tieStartX = x + deltaX

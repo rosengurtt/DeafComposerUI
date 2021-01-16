@@ -139,8 +139,8 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
       case SongViewType.rythmMusicNotation:
         minX = this.songSliderPosition / this.song.songStats.durationInSeconds * this.totalWidthOfRythmDrawing
         minY = -30
-        width = width == null ? 1200 * this.scale * 2 : width
-        height = height == null ? 128 * this.scale * 2 : height
+        width = width == null ? 1200 * this.scale * 2.2 : width
+        height = height == null ? 128 * this.scale * 2.2 : height
         break;
     }
     this.viewBox = `${minX} ${minY} ${width} ${height}`

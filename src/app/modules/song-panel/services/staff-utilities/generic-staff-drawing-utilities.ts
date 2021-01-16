@@ -100,13 +100,13 @@ export abstract class GenericStaffDrawingUtilities {
         return retObj
     }
 
-    // When we draw a note in the pentagram, y=0 is the A inside the G clef pentagram. We have to calculate
+    // When we draw a note in the pentagram, bottomY=0 is the circle of the A inside the G clef pentagram. We have to calculate
     // the number of pixels to move the note up or down so it shows in the correct place for the pitch#
     // The same pitch may be shown for ex as an A# or a Bb, depending on the alterations being used at that
     // point of the song. So we need that information too. 
     // alterations is an array that defines the alteration of each pitch, so  if alterations[37] is 
     // Alteration.Flat, it will be displayed as a Db, if it is Alteration.Sharp it will be displayed as C#
-    public static getYofNote(e: SoundEvent, bars: Bar[], eventsToDraw: SoundEvent[]): number {
+    public static getBottomYofNote(e: SoundEvent, bars: Bar[], eventsToDraw: SoundEvent[]): number {
         const alterations = this.getAlterationsAtTick(bars, e.startTick, eventsToDraw)
         let alterationOfNote = (e.alterationShown != null && e.alterationShown != Alteration.cancel) ? e.alterationShown : alterations.get(e.pitch)
         if (e.alterationShown === Alteration.cancel) alterationOfNote = null
@@ -176,7 +176,7 @@ export abstract class GenericStaffDrawingUtilities {
     public static getYofRest(e: SoundEvent, eventsToDraw: SoundEvent[]): number {
         const previousNotes = eventsToDraw.filter(x => x.type == SoundEventType.note && x.x != null)
         // Calculate average
-        return previousNotes.map(x => x.y).reduce((a, b) => a + b, 0) / previousNotes.length
+        return previousNotes.map(x => x.bottomY).reduce((a, b) => a + b, 0) / previousNotes.length
     }
     // When we are drawing notes in the pentagram, the vertical location when we put a note may depend on the alterations
     // affecting the notes at that point. For ex if the key is D, they key signature has 2 sharps, and if we have a note
