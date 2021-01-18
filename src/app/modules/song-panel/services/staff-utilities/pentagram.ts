@@ -182,10 +182,7 @@ export abstract class Pentagram {
     public static addExtraLines(g: Element, e: SoundEvent): void {
         // if it is a rest don't draw extra lines
         if (e.type == SoundEventType.rest) return
-
-        if (e.startTick==816){
-            let lolo=true
-        }
+        
         const noteLocation = this.getNoteLocationInPentagram(e)
         switch (noteLocation) {
             case PentagramLocation.InsidePentagram:

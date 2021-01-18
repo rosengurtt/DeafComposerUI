@@ -74,6 +74,10 @@ export class DrawingRythmService {
         this.eventsToDraw = this.eventsToDrawForAllVoices[voice]
         this.AddShownAlterationsToSoundEvents()
         this.AddAppliedAlterationToSoundEvents()
+        // We calculate the y location of notes first, the y depends on their pitch
+        this.calculateYofNotes()
+        // We calculate the y of the rests after the notes, because their y depends on the y of the sorrounding notes
+        this.calculateYofRests()
 
         this.allNoteStarts = DrawingCalculations.getAllNoteStarts(song, simplificationNo, this.eventsToDrawForAllVoices)
 
@@ -384,6 +388,17 @@ export class DrawingRythmService {
     }
 
 
-
+    private calculateYofNotes() {
+        for (let e of this.eventsToDraw) {
+            if (e.type == SoundEventType.note)
+                e.bottomY = GenericStaffDrawingUtilities.getBottomYofNote(e, this.bars, this.eventsToDraw)
+        }
+    }
+    private calculateYofRests() {
+        for (let e of this.eventsToDraw) {
+            if (e.type == SoundEventType.rest)
+                e.bottomY = GenericStaffDrawingUtilities.getYofRest(e, this.eventsToDraw)
+        }
+    }
 
 }

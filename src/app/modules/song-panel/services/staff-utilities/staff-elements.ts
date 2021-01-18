@@ -46,7 +46,6 @@ export abstract class StaffElements {
             e.x = x + deltaX
 
             if (e.type == SoundEventType.note) {
-                e.bottomY = GenericStaffDrawingUtilities.getBottomYofNote(e, bars, eventsToDraw)
                 const notesSimultaneousToThisOne = beatEvents.filter(x => x.startTick == e.startTick && x.endTick == e.endTick && x.pitch != e.pitch)
                 // if there is a single note, or there are some but they are simultaneous to this one,
                 // we don't have to care about beams, just draw it
@@ -62,7 +61,6 @@ export abstract class StaffElements {
             }
             // if it is a rest, draw the rest
             else {
-                e.bottomY = GenericStaffDrawingUtilities.getYofRest(e, eventsToDraw)
                 Rests.drawRest(g, e)
             }
 
@@ -110,7 +108,6 @@ export abstract class StaffElements {
             e.x = x + deltaX
 
             if (e.type == SoundEventType.note) {
-                e.bottomY = GenericStaffDrawingUtilities.getBottomYofNote(e, bars, eventsToDraw)
                 // if there is a single note, we don't have to care about beams, just draw it
                 if (beatEvents.filter(x => x.type == SoundEventType.note).length == 1 ||
                     // if there are 2 notes and one of them is a quarter
@@ -128,7 +125,6 @@ export abstract class StaffElements {
             }
             // if it is a rest, draw the rest
             else {
-                e.bottomY = GenericStaffDrawingUtilities.getYofRest(e, eventsToDraw)
                 Rests.drawRest(g, e)
             }
 

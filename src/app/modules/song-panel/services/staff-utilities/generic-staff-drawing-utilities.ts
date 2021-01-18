@@ -172,11 +172,19 @@ export abstract class GenericStaffDrawingUtilities {
     }
 
     // When drawing rests, the vertical location of the rest is not as important as with notes, it can be a bit higher
-    // or lower without changing the meaning. But it should be more or less at the same height as previous notes 
+    // or lower without changing the meaning. But it should be more or less at the same height as surrounding notes 
     public static getYofRest(e: SoundEvent, eventsToDraw: SoundEvent[]): number {
-        const previousNotes = eventsToDraw.filter(x => x.type == SoundEventType.note && x.x != null)
+        const surroundingNotes = eventsToDraw
+            .filter(x => x.type == SoundEventType.note)
+            //sort by distance from e
+            .sort((a, b) => Math.abs(a.startTick - e.startTick) - Math.abs(b.startTick - e.startTick))
+            // take 30 notes
+            .slice(0, 6)
+
         // Calculate average
-        return previousNotes.map(x => x.bottomY).reduce((a, b) => a + b, 0) / previousNotes.length
+        if (surroundingNotes && surroundingNotes.length > 0)
+            return (surroundingNotes.map(x => x.bottomY).reduce((a, b) => a + b, 0) / surroundingNotes.length) + 10
+        return 10
     }
     // When we are drawing notes in the pentagram, the vertical location when we put a note may depend on the alterations
     // affecting the notes at that point. For ex if the key is D, they key signature has 2 sharps, and if we have a note

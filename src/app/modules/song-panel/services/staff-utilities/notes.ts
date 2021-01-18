@@ -54,7 +54,7 @@ export abstract class Notes {
     // Draws a circle and a stem. The idea is that regardless of a note being a quarter, and eight or a
     // sixteenth, we draw it as a quarter, and then we add the needed beams to convert it to an eight or whatever
     public static drawBasicNote(svgBox: Element, e: SoundEvent, isCircleFull = true): Element {
-        this.writeEventInfo(svgBox, e)
+        BasicShapes.writeEventInfo(svgBox, e)
         let group = document.createElementNS(this.svgns, 'g')
         svgBox.appendChild(group)
         this.drawNoteCircle(group, e.x, e.bottomY, isCircleFull)
@@ -76,10 +76,7 @@ export abstract class Notes {
     }
 
     public static drawSingleNote(svgBox: Element, e: SoundEvent): Element {
-        if (e.startTick==6720){
-            let lolo=true
-        }
-        this.writeEventInfo(svgBox, e)
+        BasicShapes.writeEventInfo(svgBox, e)
         let group = document.createElementNS(this.svgns, 'g')
         svgBox.appendChild(group)
         switch (e.duration) {
@@ -125,15 +122,17 @@ export abstract class Notes {
         return group
     }
 
-    private static drawSubStems(g: Element, x: number, y:number, qtySubstems: number, qtyNotes: number) {
+    private static drawSubStems(g: Element, x: number, y: number, qtySubstems: number, qtyNotes: number) {
         if (qtyNotes == 1) {
             for (let i = 0; i < qtySubstems; i++) {
-                BasicShapes.drawPath(g, 'black', 1, `M${x + 10},${32 + y + 6 * i} Q ${x + 14},${35 + y + 6 * i} ${x + 19},${28 + y + 6 * i} z`)
-             //   BasicShapes.drawPath(g, 'black', 1, `M${x + 10},${44 + y + 6 * i} Q ${x + 14},${47 + y + 6 * i} ${x + 19},${40 + y + 6 * i} z`)
+                BasicShapes.drawPath(g, 'black', 1, `m ${x + 20},${y + 43 + 4 * i} c 19.5,4.9 10.5,22.1 8.8,28.1 16,-21.9 -8.5,-30.8 -8.8,-44.1 z`,
+                    null)
+                //   BasicShapes.drawPath(g, 'black', 1, `M${x + 2},${32 + y + 6 * i} Q ${x + 14},${35 + y + 6 * i} ${x + 19},${28 + y + 6 * i} z`)
+                //   BasicShapes.drawPath(g, 'black', 1, `M${x + 10},${44 + y + 6 * i} Q ${x + 14},${47 + y + 6 * i} ${x + 19},${40 + y + 6 * i} z`)
             }
         }
         for (let i = 0; i < qtySubstems; i++) {
-            BasicShapes.drawPath(g, 'black', 2, `M${x + 19},${28 + y + 4 * i} L ${x + qtyNotes * 20},${28 + y + 4 * i} z`)
+            //BasicShapes.drawPath(g, 'black', 2, `M${x + 11},${33 + y + 4 * i} L ${x + qtyNotes * 20},${28 + y + 4 * i} z`)
             //BasicShapes.drawPath(g, 'black', 2, `M${x + 19},${40 + y + 4 * i} L ${x + qtyNotes * 20},${40 + y + 4 * i} z`)
         }
     }
@@ -227,19 +226,5 @@ export abstract class Notes {
         return event.duration > duration
     }
 
-    private static writeEventInfo(g: Element, e: SoundEvent): void {
-        // BasicShapes.createText(g, `st=${e.startTick}`, e.x, 100, 12, `red`)
-        // BasicShapes.createText(g, `pit=${e.pitch}`, e.x, 112, 12, `red`)
-        // BasicShapes.createText(g, `dur=${e.durationInTicks}`, e.x, 124, 12, `red`)
-        // BasicShapes.createText(g, `alt=${e.alterationShown != null ? e.alterationShown : ''}`, e.x, 136, 12, `red`)
-        // BasicShapes.createText(g, `tie=${e.isTiedToPrevious}`, e.x, 148, 12, `red`)
-        // BasicShapes.createText(g, `x=${e.x}`, e.x, 160, 12, `red`)
-        // BasicShapes.createText(g, `y=${e.bottomY}`, e.x, 172, 12, `red`)
-    }
-    private static writeBeamInfo(g: Element, startX: number, endX: number, startY: number, endY: number): void {
-        BasicShapes.createText(g, `startX=${startX}`, startX, 184, 12, `red`)
-        BasicShapes.createText(g, `endX=${endX}`, startX, 196, 12, `red`)
-        BasicShapes.createText(g, `startY=${startY}`, startX, 208, 12, `red`)
-        BasicShapes.createText(g, `endY=${endY}`, startX, 220, 12, `red`)
-    }
+
 }

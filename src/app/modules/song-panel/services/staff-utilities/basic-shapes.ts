@@ -1,7 +1,7 @@
 export abstract class BasicShapes {
     private static svgns = 'http://www.w3.org/2000/svg'
 
-    public static drawPath(g: Element, color: string, strokeWidth: number, path: string, style: string = null): Element {
+    public static drawPath(g: Element, color: string, strokeWidth: number, path: string, style: string = null, transform: string = null): Element {
         const arc = document.createElementNS(this.svgns, 'path')
         if (style != null)
             arc.setAttributeNS(null, 'style', style)
@@ -9,6 +9,8 @@ export abstract class BasicShapes {
             arc.setAttributeNS(null, 'stroke', color)
             arc.setAttributeNS(null, 'stroke-width', strokeWidth.toString())
         }
+        if (transform != null)
+            arc.setAttributeNS(null, 'transform', transform)
         arc.setAttributeNS(null, 'd', path)
         g.appendChild(arc)
         return arc
@@ -45,5 +47,20 @@ export abstract class BasicShapes {
         textElement.setAttributeNS(null, 'fill', color)
         textElement.setAttributeNS(null, 'opacity', opacity.toString())
         g.appendChild(textElement)
+    }
+    public static writeEventInfo(g: Element, e: any): void {
+        // BasicShapes.createText(g, `st=${e.startTick}`, e.x, 100, 12, `red`)
+        // BasicShapes.createText(g, `pit=${e.pitch}`, e.x, 112, 12, `red`)
+        // BasicShapes.createText(g, `dur=${e.durationInTicks}`, e.x, 124, 12, `red`)
+        // BasicShapes.createText(g, `alt=${e.alterationShown != null ? e.alterationShown : ''}`, e.x, 136, 12, `red`)
+        // BasicShapes.createText(g, `tie=${e.isTiedToPrevious}`, e.x, 148, 12, `red`)
+        // BasicShapes.createText(g, `x=${e.x}`, e.x, 160, 12, `red`)
+        // BasicShapes.createText(g, `bottomY=${e.bottomY}`, e.x, 172, 12, `red`)
+    }
+    public static writeBeamInfo(g: Element, startX: number, endX: number, startY: number, endY: number): void {
+        BasicShapes.createText(g, `startX=${startX}`, startX, 184, 12, `red`)
+        BasicShapes.createText(g, `endX=${endX}`, startX, 196, 12, `red`)
+        BasicShapes.createText(g, `startY=${startY}`, startX, 208, 12, `red`)
+        BasicShapes.createText(g, `endY=${endY}`, startX, 220, 12, `red`)
     }
 }
