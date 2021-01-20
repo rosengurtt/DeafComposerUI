@@ -118,7 +118,10 @@ export abstract class GenericStaffDrawingUtilities {
         const yOfC3inFclef = 100
         const linesSeparation = 12
         let y: number
-
+        
+        if (e.startTick == 240) {
+            let lolo = true
+        }
 
         // F clef
         if (octave < 4) {
@@ -130,8 +133,8 @@ export abstract class GenericStaffDrawingUtilities {
             // Case when pitch is not in C scale, so there is an alteration for sure
             else
                 y = alterationOfNote == Alteration.sharp ?
-                    yOfC3inFclef - linesSeparation / 2 * (basicPitch - 1) - (octave - 3) * octaveHeightInPixels :
-                    yOfC3inFclef - linesSeparation / 2 * (basicPitch + 1) - (octave - 3) * octaveHeightInPixels
+                    yOfC3inFclef - linesSeparation / 2 * majorScalePitches.indexOf(basicPitch - 1) - (octave - 3) * octaveHeightInPixels :
+                    yOfC3inFclef - linesSeparation / 2 * majorScalePitches.indexOf(basicPitch + 1) - (octave - 3) * octaveHeightInPixels
         }
         // G clef
         else {

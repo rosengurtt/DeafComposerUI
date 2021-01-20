@@ -110,5 +110,10 @@ export const songPanelReducer = createReducer<SongPanelState>(
         newState.songsUnderAnalysis.filter(s => s.song.id == action.songId)[0].songSliderPosition = action.songSliderPosition
         return newState
     }),
+    on(SongPanelPageActions.songTempoChange, (state, action): SongPanelState => {
+        let newState = cloneDeep(state)
+        newState.songsUnderAnalysis.filter(s => s.song.id == action.songId)[0].tempoInBeatsPerMinute = action.tempo
+        return newState
+    }),
 );
 

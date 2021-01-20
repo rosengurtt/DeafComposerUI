@@ -61,7 +61,13 @@
       <button mat-mini-fab color="warn" aria-label="Show rythm in music notation view" [disabled]="viewType==songViewType.rythmMusicNotation"
       matTooltip="Show rythm in music notation view" (click)="switchViewType(songViewType.rythmMusicNotation)" >
         <mat-icon>music_video</mat-icon>
-      </button>   
+      </button> 
+      
+        <mat-form-field >
+          <mat-icon matPrefix svgIcon="metronome"></mat-icon>
+          <input matInput class="tempoBox" type="search" value="tempoInBeatsPerMinute"
+          [formControl]="tempoBox"  />
+        </mat-form-field>
     </div>
     
     <mat-slider #slider min="0" [attr.max]="sliderMax" [attr.step]="sliderStep" value="0" class="sliderHoriz"

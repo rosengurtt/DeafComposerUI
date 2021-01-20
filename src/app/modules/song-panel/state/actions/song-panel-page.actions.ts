@@ -59,3 +59,7 @@ export const songSliderPositionChange = createAction(
   '[Songs-Panel Page] Song Slider Position Change',
   props<{ songId: number, songSliderPosition: number }>()
 )
+export const songTempoChange = createAction(
+  '[Songs-Panel Page] Song Tempo Change',
+  props<{ songId: number, tempo:number }>()
+)

@@ -11,6 +11,7 @@ import { SongViewType } from 'src/app/core/models/SongViewTypes.enum'
 import { MatIconRegistry } from '@angular/material/icon'
 import { DomSanitizer } from '@angular/platform-browser'
 import { getSupportedInputTypes } from '@angular/cdk/platform'
+import { FormControl } from '@angular/forms'
 
 declare var MIDIjs: any
 
@@ -54,6 +55,8 @@ export class SongPanelComponent implements OnInit, OnChanges, OnDestroy, AfterVi
   sliderStep = 1
   sliderHasBeenMoved = false
   songViewType: typeof SongViewType = SongViewType
+  tempoBox = new FormControl()
+
 
   svgBoxWidth = 1200
   svgBoxHeight = 128
@@ -67,11 +70,15 @@ export class SongPanelComponent implements OnInit, OnChanges, OnDestroy, AfterVi
     iconRegistry: MatIconRegistry,
     sanitizer: DomSanitizer) {
     iconRegistry.addSvgIcon('piano', sanitizer.bypassSecurityTrustResourceUrl('assets/images/piano.svg'))
+    iconRegistry.addSvgIcon('metronome', sanitizer.bypassSecurityTrustResourceUrl('assets/images/metronome.svg'))
   }
 
   ngOnInit() {
     this.reset(false)
     this.setTracks()
+    const tempoInMicrosecondsPerBeat = this.song.tempoChanges[0].microsecondsPerQuarterNote
+    const tempoInBeatsPerMinute = Math.round(120 * 500000 / tempoInMicrosecondsPerBeat)
+    this.tempoBox.setValue(tempoInBeatsPerMinute)
   }
   ngAfterViewInit(): void {
     this.slider.max = this.song.songStats.durationInSeconds
@@ -110,6 +117,10 @@ export class SongPanelComponent implements OnInit, OnChanges, OnDestroy, AfterVi
     this.songStoppedPlaying.emit()
     this.resetEventSubject.next(unmuteAlltracks)
     if (this.slider) this.slider.value = 0 // during onInit we do a reset, but the slider doesn't exist yet
+    // Reset tempo
+    const tempoInMicrosecondsPerBeat = this.song.tempoChanges[0].microsecondsPerQuarterNote
+    const tempoInBeatsPerMinute = Math.round(120 * 500000 / tempoInMicrosecondsPerBeat)
+    this.tempoBox.setValue(tempoInBeatsPerMinute)
   }
 
 
@@ -120,7 +131,7 @@ export class SongPanelComponent implements OnInit, OnChanges, OnDestroy, AfterVi
     }
     else {
       let mutedTracksParam = this.mutedTracks.length > 0 ? `&mutedTracks=${this.mutedTracks.join(",")}` : ""
-      MIDIjs.play(`https://localhost:9001/api/song/${this.song.id}/midi?simplificationVersion=${this.songSimplificationVersion}&startInSeconds=${this.slider.value}${mutedTracksParam}`)
+      MIDIjs.play(`https://localhost:9001/api/song/${this.song.id}/midi?simplificationVersion=${this.songSimplificationVersion}&startInSeconds=${this.slider.value}${mutedTracksParam}&tempoInBeatsPerMinute=${this.tempoBox.value}`)
       MIDIjs.message_callback = this.getPlayingStatus.bind(this)
     }
     // reset this flag

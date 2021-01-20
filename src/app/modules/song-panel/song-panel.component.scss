@@ -14,7 +14,7 @@
 .panelControl{
     grid-area: panelControl;
     display: grid;
-    grid-template-columns: 80px 80px 80px 80px 80px 80px 80px 80px;
+    grid-template-columns: 80px 80px 80px 80px 80px 80px 80px 80px 80px;
 }
 
 .container{
@@ -36,7 +36,7 @@ span {
 .simplificationsSelector{
     padding: 10px;
 }
-.mat-form-field{
-    min-width: 300px;
-
+.tempoBox{
+    width: 60px;
+    padding-left: 10px;;
 }
