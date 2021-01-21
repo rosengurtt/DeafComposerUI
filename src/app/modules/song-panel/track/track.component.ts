@@ -19,7 +19,7 @@ import { DrawingRythmService } from '../services/drawing-rythm.service'
     DrawingRythmService
   ]
 })
-export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
+export class TrackComponent implements OnChanges, AfterViewInit {
 
   @Input() svgBoxIdPrefix: string
   @Input() progressBarIdPrefix: string
@@ -56,6 +56,7 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
   songViewType: typeof SongViewType = SongViewType
   totalVoices: number
   totalWidthOfRythmDrawing: number
+  mustRedrawSvgBox: boolean = false
 
   constructor(private drawingPianoRollService: DrawingPianoRollService,
     private drawingRythmService: DrawingRythmService) {
@@ -63,20 +64,9 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
   }
   ngAfterViewInit(): void {
     this.initializePage()
-    // this.svgBoxId = `${this.svgBoxIdPrefix}_${this.songId}_${this.trackId}`
-    // this.progressBarId = `${this.progressBarIdPrefix}${this.songId}_${this.trackId}`
-    // this.drawingPianoRollService.drawPianoRollGraphic(this.trackId, this.svgBoxId, this.song, this.simplification);
-    // this.updateSvgBox()
-    // this.resetEventSubscritpion = this.resetEvent.subscribe(x => this.reset(x))
-    // this.moveProgressBarEventSubscritpion = this.moveProgressBarEvent.subscribe(x => this.moveProgressBar(x))
   }
 
-  ngOnInit() {
-    // let typescriptSacamela = new SongSimplification(this.song.songSimplifications[this.simplification])
-    // let instrumentCode = typescriptSacamela.getInstrumentOfVoice(this.trackId)
-    // this.instrument = Instrument[instrumentCode]
-    // this.totalVoices = typescriptSacamela.numberOfVoices
-  }
+
   initializePage() {
     if (this.muteStatus) this.muteIcon = "volume_off"
     else this.muteIcon = "volume_up"
@@ -102,12 +92,14 @@ export class TrackComponent implements OnInit, OnChanges, AfterViewInit {
       if (propName == "songId") {
         this.initializePage()
       }
-      if (propName == "viewType") {
+      if (propName == "viewType" || propName == "simplification" || this.mustRedrawSvgBox) {
         if (this.viewType == SongViewType.pianoRoll) {
           this.drawingPianoRollService.drawPianoRollGraphic(this.trackId, this.svgBoxId, this.song, this.simplification);
         }
         else {
           this.totalWidthOfRythmDrawing = this.drawingRythmService.drawMusicNotationGraphic(this.trackId, this.svgBoxId, this.song, this.simplification);
+          if (this.totalWidthOfRythmDrawing == -1) this.mustRedrawSvgBox = true
+          else this.mustRedrawSvgBox = false
         }
         redrawSvgBox = true
       }

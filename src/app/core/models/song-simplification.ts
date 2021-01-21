@@ -18,7 +18,7 @@ export class SongSimplification {
         this.voicesWithNotes = this.getVoicesWithNotes()
     }
 
-    private getVoicesWithNotes(): number[] {
+    public getVoicesWithNotes(): number[] {
         let voices: Set<number> = new Set()
         this.notes.forEach(x => voices.add(x.voice))
         return Array.from(voices.values())

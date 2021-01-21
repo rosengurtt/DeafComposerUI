@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core'
+import { Injectable, SimpleChange } from '@angular/core'
 import { Store } from '@ngrx/store'
 import { SongSimplification } from 'src/app/core/models/song-simplification'
 import { Song } from 'src/app/core/models/song'
@@ -17,6 +17,7 @@ import { ScaleType } from 'src/app/core/models/scale-type.enum'
 import { KeySignature } from 'src/app/core/models/key-signature'
 import { GenericStaffDrawingUtilities } from './staff-utilities/generic-staff-drawing-utilities'
 import { Pentagram } from './staff-utilities/pentagram'
+import { BasicShapes } from './staff-utilities/basic-shapes'
 
 @Injectable()
 export class DrawingRythmService {
@@ -48,56 +49,95 @@ export class DrawingRythmService {
 
         this.svgBox = document.getElementById(svgBoxId)
         if (!this.svgBox) {
-            return
+            return -1
         }
 
         this.clearSVGbox(this.svgBox)
         this.voice = voice
         this.song = song
         this.simplification = new SongSimplification(song.songSimplifications[simplificationNo])
+
         this.bars = song.bars
+
         // Order notes by start time
         const aux = [... this.simplification.notes]
             .sort((i, j) => i.startSinceBeginningOfSongInTicks - j.startSinceBeginningOfSongInTicks)
         // normalize start time of notes
         this.songNotes = aux.map(n => Normalization.normalizeNoteStart(this.bars, n))
 
-
         console.log(`voice ${voice}`)
         this.isPercusion = this.simplification.isVoicePercusion(voice)
         this.voiceNotes = this.simplification.getNotesOfVoice(voice, song)
 
-        this.eventsToDrawForAllVoices = []
-        for (let v = 0; v < this.simplification.numberOfVoices; v++) {
-            this.eventsToDrawForAllVoices.push(DrawingCalculations.getEventsToDraw(song, simplificationNo, v))
+        if (this.isVoicePolyphonic(this.voiceNotes)) {
+            BasicShapes.createText(this.svgBox, "This voice is polyphonic and can not be shown in musical notation", 50, 80, 20, "black")
         }
-        this.eventsToDraw = this.eventsToDrawForAllVoices[voice]
-        this.AddShownAlterationsToSoundEvents()
-        this.AddAppliedAlterationToSoundEvents()
-        // We calculate the y location of notes first, the y depends on their pitch
-        this.calculateYofNotes()
-        // We calculate the y of the rests after the notes, because their y depends on the y of the sorrounding notes
-        this.calculateYofRests()
+        else {
+            this.eventsToDrawForAllVoices = []
+            const voicesWithNotes = this.simplification.getVoicesWithNotes()
+            for (let v of voicesWithNotes) {
+                this.eventsToDrawForAllVoices.push(DrawingCalculations.getEventsToDraw(song, simplificationNo, v))
+            }
 
-        this.allNoteStarts = DrawingCalculations.getAllNoteStarts(song, simplificationNo, this.eventsToDrawForAllVoices)
+            this.eventsToDraw = this.eventsToDrawForAllVoices[this.simplification.getVoicesWithNotes().indexOf(voice)]
 
-        let x = 0
-        x += Pentagram.drawClefs(this.svgBox, x)
+            console.log(`eventsToDraw`)
+            console.log(this.eventsToDraw)
 
-        let startTieX: number | null = null
-        for (const bar of this.bars) {
-            // if it is the last bar and it has no notes, don't show it
-            if (bar.barNumber == this.bars.length &&
-                this.simplification.notes.filter(n => n.endSinceBeginningOfSongInTicks > bar.ticksFromBeginningOfSong).length == 0)
-                break
+            this.AddShownAlterationsToSoundEvents()
+            this.AddAppliedAlterationToSoundEvents()
+            // We calculate the y location of notes first, the y depends on their pitch
+            this.calculateYofNotes()
+            // We calculate the y of the rests after the notes, because their y depends on the y of the sorrounding notes
+            this.calculateYofRests()
 
-            let beatDrawingInfo = this.drawBar(bar, x, startTieX)
-            x += beatDrawingInfo.deltaX
-            startTieX = beatDrawingInfo.startTieX
+            this.allNoteStarts = DrawingCalculations.getAllNoteStarts(song, simplificationNo, this.eventsToDrawForAllVoices)
+
+            let x = 0
+            x += Pentagram.drawClefs(this.svgBox, x)
+
+            let startTieX: number | null = null
+            for (const bar of this.bars) {
+                // if it is the last bar and it has no notes, don't show it
+                if (bar.barNumber == this.bars.length &&
+                    this.simplification.notes.filter(n => n.endSinceBeginningOfSongInTicks > bar.ticksFromBeginningOfSong).length == 0)
+                    break
+
+                let beatDrawingInfo = this.drawBar(bar, x, startTieX)
+                x += beatDrawingInfo.deltaX
+                startTieX = beatDrawingInfo.startTieX
+            }
+            Pentagram.drawPentagram(this.svgBox, x)
+            this.eventsToDraw.forEach(x => Pentagram.addExtraLines(this.svgBox, x))
+            return x
         }
-        Pentagram.drawPentagram(this.svgBox, x)
-        this.eventsToDraw.forEach(x => Pentagram.addExtraLines(this.svgBox, x))
-        return x
+    }
+
+    // We can not build the music notation representation of a voice if it is polyphonic, we have to split it first in
+    // monophonic voices. Because simplification 0 may have polyphonic voices, we have to check if the voice we will
+    // show in musical notation is actually polyphonic, in which case we show a message explaining that we can not
+    // build the musical notation representation due to the voice being polyphonic
+    // This method calculates the sum of the durations of all notes in the voice and the sum of durations where different
+    // notes play at the same time, but are not starting and ending together. Then compares the 2 values and if the
+    // percentage of time there is overlap is greater than 10%, then it considers this a polyphonic voice
+    private isVoicePolyphonic(voiceNotes: Note[]): boolean {
+        let totalOverlap = 0
+        let totalDuration = 0
+
+        for (const n of voiceNotes) {
+            totalDuration += n.endSinceBeginningOfSongInTicks - n.startSinceBeginningOfSongInTicks
+            let overlapingNotes = voiceNotes
+                .filter(m =>
+                    // notes not exactly simultaneous
+                    !(m.startSinceBeginningOfSongInTicks == n.startSinceBeginningOfSongInTicks && m.endSinceBeginningOfSongInTicks == n.endSinceBeginningOfSongInTicks) &&
+                    // there is overlap
+                    m.startSinceBeginningOfSongInTicks <= n.endSinceBeginningOfSongInTicks && m.endSinceBeginningOfSongInTicks >= n.startSinceBeginningOfSongInTicks)
+            let overlap = overlapingNotes
+                .map(m => Math.min(m.endSinceBeginningOfSongInTicks, n.endSinceBeginningOfSongInTicks) - Math.max(m.startSinceBeginningOfSongInTicks, n.startSinceBeginningOfSongInTicks))
+                .reduce((sum, current) => sum + current, 0)
+            totalOverlap += overlap
+        }
+        return (totalOverlap > totalDuration / 10)
     }
 
     // When a note is not a note of the C major scale, we need to know if it is considered a flat or a sharp to decide where we

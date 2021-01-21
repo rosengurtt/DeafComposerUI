@@ -118,10 +118,6 @@ export abstract class GenericStaffDrawingUtilities {
         const yOfC3inFclef = 100
         const linesSeparation = 12
         let y: number
-        
-        if (e.startTick == 240) {
-            let lolo = true
-        }
 
         // F clef
         if (octave < 4) {
