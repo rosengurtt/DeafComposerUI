@@ -57,6 +57,7 @@ export class TrackComponent implements OnChanges, AfterViewInit {
   totalVoices: number
   totalWidthOfRythmDrawing: number
   mustRedrawSvgBox: boolean = false
+  averageYofNotes: number = 0
 
   constructor(private drawingPianoRollService: DrawingPianoRollService,
     private drawingRythmService: DrawingRythmService) {
@@ -97,7 +98,7 @@ export class TrackComponent implements OnChanges, AfterViewInit {
           this.drawingPianoRollService.drawPianoRollGraphic(this.trackId, this.svgBoxId, this.song, this.simplification);
         }
         else {
-          this.totalWidthOfRythmDrawing = this.drawingRythmService.drawMusicNotationGraphic(this.trackId, this.svgBoxId, this.song, this.simplification);
+          [this.totalWidthOfRythmDrawing, this.averageYofNotes] = this.drawingRythmService.drawMusicNotationGraphic(this.trackId, this.svgBoxId, this.song, this.simplification);
           if (this.totalWidthOfRythmDrawing == -1) this.mustRedrawSvgBox = true
           else this.mustRedrawSvgBox = false
         }
@@ -123,18 +124,26 @@ export class TrackComponent implements OnChanges, AfterViewInit {
     if (!svgBox) return
     switch (this.viewType) {
       case SongViewType.pianoRoll:
-        minX = this.displacement.x
-        minY = this.displacement.y
+        minX = (this.songSliderPosition / this.song.songStats.durationInSeconds) * (this.scale * this.song.songStats.numberOfTicks)
+        if (this.displacement.y >= 0 && this.displacement.y <= 128 - this.scale * 128 )
+          minY = this.displacement.y
+        else if (this.displacement.y < 0)
+          minY = 0
+        else
+          minY = 128 - this.scale * 128 
         width = this.scale * this.song.songStats.numberOfTicks
         height = this.scale * 128
+
+        console.log(`this.displacement.y=${this.displacement.y} this.scale=${this.scale} minY=${minY}`)
         break;
       case SongViewType.rythmMusicNotation:
         minX = this.songSliderPosition / this.song.songStats.durationInSeconds * this.totalWidthOfRythmDrawing
-        minY = -30
+        minY = -30 + this.averageYofNotes / 2
         width = width == null ? 1200 * this.scale * 2.2 : width
         height = height == null ? 128 * this.scale * 2.2 : height
         break;
     }
+
     this.viewBox = `${minX} ${minY} ${width} ${height}`
   }
 

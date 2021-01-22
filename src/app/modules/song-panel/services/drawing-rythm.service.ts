@@ -45,11 +45,11 @@ export class DrawingRythmService {
         voice: number,
         svgBoxId: string,
         song: Song,
-        simplificationNo: number): number {
+        simplificationNo: number): [number, number] {
 
         this.svgBox = document.getElementById(svgBoxId)
         if (!this.svgBox) {
-            return -1
+            return [-1, -1]
         }
 
         this.clearSVGbox(this.svgBox)
@@ -109,7 +109,9 @@ export class DrawingRythmService {
             }
             Pentagram.drawPentagram(this.svgBox, x)
             this.eventsToDraw.forEach(x => Pentagram.addExtraLines(this.svgBox, x))
-            return x
+
+            const averageY = this.eventsToDraw.reduce((sum, current) => current.bottomY + sum, 0) / this.eventsToDraw.length + 1
+            return [x, averageY]
         }
     }
 
