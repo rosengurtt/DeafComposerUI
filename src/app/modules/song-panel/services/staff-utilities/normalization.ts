@@ -40,7 +40,7 @@ export class Normalization {
             tolerance, barOfNote.hasTriplets, beatStart)
 
         return new Note(note.id, note.pitch, note.volume, normalizedStart, note.endSinceBeginningOfSongInTicks, note.isPercussion,
-            note.voice, note.PitchBending, note.instrument)
+            note.voice,  note.PitchBending, note.instrument)
     }
     public static normalizePoint(point: number, beatDuration: number, tolerance: number, hasTriplets: boolean, beatStart: number) {
         if (point == 0 || point == beatDuration || point == beatStart) return point

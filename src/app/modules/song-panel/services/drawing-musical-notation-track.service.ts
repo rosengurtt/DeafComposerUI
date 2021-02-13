@@ -20,19 +20,20 @@ import { Pentagram } from './staff-utilities/pentagram'
 import { BasicShapes } from './staff-utilities/basic-shapes'
 
 @Injectable()
-export class DrawingRythmService {
+export class DrawingMusicalNotationTrackService {
     svgns = 'http://www.w3.org/2000/svg'
     svgBox: HTMLElement
     song: Song
     voice: number
+    subVoices: number[]
     simplification: SongSimplification
     bars: Bar[]             // Info include the start and end tick and the time signature of each bar of the song
     songNotes: Note[]
     voiceNotes: Note[]
     isPercusion: boolean
     eventsToDraw: SoundEvent[]  // Represents all the notes and rests we have in this voice
-    eventsToDrawForAllVoices: Array<Array<SoundEvent>>
     allNoteStarts: number[] // Represents all the ticks where there is a note starting in any of the voices
+    eventsToDrawForAllVoices: Array<Array<SoundEvent>>
 
     // We assign to each quarter, eightth, sixteenth or whatever a total of 50 px width
     // The height is always 50 px
@@ -45,7 +46,8 @@ export class DrawingRythmService {
         voice: number,
         svgBoxId: string,
         song: Song,
-        simplificationNo: number): [number, number] {
+        simplificationNo: number,
+        eventsToDrawGlobal: Array<Array<SoundEvent>>): [number, number] {
 
         this.svgBox = document.getElementById(svgBoxId)
         if (!this.svgBox) {
@@ -56,6 +58,7 @@ export class DrawingRythmService {
         this.voice = voice
         this.song = song
         this.simplification = new SongSimplification(song.songSimplifications[simplificationNo])
+        this.eventsToDrawForAllVoices = eventsToDrawGlobal
 
         this.bars = song.bars
 
@@ -63,26 +66,32 @@ export class DrawingRythmService {
         const aux = [... this.simplification.notes]
             .sort((i, j) => i.startSinceBeginningOfSongInTicks - j.startSinceBeginningOfSongInTicks)
         // normalize start time of notes
-        this.songNotes = aux.map(n => Normalization.normalizeNoteStart(this.bars, n))
+        //this.songNotes = aux.map(n => Normalization.normalizeNoteStart(this.bars, n))
 
         console.log(`voice ${voice}`)
         this.isPercusion = this.simplification.isVoicePercusion(voice)
-        this.voiceNotes = this.simplification.getNotesOfVoice(voice, song)
+        this.voiceNotes = this.simplification.getNotesOfVoice(voice)
+
 
         if (this.isVoicePolyphonic(this.voiceNotes)) {
-            BasicShapes.createText(this.svgBox, "This voice is polyphonic and can not be shown in musical notation", 50, 80, 20, "black")
+            BasicShapes.createText(this.svgBox, "This voice is polyphonic and can not be shown in musical notation", 50, 80, 30, "black")
+            return [1200, 50]
         }
         else {
-            this.eventsToDrawForAllVoices = []
-            const voicesWithNotes = this.simplification.getVoicesWithNotes()
-            for (let v of voicesWithNotes) {
-                this.eventsToDrawForAllVoices.push(DrawingCalculations.getEventsToDraw(song, simplificationNo, v))
-            }
+            // this.eventsToDrawForAllVoices = []
+            // const voicesWithNotes = this.simplification.getVoicesWithNotes()
+            // for (let v of voicesWithNotes) {
+            //     this.eventsToDrawForAllVoices.push(DrawingCalculations.getEventsToDraw(song, simplificationNo, v))
+            // }
 
             this.eventsToDraw = this.eventsToDrawForAllVoices[this.simplification.getVoicesWithNotes().indexOf(voice)]
 
-            console.log(`eventsToDraw`)
-            console.log(this.eventsToDraw)
+
+            if (this.voiceNotes[0].isPercussion) {
+                BasicShapes.createText(this.svgBox, "Percussion", 50, 80, 30, "black")
+                return [1200, 50]
+            }
+
 
             this.AddShownAlterationsToSoundEvents()
             this.AddAppliedAlterationToSoundEvents()
@@ -90,6 +99,7 @@ export class DrawingRythmService {
             this.calculateYofNotes()
             // We calculate the y of the rests after the notes, because their y depends on the y of the sorrounding notes
             this.calculateYofRests()
+
 
             this.allNoteStarts = DrawingCalculations.getAllNoteStarts(song, simplificationNo, this.eventsToDrawForAllVoices)
 
@@ -115,6 +125,10 @@ export class DrawingRythmService {
         }
     }
 
+    private drawSubvoice(subVoice): void {
+
+    }
+
     // We can not build the music notation representation of a voice if it is polyphonic, we have to split it first in
     // monophonic voices. Because simplification 0 may have polyphonic voices, we have to check if the voice we will
     // show in musical notation is actually polyphonic, in which case we show a message explaining that we can not
@@ -125,6 +139,8 @@ export class DrawingRythmService {
     private isVoicePolyphonic(voiceNotes: Note[]): boolean {
         let totalOverlap = 0
         let totalDuration = 0
+
+        if (voiceNotes[0].isPercussion) return false;
 
         for (const n of voiceNotes) {
             totalDuration += n.endSinceBeginningOfSongInTicks - n.startSinceBeginningOfSongInTicks

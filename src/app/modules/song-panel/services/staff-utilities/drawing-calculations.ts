@@ -7,7 +7,7 @@ import { Note } from '../../../../core/models/note'
 import { SongSimplification } from '../../../../core/models/song-simplification'
 import { Bar } from '../../../../core/models/bar'
 import { Normalization } from './normalization'
-import {GenericStaffDrawingUtilities} from './generic-staff-drawing-utilities'
+import { GenericStaffDrawingUtilities } from './generic-staff-drawing-utilities'
 
 export class DrawingCalculations {
     private static ticksPerQuarterNote = 96
@@ -44,7 +44,9 @@ export class DrawingCalculations {
     public static getEventsToDraw(song: Song, simplificationNo: number, voice: number): SoundEvent[] {
         const simplification = new SongSimplification(song.songSimplifications[simplificationNo])
         const bars = song.bars
-        const voiceNotes = simplification.getNotesOfVoice(voice, song)
+        const voiceNotes = simplification.getNotesOfVoice(voice)
+        if (voiceNotes[0].isPercussion)
+            return this.getEventsToDrawForPercussionVoice(song, simplificationNo, voice)
         const tolerance = 10
         let soundEvents = <SoundEvent[]>[]
         let endOfLastComputedNote = 0
@@ -52,9 +54,7 @@ export class DrawingCalculations {
         for (let i = 0; i < voiceNotes.length; i++) {
             let n = voiceNotes[i]
             let currentBar = GenericStaffDrawingUtilities.getBarOfTick(bars, endOfLastComputedNote)
-            if (currentBar==24){
-                let parenlasrotativas=1
-            }
+
             // if there is a number of ticks greater than tolerance between the end of the previous note and this one
             // and we are not at the start of the beat, add a rest
             if (endOfLastComputedNote + tolerance < n.startSinceBeginningOfSongInTicks) {
@@ -77,6 +77,48 @@ export class DrawingCalculations {
         // remove undefined items. Not sure why there are sometimes undefined items
         return standadizedEvents.filter(item => item)
     }
+    // Percussion voices are different
+    // We consider that a percussion note has a duration that is the duration between its start time and the start time of the next
+    // percussion note or the end of the bar, whoever comes first. 
+    public static getEventsToDrawForPercussionVoice(song: Song, simplificationNo: number, voice: number): SoundEvent[] {
+        const simplification = new SongSimplification(song.songSimplifications[simplificationNo])
+        const bars = song.bars
+        const voiceNotes = simplification.getNotesOfVoice(voice)
+        const tolerance = 10
+        let soundEvents = <SoundEvent[]>[]
+        let endOfLastComputedNote = 0
+        // in this loop we add rest events when there are significant empty spaces between consecutive notes
+        for (let i = 0; i < voiceNotes.length; i++) {
+            let n = voiceNotes[i]
+            const currentBar = GenericStaffDrawingUtilities.getBarOfTick(bars, endOfLastComputedNote)
+            const endOfCurrentBar = currentBar < bars.length ? bars[currentBar].ticksFromBeginningOfSong : song.songStats.numberOfTicks
+
+            // if there is a number of ticks greater than tolerance between the end of the previous note and this one
+            // and we are not at the start of the beat, add a rest
+            if (endOfLastComputedNote + tolerance < n.startSinceBeginningOfSongInTicks) {
+                const eventDuration = Normalization.getEventDuration(bars, endOfLastComputedNote, n.startSinceBeginningOfSongInTicks)
+                let event = new SoundEvent(SoundEventType.rest, null, currentBar, endOfLastComputedNote, n.startSinceBeginningOfSongInTicks, eventDuration)
+                soundEvents.push(event)
+                endOfLastComputedNote = n.startSinceBeginningOfSongInTicks
+            }
+            // Get the bar in which the note is
+            const noteBar = GenericStaffDrawingUtilities.getBarOfTick(bars, n.startSinceBeginningOfSongInTicks)
+            const nextNote = voiceNotes.filter(x => x.startSinceBeginningOfSongInTicks > n.startSinceBeginningOfSongInTicks)
+                .sort((a, b) => (a.startSinceBeginningOfSongInTicks < b.startSinceBeginningOfSongInTicks ? -1 : 1))[0]
+
+            const endOfEvent = nextNote && nextNote.startSinceBeginningOfSongInTicks < endOfCurrentBar ?
+                nextNote.startSinceBeginningOfSongInTicks :
+                endOfCurrentBar
+            const eventDuration = Normalization.getEventDuration(bars, n.startSinceBeginningOfSongInTicks, endOfEvent)
+            soundEvents.push(new SoundEvent(SoundEventType.note, n.pitch, noteBar, n.startSinceBeginningOfSongInTicks, n.endSinceBeginningOfSongInTicks, eventDuration))
+            endOfLastComputedNote = endOfEvent
+        }
+        let standadizedEvents = this.standardizeSequenceOfNotesAndRests(bars, soundEvents)
+
+        // remove undefined items. Not sure why there are sometimes undefined items
+        return standadizedEvents.filter(item => item)
+    }
+
     // When we have a situation when for ex. a quarter note was played with the 3/4 of its duration, we don't want to draw an
     // eight tied to a sixteenth and a sixteenth rest.
     // This function would detect such a case and return the endtick that corresponds to a whole quarter, so we can fix the

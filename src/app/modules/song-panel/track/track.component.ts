@@ -7,7 +7,8 @@ import { Song } from 'src/app/core/models/song'
 import { SongSimplification } from 'src/app/core/models/song-simplification'
 import { SongViewType } from 'src/app/core/models/SongViewTypes.enum'
 import { DrawingPianoRollService } from '../services/drawing-piano-roll.service'
-import { DrawingRythmService } from '../services/drawing-rythm.service'
+import { DrawingMusicalNotationTrackService } from '../services/drawing-musical-notation-track.service'
+import { DrawingMusicalNotationGlobalService } from '../services/drawing-musical-notation-global.service'
 
 
 @Component({
@@ -16,7 +17,7 @@ import { DrawingRythmService } from '../services/drawing-rythm.service'
   styleUrls: ['./track.component.scss'],
   providers: [
     DrawingPianoRollService,
-    DrawingRythmService
+    DrawingMusicalNotationTrackService
   ]
 })
 export class TrackComponent implements OnChanges, AfterViewInit {
@@ -60,7 +61,8 @@ export class TrackComponent implements OnChanges, AfterViewInit {
   averageYofNotes: number = 0
 
   constructor(private drawingPianoRollService: DrawingPianoRollService,
-    private drawingRythmService: DrawingRythmService) {
+    private drawingMusicalNotationTrackService: DrawingMusicalNotationTrackService,
+    private drawingMusicalNotationGlobalService: DrawingMusicalNotationGlobalService) {
 
   }
   ngAfterViewInit(): void {
@@ -95,10 +97,12 @@ export class TrackComponent implements OnChanges, AfterViewInit {
       }
       if (propName == "viewType" || propName == "simplification" || this.mustRedrawSvgBox) {
         if (this.viewType == SongViewType.pianoRoll) {
-          this.drawingPianoRollService.drawPianoRollGraphic(this.trackId, this.svgBoxId, this.song, this.simplification);
+          this.drawingPianoRollService.drawPianoRollGraphic(this.trackId, this.svgBoxId, this.song, this.simplification)
         }
         else {
-          [this.totalWidthOfRythmDrawing, this.averageYofNotes] = this.drawingRythmService.drawMusicNotationGraphic(this.trackId, this.svgBoxId, this.song, this.simplification);
+          let eventsToDraw = this.drawingMusicalNotationGlobalService.getEventsToDrawForSong(this.song, this.simplification);
+
+          [this.totalWidthOfRythmDrawing, this.averageYofNotes] = this.drawingMusicalNotationTrackService.drawMusicNotationGraphic(this.trackId, this.svgBoxId, this.song, this.simplification, eventsToDraw);
           if (this.totalWidthOfRythmDrawing == -1) this.mustRedrawSvgBox = true
           else this.mustRedrawSvgBox = false
         }
@@ -125,16 +129,15 @@ export class TrackComponent implements OnChanges, AfterViewInit {
     switch (this.viewType) {
       case SongViewType.pianoRoll:
         minX = (this.songSliderPosition / this.song.songStats.durationInSeconds) * (this.scale * this.song.songStats.numberOfTicks)
-        if (this.displacement.y >= 0 && this.displacement.y <= 128 - this.scale * 128 )
+        if (this.displacement.y >= 0 && this.displacement.y <= 128 - this.scale * 128)
           minY = this.displacement.y
         else if (this.displacement.y < 0)
           minY = 0
         else
-          minY = 128 - this.scale * 128 
+          minY = 128 - this.scale * 128
         width = this.scale * this.song.songStats.numberOfTicks
         height = this.scale * 128
 
-        console.log(`this.displacement.y=${this.displacement.y} this.scale=${this.scale} minY=${minY}`)
         break;
       case SongViewType.rythmMusicNotation:
         minX = this.songSliderPosition / this.song.songStats.durationInSeconds * this.totalWidthOfRythmDrawing
@@ -143,14 +146,13 @@ export class TrackComponent implements OnChanges, AfterViewInit {
         height = height == null ? 128 * this.scale * 2.2 : height
         break;
     }
-
     this.viewBox = `${minX} ${minY} ${width} ${height}`
   }
 
 
   reset(unmuteAllTracks: boolean): void {
     if (unmuteAllTracks) this.muteIcon = "volume_up"
-    this.drawingRythmService.paintAllNotesBlack()
+    this.drawingMusicalNotationTrackService.paintAllNotesBlack()
     this.updateSvgBox()
   }
   dragStarted(event): void {
@@ -192,7 +194,7 @@ export class TrackComponent implements OnChanges, AfterViewInit {
       this.drawingPianoRollService.createProgressBar(numberOfTicks)
     }
     else {
-      const displacement = this.drawingRythmService.paintNotesBeingPlayed(numberOfTicks)
+      const displacement = this.drawingMusicalNotationTrackService.paintNotesBeingPlayed(numberOfTicks)
       // We don't want to raise a displacement event for each voice, but a single one for each elapsed second
       if (secondsElapsed * 2 % this.totalVoices != this.trackId) return
       // We don't want to move continuosly the staff, because it would be unpleasant to follow, we want to freeze

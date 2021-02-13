@@ -3,7 +3,6 @@ import { RouterModule } from '@angular/router'
 import { BrowserModule } from '@angular/platform-browser'
 import { MaterialModule } from '../../core/material.module'
 
-
 import { SongsRepositoryService } from '../../core/services/songs-repository/songs-repository.service'
 import { ReactiveFormsModule } from '@angular/forms'
 import { SongPanelShellComponent } from './song-panel-shell.component'
@@ -12,9 +11,8 @@ import { StoreModule } from '@ngrx/store'
 import { songsPanelFeatureKey } from './state'
 import { songPanelReducer } from './state/song-panel.reducer';
 import { TrackComponent } from './track/track.component'
-import { DrawingPianoRollService } from './services/drawing-piano-roll.service'
 import { SplitCamelCasePipe } from 'src/app/core/pipes/split-camel-case.pipe'
-import { DrawingRythmService } from './services/drawing-rythm.service'
+import { DrawingMusicalNotationGlobalService } from './services/drawing-musical-notation-global.service'
 
 @NgModule({
     declarations: [
@@ -34,7 +32,8 @@ import { DrawingRythmService } from './services/drawing-rythm.service'
       
     ],
     providers: [
-      SongsRepositoryService
+      SongsRepositoryService,
+      DrawingMusicalNotationGlobalService
     ],
     schemas: [CUSTOM_ELEMENTS_SCHEMA]
   })

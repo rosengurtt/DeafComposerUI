@@ -24,24 +24,18 @@ export class SongSimplification {
         return Array.from(voices.values())
     }
 
-    // Returns the notes in bar fromBar, the ones in bar toBar, and all intermiediary bars
-    // It includes notes that started before fromBar bur are still playing in fromBar and notes that
-    // started playing but have not finish playing by the time toBar finished
-    public getNotesOfVoice(voice: number, song: Song = null, fromBar: number | null = null, toBar: number | null = null): Note[] {
-        let startTick = 0
-        let endTick = 10000000
-        if (song && fromBar) startTick = song.bars[fromBar - 1].ticksFromBeginningOfSong
-        if (song && toBar) endTick = song.bars[toBar].ticksFromBeginningOfSong
+    public getNotesOfVoice(voice: number): Note[] {
         if (this.notes && this.notes.length > 0) {
             return this.notes
-                .filter(note => note.voice === voice && note.startSinceBeginningOfSongInTicks < endTick &&
-                    note.endSinceBeginningOfSongInTicks > startTick)
+                .filter(note => note.voice === voice)
                 .sort(
                     (a, b) => (a.startSinceBeginningOfSongInTicks < b.startSinceBeginningOfSongInTicks ? -1 : 1)
                 )
         }
         return []
     }
+
+
 
     // Returns the notes in bar fromBar, the ones in bar toBar, and all intermiediary bars
     // It includes notes that started before fromBar bur are still playing in fromBar and notes that
@@ -79,5 +73,6 @@ export class SongSimplification {
         }
         return false
     }
+
 
 }

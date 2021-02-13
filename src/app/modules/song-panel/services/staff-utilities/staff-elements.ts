@@ -20,8 +20,7 @@ export abstract class StaffElements {
     public static drawBeat(g: Element, x: number, bar: Bar, beat: number, beatGraphNeeds: BeatGraphNeeds, eventsToDraw: SoundEvent[], bars: Bar[], tieStartX: number | null): BeatDrawingInfo {
         const timeSig = bar.timeSignature
 
-        // if (timeSig.numerator == 3 && timeSig.denominator == 8)
-        //     return this.drawBeatOf3_8bar(g, x, bar, beat, beatGraphNeeds, eventsToDraw, tieStartX)
+        
         if (timeSig.numerator % 3 == 0 && timeSig.denominator == 8)
             return this.drawBeatOfbarWithTimeSig3x8(g, x, bar, beat, beatGraphNeeds, eventsToDraw, bars, tieStartX)
         const beatDurationInTicks = 96 * 4 / timeSig.denominator

@@ -1,3 +1,5 @@
+import { NoteDuration } from "src/app/core/models/note-duration"
+
 export abstract class BasicShapes {
     private static svgns = 'http://www.w3.org/2000/svg'
 
@@ -16,7 +18,7 @@ export abstract class BasicShapes {
         return arc
     }
     public static drawEllipse(g: Element, cx: number, cy: number, rx: number, ry: number, color: string,
-        strokeWidth: number, transform: string, isFilled: boolean) {
+        strokeWidth: number, transform: string, isFilled: boolean): void {
         const ellipse = document.createElementNS(this.svgns, 'ellipse')
         ellipse.setAttributeNS(null, 'cx', cx.toString())
         ellipse.setAttributeNS(null, 'cy', cy.toString())
@@ -30,6 +32,25 @@ export abstract class BasicShapes {
         g.appendChild(ellipse)
     }
 
+    // Draws the cross used in drums notation for some instruments like the hi hat
+    // The parameters drawCircleAround and drawHorizontalLine are used to draw diferent versions of the cross (i.e. the open hi hat uses a circle)
+    public static drawCross(g: Element, x: number, y: number, color: string = 'black', drawCircleAround: boolean = false, drawHorizontalLine: boolean = false): void {
+        this.drawPath(g, color, 2, `M ${x - 6}, ${y - 6} l 12,12 M ${x + 6}, ${y - 6} l -12,12 Z`)
+        if (drawCircleAround)
+            this.drawEllipse(g, x, y, 8, 8, color, 2, null, false)
+        if (drawHorizontalLine)
+            this.drawPath(g, color, 2, `M ${x - 8},${y} h 16 Z`)
+    }
+    // Draws a rombus used for some drums notes like splash and rid bell
+    public static drawRombus(g: Element, x: number, y: number, color: string = 'black', isFilled: boolean = true) {
+        let path = this.drawPath(g, color, 2, `M ${x},${y - 7} L ${x + 7},${y} L ${x},${y + 7} L ${x - 7},${y} L ${x},${y - 7}  Z`)
+        if (!isFilled) path.setAttributeNS(null, 'fill', 'none')
+    }
+
+    // Draws the triangle used by the drums note of the cowbell
+    public static drawTriangle(g: Element, x: number, y: number, color: string = 'black') {
+        this.drawPath(g, color, 2, `M ${x},${y} L ${x + 7},${y + 8} L ${x - 7},${y + 8} L ${x},${y}  Z`)
+    }
 
 
     public static createText(g: Element, text: string, x: number, y: number, fontSize: number, color: string,
@@ -48,6 +69,49 @@ export abstract class BasicShapes {
         textElement.setAttributeNS(null, 'opacity', opacity.toString())
         g.appendChild(textElement)
     }
+
+    public static drawStem(g: Element, x: number, bottomY: number, topY: number = null, color: string = 'black') {
+        let y: number
+        const zero = 30
+        const defaultStemLength = 48
+        if (topY === null) {
+            y = bottomY + defaultStemLength
+        }
+        else
+            y = topY
+        this.drawPath(g, color, 2, `M ${x + 19},${zero + bottomY} V ${zero + y} z`)
+    }
+    public static drawCircleAndStem(parent: Element, x: number, bottomY: number, topY: number = null, color: string = 'black', isCircleFull = true) {
+        this.drawNoteCircle(parent, x, bottomY, color, isCircleFull)
+        this.drawStem(parent, x, bottomY, topY)
+    }
+
+    public static drawNoteCircle(g: Element, x: number, y: number, color: string = 'black', isCircleFull = true) {
+        this.drawEllipse(g, x + 13, 81 + y, 7, 5, color, 2, `rotate(-25 ${x + 13} ${81 + y})`, isCircleFull)
+    }
+
+    public static drawBeam(g: Element, startX: number, startY: number, endX: number, endY: number, color: string = 'black', duration: NoteDuration): void {
+        switch (duration) {
+            case NoteDuration.eight:
+                BasicShapes.drawPath(g, color, 1, `M ${startX + 19},${30 + startY} L ${endX + 19},${30 + endY} z`)
+                break;
+            case NoteDuration.sixteenth:
+                BasicShapes.drawPath(g, color, 1, `M ${startX + 19},${36 + startY} L ${endX + 19},${36 + endY} z`)
+                break;
+            case NoteDuration.thirtysecond:
+                BasicShapes.drawPath(g, color, 1, `M ${startX + 19},${42 + startY} L ${endX + 19},${42 + endY} z`)
+                break;
+            case NoteDuration.sixtyfourth:
+                BasicShapes.drawPath(g, color, 1, `M ${startX + 19},${48 + startY} L ${endX + 19},${48 + endY} z`)
+                break;
+        }
+    }
+    public static drawSubStems(g: Element, x: number, y: number, color: string = 'black', qtySubstems: number) {
+        for (let i = 0; i < qtySubstems; i++) {
+            BasicShapes.drawPath(g, color, 1, `m ${x + 20},${y + 43 + 4 * i} c 19.5,4.9 10.5,22.1 8.8,28.1 16,-21.9 -8.5,-30.8 -8.8,-44.1 z`,
+                null)
+        }
+    }
     public static writeEventInfo(g: Element, e: any): void {
         // BasicShapes.createText(g, `st=${e.startTick}`, e.x, 100, 12, `red`)
         // BasicShapes.createText(g, `pit=${e.pitch}`, e.x, 112, 12, `red`)
@@ -55,7 +119,7 @@ export abstract class BasicShapes {
         // BasicShapes.createText(g, `alt=${e.alterationShown != null ? e.alterationShown : ''}`, e.x, 136, 12, `red`)
         // BasicShapes.createText(g, `tie=${e.isTiedToPrevious}`, e.x, 148, 12, `red`)
         // BasicShapes.createText(g, `x=${e.x}`, e.x, 160, 12, `red`)
-        // BasicShapes.createText(g, `bottomY=${e.bottomY}`, e.x, 172, 12, `red`)
+        // BasicShapes.createText(g, `y=${e.bottomY}`, e.x, 172, 12, `red`)
     }
     public static writeBeamInfo(g: Element, startX: number, endX: number, startY: number, endY: number): void {
         BasicShapes.createText(g, `startX=${startX}`, startX, 184, 12, `red`)
