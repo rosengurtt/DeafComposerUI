@@ -14,7 +14,7 @@ export class DrawingMusicalNotationGlobalService {
     // (like 2 notes played by different instruments at the same time) to be shown aligned vertically
     // To be able to do that, when we draw one track, we need to know what is going on at that time on the other tracks
     // To avoid calculating the space taken by the events on different tracks every time we draw one track, this method has
-    // been extracted from the code to draw a single track, so it is executed once for each track and its results are shared
+    // been extracted from the code to draw a single track, so it is executed only once and its results are shared
     // by the individual tracks
     // Because we may have several songs open at the same time, it needs to keep the information it processed for each song
     public getEventsToDrawForSong(

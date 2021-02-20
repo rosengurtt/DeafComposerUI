@@ -34,22 +34,31 @@ export abstract class BasicShapes {
 
     // Draws the cross used in drums notation for some instruments like the hi hat
     // The parameters drawCircleAround and drawHorizontalLine are used to draw diferent versions of the cross (i.e. the open hi hat uses a circle)
-    public static drawCross(g: Element, x: number, y: number, color: string = 'black', drawCircleAround: boolean = false, drawHorizontalLine: boolean = false): void {
+    public static drawCross(g: Element, x: number, y: number, color: string = 'black', drawCircleAround: boolean = false,
+        drawHorizontalMiddleLine: boolean = false, drawUnderline: boolean = false): void {
+        y = y + 82
+        x = x + 10
         this.drawPath(g, color, 2, `M ${x - 6}, ${y - 6} l 12,12 M ${x + 6}, ${y - 6} l -12,12 Z`)
         if (drawCircleAround)
-            this.drawEllipse(g, x, y, 8, 8, color, 2, null, false)
-        if (drawHorizontalLine)
-            this.drawPath(g, color, 2, `M ${x - 8},${y} h 16 Z`)
+            this.drawEllipse(g, x, y, 7, 7, color, 2, null, false)
+        if (drawHorizontalMiddleLine)
+            this.drawPath(g, color, 2, `M ${x - 12},${y} h 22 Z`)
+        if (drawUnderline)
+            this.drawPath(g, color, 2, `M ${x - 12},${y + 6} h 22 Z`)
     }
     // Draws a rombus used for some drums notes like splash and rid bell
     public static drawRombus(g: Element, x: number, y: number, color: string = 'black', isFilled: boolean = true) {
+        y += 81
+        x += 11
         let path = this.drawPath(g, color, 2, `M ${x},${y - 7} L ${x + 7},${y} L ${x},${y + 7} L ${x - 7},${y} L ${x},${y - 7}  Z`)
         if (!isFilled) path.setAttributeNS(null, 'fill', 'none')
     }
 
     // Draws the triangle used by the drums note of the cowbell
     public static drawTriangle(g: Element, x: number, y: number, color: string = 'black') {
-        this.drawPath(g, color, 2, `M ${x},${y} L ${x + 7},${y + 8} L ${x - 7},${y + 8} L ${x},${y}  Z`)
+        y += 86
+        x += 11
+        this.drawPath(g, color, 2, `M ${x},${y} L ${x + 7},${y - 10} L ${x - 7},${y - 10} L ${x},${y}  Z`)
     }
 
 
@@ -70,7 +79,7 @@ export abstract class BasicShapes {
         g.appendChild(textElement)
     }
 
-    public static drawStem(g: Element, x: number, bottomY: number, topY: number = null, color: string = 'black') {
+    public static drawStem(g: Element, x: number, bottomY: number, topY: number = null, color: string = 'black', isUp: boolean = true) {
         let y: number
         const zero = 30
         const defaultStemLength = 48
@@ -79,11 +88,16 @@ export abstract class BasicShapes {
         }
         else
             y = topY
-        this.drawPath(g, color, 2, `M ${x + 19},${zero + bottomY} V ${zero + y} z`)
+        
+        if (isUp)
+            this.drawPath(g, color, 2, `M ${x + 19},${zero + bottomY} V ${zero + y} z`)
+        else
+            this.drawPath(g, color, 2, `M ${x + 7},${zero + y} v 55 z`)
     }
-    public static drawCircleAndStem(parent: Element, x: number, bottomY: number, topY: number = null, color: string = 'black', isCircleFull = true) {
+    public static drawCircleAndStem(parent: Element, x: number, bottomY: number, topY: number = null, color: string = 'black',
+        isCircleFull = true, isUp: boolean = true) {
         this.drawNoteCircle(parent, x, bottomY, color, isCircleFull)
-        this.drawStem(parent, x, bottomY, topY)
+        this.drawStem(parent, x, bottomY, topY, color, isUp)
     }
 
     public static drawNoteCircle(g: Element, x: number, y: number, color: string = 'black', isCircleFull = true) {

@@ -45,8 +45,9 @@ export class DrawingCalculations {
         const simplification = new SongSimplification(song.songSimplifications[simplificationNo])
         const bars = song.bars
         const voiceNotes = simplification.getNotesOfVoice(voice)
-        if (voiceNotes[0].isPercussion)
+        if (voiceNotes[0].isPercussion) {
             return this.getEventsToDrawForPercussionVoice(song, simplificationNo, voice)
+        }
         const tolerance = 10
         let soundEvents = <SoundEvent[]>[]
         let endOfLastComputedNote = 0
@@ -54,6 +55,20 @@ export class DrawingCalculations {
         for (let i = 0; i < voiceNotes.length; i++) {
             let n = voiceNotes[i]
             let currentBar = GenericStaffDrawingUtilities.getBarOfTick(bars, endOfLastComputedNote)
+            let endOfCurrentBar = currentBar < bars.length ? bars[currentBar].ticksFromBeginningOfSong : song.songStats.numberOfTicks
+
+            // Get the bar in which the note is
+            const noteBar = GenericStaffDrawingUtilities.getBarOfTick(bars, n.startSinceBeginningOfSongInTicks)
+
+            // If there are several bars with no notes before n, then fill them with rests
+            while (currentBar < noteBar) {
+                const eventDuration = Normalization.getEventDuration(bars, endOfLastComputedNote, endOfCurrentBar)
+                let event = new SoundEvent(SoundEventType.rest, null, currentBar, endOfLastComputedNote, endOfCurrentBar, eventDuration)
+                soundEvents.push(event)
+                endOfLastComputedNote = endOfCurrentBar
+                currentBar++
+                endOfCurrentBar = currentBar < bars.length ? bars[currentBar].ticksFromBeginningOfSong : song.songStats.numberOfTicks
+            }
 
             // if there is a number of ticks greater than tolerance between the end of the previous note and this one
             // and we are not at the start of the beat, add a rest
@@ -63,8 +78,6 @@ export class DrawingCalculations {
                 soundEvents.push(event)
                 endOfLastComputedNote = n.startSinceBeginningOfSongInTicks
             }
-            // Get the bar in which the note is
-            const noteBar = GenericStaffDrawingUtilities.getBarOfTick(bars, n.startSinceBeginningOfSongInTicks)
             const eventDuration = Normalization.getEventDuration(bars, n.startSinceBeginningOfSongInTicks, n.endSinceBeginningOfSongInTicks)
             soundEvents.push(new SoundEvent(SoundEventType.note, n.pitch, noteBar, n.startSinceBeginningOfSongInTicks, n.endSinceBeginningOfSongInTicks, eventDuration))
             if (i < voiceNotes.length - 1)
@@ -90,29 +103,44 @@ export class DrawingCalculations {
         // in this loop we add rest events when there are significant empty spaces between consecutive notes
         for (let i = 0; i < voiceNotes.length; i++) {
             let n = voiceNotes[i]
-            const currentBar = GenericStaffDrawingUtilities.getBarOfTick(bars, endOfLastComputedNote)
-            const endOfCurrentBar = currentBar < bars.length ? bars[currentBar].ticksFromBeginningOfSong : song.songStats.numberOfTicks
+            if (n.startSinceBeginningOfSongInTicks == 1632){
+                let parenLasRotativas = true
+            }
+            let currentBar = GenericStaffDrawingUtilities.getBarOfTick(bars, endOfLastComputedNote)
+            let endOfCurrentBar = currentBar < bars.length ? bars[currentBar].ticksFromBeginningOfSong : song.songStats.numberOfTicks
 
+            // Get the bar in which the note is
+            const noteBar = GenericStaffDrawingUtilities.getBarOfTick(bars, n.startSinceBeginningOfSongInTicks)
+
+            // If there are several bars with no notes before n, then fill them with rests
+            while (currentBar < noteBar) {
+                const eventDuration = Normalization.getEventDuration(bars, endOfLastComputedNote, endOfCurrentBar)
+                let event = new SoundEvent(SoundEventType.rest, null, currentBar, endOfLastComputedNote, endOfCurrentBar, eventDuration, null, null, true)
+                soundEvents.push(event)
+                endOfLastComputedNote = endOfCurrentBar
+                currentBar++
+                endOfCurrentBar = currentBar < bars.length ? bars[currentBar].ticksFromBeginningOfSong : song.songStats.numberOfTicks
+            }
             // if there is a number of ticks greater than tolerance between the end of the previous note and this one
             // and we are not at the start of the beat, add a rest
             if (endOfLastComputedNote + tolerance < n.startSinceBeginningOfSongInTicks) {
                 const eventDuration = Normalization.getEventDuration(bars, endOfLastComputedNote, n.startSinceBeginningOfSongInTicks)
-                let event = new SoundEvent(SoundEventType.rest, null, currentBar, endOfLastComputedNote, n.startSinceBeginningOfSongInTicks, eventDuration)
+                let event = new SoundEvent(SoundEventType.rest, null, currentBar, endOfLastComputedNote, n.startSinceBeginningOfSongInTicks, eventDuration, null, null, true)
                 soundEvents.push(event)
                 endOfLastComputedNote = n.startSinceBeginningOfSongInTicks
             }
-            // Get the bar in which the note is
-            const noteBar = GenericStaffDrawingUtilities.getBarOfTick(bars, n.startSinceBeginningOfSongInTicks)
+
             const nextNote = voiceNotes.filter(x => x.startSinceBeginningOfSongInTicks > n.startSinceBeginningOfSongInTicks)
                 .sort((a, b) => (a.startSinceBeginningOfSongInTicks < b.startSinceBeginningOfSongInTicks ? -1 : 1))[0]
 
-            const endOfEvent = nextNote && nextNote.startSinceBeginningOfSongInTicks < endOfCurrentBar ?
+            const endOfEvent = nextNote && nextNote.startSinceBeginningOfSongInTicks <= endOfCurrentBar ?
                 nextNote.startSinceBeginningOfSongInTicks :
                 endOfCurrentBar
             const eventDuration = Normalization.getEventDuration(bars, n.startSinceBeginningOfSongInTicks, endOfEvent)
-            soundEvents.push(new SoundEvent(SoundEventType.note, n.pitch, noteBar, n.startSinceBeginningOfSongInTicks, n.endSinceBeginningOfSongInTicks, eventDuration))
+            soundEvents.push(new SoundEvent(SoundEventType.note, n.pitch, noteBar, n.startSinceBeginningOfSongInTicks, endOfEvent, eventDuration, null, null, true))
             endOfLastComputedNote = endOfEvent
         }
+
         let standadizedEvents = this.standardizeSequenceOfNotesAndRests(bars, soundEvents)
 
         // remove undefined items. Not sure why there are sometimes undefined items

@@ -6,7 +6,6 @@ import { MusicStylesPaginated } from 'src/app/core/services/songs-repository/res
 import { BandsPaginated } from 'src/app/core/services/songs-repository/responses-format/bands-paginated'
 import { SongsPaginated } from 'src/app/core/services/songs-repository/responses-format/songs-paginated'
 
-// State for this feature (Product)
 export interface SongsLibraryState {
     musicStylesPaginated: MusicStylesPaginated
     bandsPaginated: BandsPaginated

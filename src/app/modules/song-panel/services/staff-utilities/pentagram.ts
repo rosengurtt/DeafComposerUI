@@ -27,18 +27,20 @@ export abstract class Pentagram {
     private static A1sharp = 34
     private static F1sharp = 30
 
-    public static drawPentagram(g: Element, length: number): void {
+    public static drawPentagram(g: Element, length: number, isPercussionVoice: boolean = false): void {
         BasicShapes.drawPath(g, 'black', 1, `M 5,52 H ${length}`)
         BasicShapes.drawPath(g, 'black', 1, `M 5,64 H ${length}`)
         BasicShapes.drawPath(g, 'black', 1, `M 5,76 H ${length}`)
         BasicShapes.drawPath(g, 'black', 1, `M 5,88 H ${length}`)
         BasicShapes.drawPath(g, 'black', 1, `M 5,100 H ${length}`)
 
-        BasicShapes.drawPath(g, 'black', 1, `M 5,152 H ${length}`)
-        BasicShapes.drawPath(g, 'black', 1, `M 5,164 H ${length}`)
-        BasicShapes.drawPath(g, 'black', 1, `M 5,176 H ${length}`)
-        BasicShapes.drawPath(g, 'black', 1, `M 5,188 H ${length}`)
-        BasicShapes.drawPath(g, 'black', 1, `M 5,200 H ${length}`)
+        if (!isPercussionVoice) {
+            BasicShapes.drawPath(g, 'black', 1, `M 5,152 H ${length}`)
+            BasicShapes.drawPath(g, 'black', 1, `M 5,164 H ${length}`)
+            BasicShapes.drawPath(g, 'black', 1, `M 5,176 H ${length}`)
+            BasicShapes.drawPath(g, 'black', 1, `M 5,188 H ${length}`)
+            BasicShapes.drawPath(g, 'black', 1, `M 5,200 H ${length}`)
+        }
     }
     // We draw the time signature in a bar if it is the first bar or if the time signature is different from the
     // previous bar
@@ -60,18 +62,21 @@ export abstract class Pentagram {
         return true
     }
     // Returns the space it took in the drawing
-    public static drawTimeSignature(g: Element, x: number, timeSignature: TimeSignature): number {
+    public static drawTimeSignature(g: Element, x: number, timeSignature: TimeSignature, isPercussionVoice: boolean = false): number {
         BasicShapes.createText(g, timeSignature.numerator.toString(), x + 10, 68, 30, 'black', null, 'bold')
         BasicShapes.createText(g, timeSignature.denominator.toString(), x + 10, 105, 28, 'black', null, 'bold')
 
-        BasicShapes.createText(g, timeSignature.numerator.toString(), x + 10, 168, 30, 'black', null, 'bold')
-        BasicShapes.createText(g, timeSignature.denominator.toString(), x + 10, 205, 28, 'black', null, 'bold')
+        if (!isPercussionVoice) {
+            BasicShapes.createText(g, timeSignature.numerator.toString(), x + 10, 168, 30, 'black', null, 'bold')
+            BasicShapes.createText(g, timeSignature.denominator.toString(), x + 10, 205, 28, 'black', null, 'bold')
+        }
         return 50
     }
 
-    public static drawBarLine(svgBox: Element, x: number): number {
+    public static drawBarLine(svgBox: Element, x: number, isPercussionVoice: boolean = false): number {
         BasicShapes.drawPath(svgBox, 'black', 2, `M ${x + 10},40 V 112 z`)
-        BasicShapes.drawPath(svgBox, 'black', 2, `M ${x + 10},140 V 212 z`)
+        if (!isPercussionVoice)
+            BasicShapes.drawPath(svgBox, 'black', 2, `M ${x + 10},140 V 212 z`)
         return 50
     }
     public static drawBarNumber(g: Element, x: number, barNumber: number): number {
@@ -80,9 +85,13 @@ export abstract class Pentagram {
     }
 
 
-    public static drawClefs(g: Element, x: number): number {
-        this.drawGclef(g)
-        this.drawFclef(g)
+    public static drawClefs(g: Element, x: number, isPercusion: boolean = false): number {
+        if (isPercusion)
+            this.drawDrumsClef(g)
+        else {
+            this.drawGclef(g)
+            this.drawFclef(g)
+        }
         return 55
     }
 
@@ -101,9 +110,17 @@ export abstract class Pentagram {
         BasicShapes.drawEllipse(g, 45, 158, 3, 2, 'black', 2, '', true)
         BasicShapes.drawEllipse(g, 45, 170, 3, 2, 'black', 2, '', true)
         clef.setAttributeNS(null, 'transform', 'matrix(3,0,0,3,15,-150) translate(-15,90) scale(0.2 0.2)')
+
+        console.log("me voy de F cleff")
+    }
+    private static drawDrumsClef(g: Element) {
+        BasicShapes.drawPath(g, 'black', 6, `m 25,64 v 24`)
+        BasicShapes.drawPath(g, 'black', 6, `m 38,64 v 24`)
     }
 
-    private static drawSharpOfKeySignature(g: Element, sharpNo: number, x: number): number {
+
+
+    private static drawSharpOfKeySignature(g: Element, sharpNo: number, x: number, isPercussionVoice: boolean = false): number {
         let deltaX: number = 11
         let deltaY: number = 0
         switch (sharpNo) {
@@ -129,12 +146,13 @@ export abstract class Pentagram {
                 deltaY = 106
                 break
         }
-        Notes.drawSharp(g, x, deltaY - 112)
-        return Notes.drawSharp(g, x, deltaY)
+        const returnValue = Notes.drawSharp(g, x, deltaY - 112)
+        if (!isPercussionVoice) Notes.drawSharp(g, x, deltaY)
+        return returnValue
     }
 
 
-    private static drawFlatOfKeySignature(g: Element, flatNo: number, x: number): number {
+    private static drawFlatOfKeySignature(g: Element, flatNo: number, x: number, isPercussionVoice: boolean = false): number {
         let deltaY: number = 0
         switch (flatNo) {
             case 1:
@@ -159,20 +177,21 @@ export abstract class Pentagram {
                 deltaY = 121
                 break
         }
-        Notes.drawFlat(g, x, deltaY)
-        return Notes.drawFlat(g, x, deltaY - 111)
+        const returnValue = Notes.drawFlat(g, x, deltaY)
+        if (!isPercussionVoice) Notes.drawFlat(g, x, deltaY - 111)
+        return returnValue
     }
 
 
-    public static drawKeySignature(g: Element, x: number, k: KeySignature): number {
+    public static drawKeySignature(g: Element, x: number, k: KeySignature, isPercussionVoice: boolean = false): number {
         let deltaX = 13
         // sharps
         for (let s = 1; s <= k.key; s++) {
-            deltaX += this.drawSharpOfKeySignature(g, s, x + deltaX)
+            deltaX += this.drawSharpOfKeySignature(g, s, x + deltaX, isPercussionVoice)
         }
         // flats
         for (let f = 1; f <= -k.key; f++) {
-            deltaX += this.drawFlatOfKeySignature(g, f, x + deltaX)
+            deltaX += this.drawFlatOfKeySignature(g, f, x + deltaX, isPercussionVoice)
         }
         return deltaX
     }
@@ -181,8 +200,8 @@ export abstract class Pentagram {
     // This method adds any extra lines needed for a note
     public static addExtraLines(g: Element, e: SoundEvent): void {
         // if it is a rest don't draw extra lines
-        if (e.type == SoundEventType.rest) return
-        
+        if (e.type == SoundEventType.rest || e.isPercussion) return
+
         const noteLocation = this.getNoteLocationInPentagram(e)
         switch (noteLocation) {
             case PentagramLocation.InsidePentagram:

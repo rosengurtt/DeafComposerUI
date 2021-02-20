@@ -5,6 +5,7 @@ import { SoundEvent } from 'src/app/core/models/sound-event'
 import { SoundEventType } from 'src/app/core/models/sound-event-type.enum'
 import { DrawingCalculations } from './drawing-calculations'
 import { BeatGraphNeeds } from 'src/app/core/models/beat-graph-needs'
+import { DrumsShapes } from './drums-shapes'
 
 export abstract class Notes {
     private static svgns = 'http://www.w3.org/2000/svg'
@@ -45,6 +46,8 @@ export abstract class Notes {
     // sixteenth, we draw it as a quarter, and then we add the needed beams to convert it to an eight or whatever
     public static drawBasicNote(svgBox: Element, e: SoundEvent, isCircleFull = true, color: string = 'black'): Element {
         BasicShapes.writeEventInfo(svgBox, e)
+        if (e.isPercussion)
+            return DrumsShapes.drawBasicNote(svgBox, e, color)
         let group = document.createElementNS(this.svgns, 'g')
         svgBox.appendChild(group)
         BasicShapes.drawNoteCircle(group, e.x, e.bottomY, color, isCircleFull)
@@ -66,6 +69,8 @@ export abstract class Notes {
     }
 
     public static drawSingleNote(svgBox: Element, e: SoundEvent, color: string = 'black'): Element {
+        if (e.isPercussion)
+            return DrumsShapes.drawSingleNote(svgBox, e, color)
         BasicShapes.writeEventInfo(svgBox, e)
         let group = document.createElementNS(this.svgns, 'g')
         svgBox.appendChild(group)

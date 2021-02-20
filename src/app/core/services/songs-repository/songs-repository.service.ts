@@ -16,12 +16,12 @@ import { PaginationData } from '../../models/pagination-data';
 
 
 export class SongsRepositoryService {
-    get songLibraryUrl(): string{
+    get songLibraryUrl(): string {
         return environment.GetEnvironment().DeafComposerBackend
     }
 
 
-    constructor(private http: HttpClient) {    
+    constructor(private http: HttpClient) {
     }
 
 
@@ -54,8 +54,11 @@ export class SongsRepositoryService {
         return this.http.get<GetSongResponse>(this.songLibraryUrl + 'song/' + id + '/info');
     }
 
-    getSongById(id: number): Observable<GetSongResponse> {
-        return this.http.get<GetSongResponse>(this.songLibraryUrl + 'song/' + id);
+    getSongById(id: number, simplificationVersion: number | null = null): Observable<GetSongResponse> {
+        let url = this.songLibraryUrl + 'song/' + id
+        if (simplificationVersion) url += `?simplificationVersion=${simplificationVersion}`
+
+        return this.http.get<GetSongResponse>(url);
     }
 
     addPaginationParameters(url: string, paginationData?: PaginationData) {
@@ -66,9 +69,9 @@ export class SongsRepositoryService {
         return url
     }
 
-    addParameterToUrl(url: string, paramName:string, paramValue:any){
+    addParameterToUrl(url: string, paramName: string, paramValue: any) {
         if (paramValue) {
-            url += (url.includes('?')) ? `&${paramName}=${paramValue}` : `?${paramName}=${paramValue}`          
+            url += (url.includes('?')) ? `&${paramName}=${paramValue}` : `?${paramName}=${paramValue}`
         }
         return url
     }

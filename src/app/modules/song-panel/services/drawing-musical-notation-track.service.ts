@@ -18,6 +18,7 @@ import { KeySignature } from 'src/app/core/models/key-signature'
 import { GenericStaffDrawingUtilities } from './staff-utilities/generic-staff-drawing-utilities'
 import { Pentagram } from './staff-utilities/pentagram'
 import { BasicShapes } from './staff-utilities/basic-shapes'
+import { DrumsShapes } from './staff-utilities/drums-shapes'
 
 @Injectable()
 export class DrawingMusicalNotationTrackService {
@@ -30,7 +31,6 @@ export class DrawingMusicalNotationTrackService {
     bars: Bar[]             // Info include the start and end tick and the time signature of each bar of the song
     songNotes: Note[]
     voiceNotes: Note[]
-    isPercusion: boolean
     eventsToDraw: SoundEvent[]  // Represents all the notes and rests we have in this voice
     allNoteStarts: number[] // Represents all the ticks where there is a note starting in any of the voices
     eventsToDrawForAllVoices: Array<Array<SoundEvent>>
@@ -69,29 +69,14 @@ export class DrawingMusicalNotationTrackService {
         //this.songNotes = aux.map(n => Normalization.normalizeNoteStart(this.bars, n))
 
         console.log(`voice ${voice}`)
-        this.isPercusion = this.simplification.isVoicePercusion(voice)
         this.voiceNotes = this.simplification.getNotesOfVoice(voice)
-
 
         if (this.isVoicePolyphonic(this.voiceNotes)) {
             BasicShapes.createText(this.svgBox, "This voice is polyphonic and can not be shown in musical notation", 50, 80, 30, "black")
             return [1200, 50]
         }
         else {
-            // this.eventsToDrawForAllVoices = []
-            // const voicesWithNotes = this.simplification.getVoicesWithNotes()
-            // for (let v of voicesWithNotes) {
-            //     this.eventsToDrawForAllVoices.push(DrawingCalculations.getEventsToDraw(song, simplificationNo, v))
-            // }
-
             this.eventsToDraw = this.eventsToDrawForAllVoices[this.simplification.getVoicesWithNotes().indexOf(voice)]
-
-
-            if (this.voiceNotes[0].isPercussion) {
-                BasicShapes.createText(this.svgBox, "Percussion", 50, 80, 30, "black")
-                return [1200, 50]
-            }
-
 
             this.AddShownAlterationsToSoundEvents()
             this.AddAppliedAlterationToSoundEvents()
@@ -103,8 +88,9 @@ export class DrawingMusicalNotationTrackService {
 
             this.allNoteStarts = DrawingCalculations.getAllNoteStarts(song, simplificationNo, this.eventsToDrawForAllVoices)
 
+            const voiceIsPercusion = this.voiceNotes[0].isPercussion
             let x = 0
-            x += Pentagram.drawClefs(this.svgBox, x)
+            x += Pentagram.drawClefs(this.svgBox, x, voiceIsPercusion)
 
             let startTieX: number | null = null
             for (const bar of this.bars) {
@@ -113,20 +99,16 @@ export class DrawingMusicalNotationTrackService {
                     this.simplification.notes.filter(n => n.endSinceBeginningOfSongInTicks > bar.ticksFromBeginningOfSong).length == 0)
                     break
 
-                let beatDrawingInfo = this.drawBar(bar, x, startTieX)
+                let beatDrawingInfo = this.drawBar(bar, x, startTieX, voiceIsPercusion)
                 x += beatDrawingInfo.deltaX
                 startTieX = beatDrawingInfo.startTieX
             }
-            Pentagram.drawPentagram(this.svgBox, x)
+            Pentagram.drawPentagram(this.svgBox, x, voiceIsPercusion)
             this.eventsToDraw.forEach(x => Pentagram.addExtraLines(this.svgBox, x))
 
             const averageY = this.eventsToDraw.reduce((sum, current) => current.bottomY + sum, 0) / this.eventsToDraw.length + 1
             return [x, averageY]
         }
-    }
-
-    private drawSubvoice(subVoice): void {
-
     }
 
     // We can not build the music notation representation of a voice if it is polyphonic, we have to split it first in
@@ -420,17 +402,17 @@ export class DrawingMusicalNotationTrackService {
 
     // bar is the bar number, that is 1 for the first bar of the song
     // x is the coordinate in pixels where we must start drawing
-    private drawBar(bar: Bar, x: number, startTieX: number | null): BeatDrawingInfo {
+    private drawBar(bar: Bar, x: number, startTieX: number | null, isPercussionVoice: boolean = false): BeatDrawingInfo {
         const timeSig = bar.timeSignature
         const keySig = bar.keySignature
         const totalBeats = timeSig.numerator
         let deltaX = 0
 
         if (Pentagram.mustDrawKeySignature(bar.barNumber, this.bars))
-            deltaX += Pentagram.drawKeySignature(this.svgBox, x + deltaX, keySig)
+            deltaX += Pentagram.drawKeySignature(this.svgBox, x + deltaX, keySig, isPercussionVoice)
 
         if (Pentagram.mustDrawTimeSignature(bar.barNumber, this.bars))
-            deltaX += Pentagram.drawTimeSignature(this.svgBox, x + deltaX, timeSig)
+            deltaX += Pentagram.drawTimeSignature(this.svgBox, x + deltaX, timeSig, isPercussionVoice)
 
         for (let beat = 1; beat <= totalBeats; beat++) {
             let beatGraphNeeds: BeatGraphNeeds
@@ -439,7 +421,7 @@ export class DrawingMusicalNotationTrackService {
             deltaX += beatDrawInfo.deltaX
             startTieX = beatDrawInfo.startTieX
         }
-        deltaX += Pentagram.drawBarLine(this.svgBox, x + deltaX)
+        deltaX += Pentagram.drawBarLine(this.svgBox, x + deltaX, isPercussionVoice)
         Pentagram.drawBarNumber(this.svgBox, x + deltaX / 2 - 10, bar.barNumber)
         return new BeatDrawingInfo(startTieX, deltaX)
 
@@ -449,7 +431,10 @@ export class DrawingMusicalNotationTrackService {
     private calculateYofNotes() {
         for (let e of this.eventsToDraw) {
             if (e.type == SoundEventType.note)
-                e.bottomY = GenericStaffDrawingUtilities.getBottomYofNote(e, this.bars, this.eventsToDraw)
+                if (e.isPercussion)
+                    e.bottomY = DrumsShapes.getYForDrumNote(e.pitch)
+                else
+                    e.bottomY = GenericStaffDrawingUtilities.getBottomYofNote(e, this.bars, this.eventsToDraw)
         }
     }
     private calculateYofRests() {

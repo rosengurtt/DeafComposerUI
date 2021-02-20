@@ -101,7 +101,7 @@ export abstract class GenericStaffDrawingUtilities {
     }
 
     // When we draw a note in the pentagram, bottomY=0 is the circle of the A inside the G clef pentagram. We have to calculate
-    // the number of pixels to move the note up or down so it shows in the correct place for the pitch#
+    // the number of pixels to move the note up or down so it shows in the correct place for the pitch
     // The same pitch may be shown for ex as an A# or a Bb, depending on the alterations being used at that
     // point of the song. So we need that information too. 
     // alterations is an array that defines the alteration of each pitch, so  if alterations[37] is 
@@ -173,6 +173,10 @@ export abstract class GenericStaffDrawingUtilities {
     // When drawing rests, the vertical location of the rest is not as important as with notes, it can be a bit higher
     // or lower without changing the meaning. But it should be more or less at the same height as surrounding notes 
     public static getYofRest(e: SoundEvent, eventsToDraw: SoundEvent[]): number {
+        // For percussion tracks we put the rest aprox in the middle
+        if (e.isPercussion)
+            return 10
+
         const surroundingNotes = eventsToDraw
             .filter(x => x.type == SoundEventType.note)
             //sort by distance from e

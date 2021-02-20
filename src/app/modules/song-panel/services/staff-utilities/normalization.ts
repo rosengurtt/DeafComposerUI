@@ -76,7 +76,7 @@ export class Normalization {
             let parenlasrotativas=true
         }
         // the following  line is needed because of typescript/javascript limitations
-        e = new SoundEvent(e.type, e.pitch, e.bar, e.startTick, e.endTick, e.duration, e.isTiedToPrevious, e.isAccented)
+        e = new SoundEvent(e.type, e.pitch, e.bar, e.startTick, e.endTick, e.duration, e.isTiedToPrevious, e.isAccented, e.isPercussion)
         const timeSig = bars[e.bar - 1].timeSignature
         const beatDuration = 96 * 4 / timeSig.denominator
         const barHasTriplets = bars[e.bar - 1].hasTriplets
@@ -153,7 +153,6 @@ export class Normalization {
     // not just 2) and it returns a sequence of events that correspond to the split points we passed
     // The first event returned has a isTiedToPrevious value of false, and all the rest of true
     public static splitEvent(e: SoundEvent, splitPoints: number[], bars: Bar[]): SoundEvent[] {
-        //console.log(splitPoints)
         // In case we don't have actually to split anyting because there are no split points,
         // return the event as an array of events
         if (!splitPoints || splitPoints.length == 0)
@@ -163,13 +162,13 @@ export class Normalization {
         let pointBar = GenericStaffDrawingUtilities.getBarOfTick(bars, lastStartPoint)
         for (const p of splitPoints) {
             const eventDuration = this.getEventDuration(bars, lastStartPoint, p)
-            retObj.push(new SoundEvent(e.type, e.pitch, pointBar, lastStartPoint, p, eventDuration, lastStartPoint == e.startTick ? e.isTiedToPrevious : true))
+            retObj.push(new SoundEvent(e.type, e.pitch, pointBar, lastStartPoint, p, eventDuration, lastStartPoint == e.startTick ? e.isTiedToPrevious : true, null, e.isPercussion))
             // Get the bar for the event that starts in point p         
             lastStartPoint = p
             pointBar = GenericStaffDrawingUtilities.getBarOfTick(bars, lastStartPoint)
         }
         const eventDuration = this.getEventDuration(bars, lastStartPoint, e.endTick)
-        retObj.push(new SoundEvent(e.type, e.pitch, pointBar, lastStartPoint, e.endTick, eventDuration, true))
+        retObj.push(new SoundEvent(e.type, e.pitch, pointBar, lastStartPoint, e.endTick, eventDuration, true, null, e.isPercussion))
         return retObj
     }
 

@@ -14,6 +14,7 @@ export class SoundEvent {
     duration: NoteDuration
     isTiedToPrevious: boolean
     isAccented: boolean
+    isPercussion: boolean
     // alterationShown is used for indicating the alteration shown next to the note in the pentagram
     alterationShown: Alteration | null
     // alteration applied is used for indicating how the note is played. When the key signature has sharp for ex. the note may
@@ -37,7 +38,8 @@ export class SoundEvent {
         end: number,
         duration: NoteDuration,
         isTiedToPrevious: boolean | null = null,
-        isAccented: boolean | null = null) {
+        isAccented: boolean | null = null,
+        isPercussion: boolean = false) {
         this.type = type
         this.pitch = pitch
         this.startTick = start
@@ -54,6 +56,7 @@ export class SoundEvent {
         else isAccented = false
         this.alterationShown = null
         this.alterationApplied = null
+        this.isPercussion = isPercussion
     }
 
 
