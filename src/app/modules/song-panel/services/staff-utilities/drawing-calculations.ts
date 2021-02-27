@@ -103,9 +103,6 @@ export class DrawingCalculations {
         // in this loop we add rest events when there are significant empty spaces between consecutive notes
         for (let i = 0; i < voiceNotes.length; i++) {
             let n = voiceNotes[i]
-            if (n.startSinceBeginningOfSongInTicks == 1632){
-                let parenLasRotativas = true
-            }
             let currentBar = GenericStaffDrawingUtilities.getBarOfTick(bars, endOfLastComputedNote)
             let endOfCurrentBar = currentBar < bars.length ? bars[currentBar].ticksFromBeginningOfSong : song.songStats.numberOfTicks
 

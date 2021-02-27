@@ -69,7 +69,8 @@ export class SongsLibraryEffects {
             .pipe(
               withLatestFrom(this.songsRepositoryService.getSongs(action.selectedStyle.id, null, { pageNo: 0, pageSize: state.songsPaginated.pageSize }, state.songTerm)),
               map(([bands, songs]) =>
-                SongsLibraryApiActions.styleSelectedSuccess({ bandsPaginated: bands.result, songsPaginated: songs.result })),
+                SongsLibraryApiActions.styleSelectedSuccess({ bandsPaginated: bands.result, songsPaginated: songs.result }))
+                ,
               catchError(error => of(SongsLibraryApiActions.styleSelectedFailure({ error })))
             )
         )

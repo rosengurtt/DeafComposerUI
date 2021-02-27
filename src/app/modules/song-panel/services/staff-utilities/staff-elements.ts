@@ -20,7 +20,7 @@ export abstract class StaffElements {
     public static drawBeat(g: Element, x: number, bar: Bar, beat: number, beatGraphNeeds: BeatGraphNeeds, eventsToDraw: SoundEvent[], bars: Bar[], tieStartX: number | null): BeatDrawingInfo {
         const timeSig = bar.timeSignature
 
-        
+
         if (timeSig.numerator % 3 == 0 && timeSig.denominator == 8)
             return this.drawBeatOfbarWithTimeSig3x8(g, x, bar, beat, beatGraphNeeds, eventsToDraw, bars, tieStartX)
         const beatDurationInTicks = 96 * 4 / timeSig.denominator
@@ -41,6 +41,7 @@ export abstract class StaffElements {
 
         for (let i = 0; i < beatEvents.length; i++) {
             const e: SoundEvent = beatEvents[i]
+
             let deltaX = DrawingCalculations.calculateXofEventInsideBeat(e, beatGraphNeeds, beatStartTick)
             e.x = x + deltaX
 
@@ -48,7 +49,9 @@ export abstract class StaffElements {
                 const notesSimultaneousToThisOne = beatEvents.filter(x => x.startTick == e.startTick && x.endTick == e.endTick && x.pitch != e.pitch)
                 // if there is a single note, or there are some but they are simultaneous to this one,
                 // we don't have to care about beams, just draw it
-                if (beatEvents.filter(x => x.type == SoundEventType.note && !notesSimultaneousToThisOne.includes(x)).length == 1) {
+                // if it is percussion we also just draw it as a single note, because the beams are a pain when there are notes with
+                // stems up and stems down
+                if (e.isPercussion || beatEvents.filter(x => x.type == SoundEventType.note && !notesSimultaneousToThisOne.includes(x)).length == 1) {
                     const graph = Notes.drawSingleNote(g, e)
                     e.graphic.push(graph)
                 }

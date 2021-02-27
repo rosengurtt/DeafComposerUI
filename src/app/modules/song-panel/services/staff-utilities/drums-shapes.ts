@@ -18,6 +18,7 @@ export abstract class DrumsShapes {
     public static drawSingleNote(svgBox: Element, e: SoundEvent, color: string = 'black'): Element {
         BasicShapes.writeEventInfo(svgBox, e)
         let group = document.createElementNS(this.svgns, 'g')
+        let isStemUp = this.isStemUp(e.pitch)
         svgBox.appendChild(group)
         switch (e.duration) {
             case NoteDuration.whole:
@@ -31,25 +32,34 @@ export abstract class DrumsShapes {
                 break;
             case NoteDuration.eight:
                 e.bottomY = this.drawDrumCircleAndStem(group, e.x, color, e.pitch, true)
-                BasicShapes.drawSubStems(group, e.x, e.bottomY, color, 1)
+                this.drawSubStems(group, e.x, e.bottomY, color, 1, isStemUp)
                 break;
             case NoteDuration.sixteenth:
                 e.bottomY = this.drawDrumCircleAndStem(group, e.x, color, e.pitch, true)
-                BasicShapes.drawSubStems(group, e.x, e.bottomY, color, 2)
+                this.drawSubStems(group, e.x, e.bottomY, color, 2, isStemUp)
                 break;
             case NoteDuration.thirtysecond:
                 e.bottomY = this.drawDrumCircleAndStem(group, e.x, color, e.pitch, true)
-                BasicShapes.drawSubStems(group, e.x, e.bottomY, color, 3)
+                this.drawSubStems(group, e.x, e.bottomY, color, 3, isStemUp)
                 break;
             case NoteDuration.sixtyfourth:
                 e.bottomY = this.drawDrumCircleAndStem(group, e.x, color, e.pitch, true)
-                BasicShapes.drawSubStems(group, e.x, e.bottomY, color, 4)
+                this.drawSubStems(group, e.x, e.bottomY, color, 4, isStemUp)
                 break;
         }
 
         return group
     }
-
+    public static drawSubStems(g: Element, x: number, y: number, color: string = 'black', qtySubstems: number, isStemUp = true) {
+        for (let i = 0; i < qtySubstems; i++) {
+            if (isStemUp)
+                BasicShapes.drawPath(g, color, 1, `m ${x + 20},${y + 43 + 4 * i} c 19.5,4.9 10.5,22.1 8.8,28.1 16,-21.9 -8.5,-30.8 -8.8,-44.1 z`, null)
+            else {
+                const arc = BasicShapes.drawPath(g, color, 1, `m ${20},${y + 43 + 4 * i} c 19.5,4.9 10.5,22.1 8.8,28.1 16,-21.9 -8.5,-30.8 -8.8,-44.1 z`, null)
+                arc.setAttributeNS(null, 'transform', `scale(-1,1) rotate(180, ${0}, ${y + 80}) translate(${x - 12},-3)`)
+            }
+        }
+    }
     private static drawDrumCircleAndStem(parent: Element, x: number, color: string = 'black', pitch: DrumPitch,
         isCircleFull: boolean = true, isStemPresent: boolean = true): number {
         const y = this.getYForDrumNote(pitch)
@@ -111,6 +121,11 @@ export abstract class DrumsShapes {
 
         }
         return y
+    }
+    private static isStemUp(pitch: number): boolean {
+        const pitchesWithStemsDown = [36, 43, 44]
+        if (pitchesWithStemsDown.includes(pitch)) return false
+        return true
     }
 
 

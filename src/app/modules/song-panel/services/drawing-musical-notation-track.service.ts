@@ -106,7 +106,8 @@ export class DrawingMusicalNotationTrackService {
             Pentagram.drawPentagram(this.svgBox, x, voiceIsPercusion)
             this.eventsToDraw.forEach(x => Pentagram.addExtraLines(this.svgBox, x))
 
-            const averageY = this.eventsToDraw.reduce((sum, current) => current.bottomY + sum, 0) / this.eventsToDraw.length + 1
+            let averageY = this.eventsToDraw.reduce((sum, current) => current.bottomY + sum, 0) / this.eventsToDraw.length + 1
+            if (voiceIsPercusion) averageY -=100
             return [x, averageY]
         }
     }

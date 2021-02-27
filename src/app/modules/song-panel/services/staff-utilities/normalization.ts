@@ -71,10 +71,6 @@ export class Normalization {
     // goes first. It does this trying to make the starting of the notes/rests to fall in the hardest subdivision of the beat
     // We have to consider the case where the bar has triplets
     public static normalizeInterval(bars: Bar[], e: SoundEvent): SoundEvent[] {
-
-        if(e.startTick==3504 && e.endTick==4032){
-            let parenlasrotativas=true
-        }
         // the following  line is needed because of typescript/javascript limitations
         e = new SoundEvent(e.type, e.pitch, e.bar, e.startTick, e.endTick, e.duration, e.isTiedToPrevious, e.isAccented, e.isPercussion)
         const timeSig = bars[e.bar - 1].timeSignature

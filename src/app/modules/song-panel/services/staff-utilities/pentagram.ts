@@ -110,8 +110,6 @@ export abstract class Pentagram {
         BasicShapes.drawEllipse(g, 45, 158, 3, 2, 'black', 2, '', true)
         BasicShapes.drawEllipse(g, 45, 170, 3, 2, 'black', 2, '', true)
         clef.setAttributeNS(null, 'transform', 'matrix(3,0,0,3,15,-150) translate(-15,90) scale(0.2 0.2)')
-
-        console.log("me voy de F cleff")
     }
     private static drawDrumsClef(g: Element) {
         BasicShapes.drawPath(g, 'black', 6, `m 25,64 v 24`)

@@ -69,6 +69,7 @@ export abstract class Notes {
     }
 
     public static drawSingleNote(svgBox: Element, e: SoundEvent, color: string = 'black'): Element {
+        e.areSubstemsDrawn = true
         if (e.isPercussion)
             return DrumsShapes.drawSingleNote(svgBox, e, color)
         BasicShapes.writeEventInfo(svgBox, e)
@@ -130,7 +131,7 @@ export abstract class Notes {
     // This method draws them
     public static drawBeatBeams(g: Element, x: number, beatStartTick: number, beatGraphNeeds: BeatGraphNeeds, beatEvents: SoundEvent[], color: string = 'black'): void {
         const thisBeatNoteEvents = beatEvents.filter(x => x.type == SoundEventType.note).sort((a, b) => a.startTick - b.startTick)
-        if (!thisBeatNoteEvents || thisBeatNoteEvents.length <= 1) return
+        if (!thisBeatNoteEvents || thisBeatNoteEvents.length <= 1 || thisBeatNoteEvents[0].isPercussion) return
         const firstX = thisBeatNoteEvents[0].x - x
         const firstBottomY = thisBeatNoteEvents[0].bottomY
         const lastX = thisBeatNoteEvents[thisBeatNoteEvents.length - 1].x - x
@@ -155,14 +156,22 @@ export abstract class Notes {
             nextEvent.topY = endY
             BasicShapes.drawStem(g, nextEvent.x, nextEvent.bottomY, nextEvent.topY)
 
-            if (this.isNoteShorterThan(eventito, NoteDuration.quarter) && this.isNoteShorterThan(nextEvent, NoteDuration.quarter))
+
+            if (this.isNoteShorterThan(eventito, NoteDuration.quarter) && this.isNoteShorterThan(nextEvent, NoteDuration.quarter)) {
                 BasicShapes.drawBeam(g, x + startX, startY, x + endX, endY, color, NoteDuration.eight)
+                eventito.areSubstemsDrawn = true
+                nextEvent.areSubstemsDrawn = true
+            }
             if (this.isNoteShorterThan(eventito, NoteDuration.eight) && this.isNoteShorterThan(nextEvent, NoteDuration.eight))
                 BasicShapes.drawBeam(g, x + startX, startY, x + endX, endY, color, NoteDuration.sixteenth)
             if (this.isNoteShorterThan(eventito, NoteDuration.sixteenth) && this.isNoteShorterThan(nextEvent, NoteDuration.sixteenth))
                 BasicShapes.drawBeam(g, x + startX, startY, x + endX, endY, color, NoteDuration.thirtysecond)
             if (this.isNoteShorterThan(eventito, NoteDuration.thirtysecond) && this.isNoteShorterThan(nextEvent, NoteDuration.thirtysecond))
                 BasicShapes.drawBeam(g, x + startX, startY, x + endX, endY, color, NoteDuration.sixtyfourth)
+        }
+        for (let e of thisBeatNoteEvents) {
+            if (!e.areSubstemsDrawn)
+                this.drawSingleNote(g, e, 'black')
         }
     }
 
