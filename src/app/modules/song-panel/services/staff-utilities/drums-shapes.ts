@@ -12,13 +12,14 @@ export abstract class DrumsShapes {
         let group = document.createElementNS(this.svgns, 'g')
         svgBox.appendChild(group)
         e.bottomY = this.drawDrumCircleAndStem(group, e.x, color, e.pitch, true)
+        e.isStemUp = this.isStemUp(e.pitch)
         return group
     }
 
     public static drawSingleNote(svgBox: Element, e: SoundEvent, color: string = 'black'): Element {
-        BasicShapes.writeEventInfo(svgBox, e)
+         BasicShapes.writeEventInfo(svgBox, e)
         let group = document.createElementNS(this.svgns, 'g')
-        let isStemUp = this.isStemUp(e.pitch)
+        e.isStemUp = this.isStemUp(e.pitch)
         svgBox.appendChild(group)
         switch (e.duration) {
             case NoteDuration.whole:
@@ -32,19 +33,19 @@ export abstract class DrumsShapes {
                 break;
             case NoteDuration.eight:
                 e.bottomY = this.drawDrumCircleAndStem(group, e.x, color, e.pitch, true)
-                this.drawSubStems(group, e.x, e.bottomY, color, 1, isStemUp)
+                this.drawSubStems(group, e.x, e.bottomY, color, 1, e.isStemUp)
                 break;
             case NoteDuration.sixteenth:
                 e.bottomY = this.drawDrumCircleAndStem(group, e.x, color, e.pitch, true)
-                this.drawSubStems(group, e.x, e.bottomY, color, 2, isStemUp)
+                this.drawSubStems(group, e.x, e.bottomY, color, 2, e.isStemUp)
                 break;
             case NoteDuration.thirtysecond:
                 e.bottomY = this.drawDrumCircleAndStem(group, e.x, color, e.pitch, true)
-                this.drawSubStems(group, e.x, e.bottomY, color, 3, isStemUp)
+                this.drawSubStems(group, e.x, e.bottomY, color, 3, e.isStemUp)
                 break;
             case NoteDuration.sixtyfourth:
                 e.bottomY = this.drawDrumCircleAndStem(group, e.x, color, e.pitch, true)
-                this.drawSubStems(group, e.x, e.bottomY, color, 4, isStemUp)
+                this.drawSubStems(group, e.x, e.bottomY, color, 4, e.isStemUp)
                 break;
         }
 
@@ -52,11 +53,20 @@ export abstract class DrumsShapes {
     }
     public static drawSubStems(g: Element, x: number, y: number, color: string = 'black', qtySubstems: number, isStemUp = true) {
         for (let i = 0; i < qtySubstems; i++) {
-            if (isStemUp)
-                BasicShapes.drawPath(g, color, 1, `m ${x + 20},${y + 43 + 4 * i} c 19.5,4.9 10.5,22.1 8.8,28.1 16,-21.9 -8.5,-30.8 -8.8,-44.1 z`, null)
+            if (isStemUp) {
+                BasicShapes.drawPath(g, color, 1,
+                    `m ${27},${57 + 14 * i} c 19.5,4.9 10.5,22.1 8.8,28.1 16,-21.9 -8.5,-30.8 -8.8,-44.1 z`,
+                    null, `translate(${x},${y}) scale(0.7)`)
+            }
             else {
-                const arc = BasicShapes.drawPath(g, color, 1, `m ${20},${y + 43 + 4 * i} c 19.5,4.9 10.5,22.1 8.8,28.1 16,-21.9 -8.5,-30.8 -8.8,-44.1 z`, null)
-                arc.setAttributeNS(null, 'transform', `scale(-1,1) rotate(180, ${0}, ${y + 80}) translate(${x - 12},-3)`)
+                // BasicShapes.drawPath(g, color, 1,
+                //     `m ${27},${57 + 14 * i} c 19.5,4.9 10.5,22.1 8.8,28.1 16,-21.9 -8.5,-30.8 -8.8,-44.1 z`,
+                //     null, `scale(-0.7,0.7) rotate(180, ${0}, ${y + 80}) translate(${x - 12},${y})`)
+                BasicShapes.drawPath(g, color, 1,
+                `m ${27},${57 + 14 * i} c 13.7,3.4 7.4,15.5 6.2,19.7 11.2,-15.3 -6,-21.6 -6.2,-30.9 z`,
+                null, `scale(-1,1) rotate(180, ${0}, ${y + 80}) translate(${x - 20},${y-20})`)
+                // const arc = BasicShapes.drawPath(g, color, 1, `m ${20},${y + 43 + 4 * i} c 19.5,4.9 10.5,22.1 8.8,28.1 16,-21.9 -8.5,-30.8 -8.8,-44.1 z`, null)
+                // arc.setAttributeNS(null, 'transform', `scale(-0.98,0.98) rotate(180, ${50}, ${y + 80}) translate(${x+150},-3)`)
             }
         }
     }

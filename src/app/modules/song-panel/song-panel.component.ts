@@ -74,8 +74,6 @@ export class SongPanelComponent implements OnInit, OnChanges, OnDestroy, AfterVi
   }
 
   ngOnInit() {
-    console.log("estoy en song panel")
-    console.log(this.song)
     this.reset(false)
     this.setTracks()
     const tempoInMicrosecondsPerBeat = this.song.tempoChanges[0].microsecondsPerQuarterNote

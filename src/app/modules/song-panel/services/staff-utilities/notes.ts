@@ -131,47 +131,58 @@ export abstract class Notes {
     // This method draws them
     public static drawBeatBeams(g: Element, x: number, beatStartTick: number, beatGraphNeeds: BeatGraphNeeds, beatEvents: SoundEvent[], color: string = 'black'): void {
         const thisBeatNoteEvents = beatEvents.filter(x => x.type == SoundEventType.note).sort((a, b) => a.startTick - b.startTick)
-        if (!thisBeatNoteEvents || thisBeatNoteEvents.length <= 1 || thisBeatNoteEvents[0].isPercussion) return
-        const firstX = thisBeatNoteEvents[0].x - x
-        const firstBottomY = thisBeatNoteEvents[0].bottomY
-        const lastX = thisBeatNoteEvents[thisBeatNoteEvents.length - 1].x - x
-        const lastBottomY = thisBeatNoteEvents[thisBeatNoteEvents.length - 1].bottomY
-        if (firstX == lastX) return
-        const shortestStem = this.calculateShortestStem(firstX + x, firstBottomY, lastX + x, lastBottomY, thisBeatNoteEvents)
-        const defaultStemLength = 48
-        // verticalDisplacement is the value we will have to extend the stems of the first and last notes, so all the stems of the 
-        // intermediate notes are at least as long as defaultStemLength minus 6
-        const verticalDisplacement = shortestStem
+        const areAllStemsUp = thisBeatNoteEvents.filter(e => e.isStemUp == false).length == 0
 
-        for (let i = 0; i < thisBeatNoteEvents.length - 1; i++) {
-            const eventito = thisBeatNoteEvents[i]
-            const nextEvent = thisBeatNoteEvents[i + 1]
-            const startX = DrawingCalculations.calculateXofEventInsideBeat(eventito, beatGraphNeeds, beatStartTick)
-            const endX = DrawingCalculations.calculateXofEventInsideBeat(nextEvent, beatGraphNeeds, beatStartTick)
-            const startY = firstBottomY + ((lastBottomY - firstBottomY) / (lastX - firstX)) * (startX - firstX) - verticalDisplacement
-            const endY = firstBottomY + ((lastBottomY - firstBottomY) / (lastX - firstX)) * (endX - firstX) - verticalDisplacement
-            // if verticalDisplacement > 0 we have to extend the stems so they reach the top beam
-            eventito.topY = startY
-            BasicShapes.drawStem(g, eventito.x, eventito.bottomY, eventito.topY)
-            nextEvent.topY = endY
-            BasicShapes.drawStem(g, nextEvent.x, nextEvent.bottomY, nextEvent.topY)
+         // we connect the notes if there are more than 1 notes and they have all stems up
+        if (thisBeatNoteEvents && thisBeatNoteEvents.length > 1 && areAllStemsUp) {
+            const firstX = thisBeatNoteEvents[0].x - x
+            const firstBottomY = thisBeatNoteEvents[0].bottomY
+            const lastX = thisBeatNoteEvents[thisBeatNoteEvents.length - 1].x - x
+            const lastBottomY = thisBeatNoteEvents[thisBeatNoteEvents.length - 1].bottomY
+            if (firstX == lastX) return
+            const shortestStem = this.calculateShortestStem(firstX + x, firstBottomY, lastX + x, lastBottomY, thisBeatNoteEvents)
+            // verticalDisplacement is the value we will have to extend the stems of the first and last notes, so all the stems of the 
+            // intermediate notes are at least as long as defaultStemLength minus 6
+            const verticalDisplacement = shortestStem
+
+            for (let i = 0; i < thisBeatNoteEvents.length - 1; i++) {
+                const eventito = thisBeatNoteEvents[i]
+                const nextEvent = thisBeatNoteEvents[i + 1]
+                const startX = DrawingCalculations.calculateXofEventInsideBeat(eventito, beatGraphNeeds, beatStartTick)
+                const endX = DrawingCalculations.calculateXofEventInsideBeat(nextEvent, beatGraphNeeds, beatStartTick)
+                const startY = firstBottomY + ((lastBottomY - firstBottomY) / (lastX - firstX)) * (startX - firstX) - verticalDisplacement
+                const endY = firstBottomY + ((lastBottomY - firstBottomY) / (lastX - firstX)) * (endX - firstX) - verticalDisplacement
+                // if verticalDisplacement > 0 we have to extend the stems so they reach the top beam
+                eventito.topY = startY
+                BasicShapes.drawStem(g, eventito.x, eventito.bottomY, eventito.topY)
+                nextEvent.topY = endY
+                BasicShapes.drawStem(g, nextEvent.x, nextEvent.bottomY, nextEvent.topY)
 
 
-            if (this.isNoteShorterThan(eventito, NoteDuration.quarter) && this.isNoteShorterThan(nextEvent, NoteDuration.quarter)) {
-                BasicShapes.drawBeam(g, x + startX, startY, x + endX, endY, color, NoteDuration.eight)
-                eventito.areSubstemsDrawn = true
-                nextEvent.areSubstemsDrawn = true
+                if (this.isNoteShorterThan(eventito, NoteDuration.quarter) && this.isNoteShorterThan(nextEvent, NoteDuration.quarter)) {
+                    BasicShapes.drawBeam(g, x + startX, startY, x + endX, endY, color, NoteDuration.eight)
+                    eventito.areSubstemsDrawn = true
+                    nextEvent.areSubstemsDrawn = true
+                }
+                if (this.isNoteShorterThan(eventito, NoteDuration.eight) && this.isNoteShorterThan(nextEvent, NoteDuration.eight))
+                    BasicShapes.drawBeam(g, x + startX, startY, x + endX, endY, color, NoteDuration.sixteenth)
+                if (this.isNoteShorterThan(eventito, NoteDuration.sixteenth) && this.isNoteShorterThan(nextEvent, NoteDuration.sixteenth))
+                    BasicShapes.drawBeam(g, x + startX, startY, x + endX, endY, color, NoteDuration.thirtysecond)
+                if (this.isNoteShorterThan(eventito, NoteDuration.thirtysecond) && this.isNoteShorterThan(nextEvent, NoteDuration.thirtysecond))
+                    BasicShapes.drawBeam(g, x + startX, startY, x + endX, endY, color, NoteDuration.sixtyfourth)
             }
-            if (this.isNoteShorterThan(eventito, NoteDuration.eight) && this.isNoteShorterThan(nextEvent, NoteDuration.eight))
-                BasicShapes.drawBeam(g, x + startX, startY, x + endX, endY, color, NoteDuration.sixteenth)
-            if (this.isNoteShorterThan(eventito, NoteDuration.sixteenth) && this.isNoteShorterThan(nextEvent, NoteDuration.sixteenth))
-                BasicShapes.drawBeam(g, x + startX, startY, x + endX, endY, color, NoteDuration.thirtysecond)
-            if (this.isNoteShorterThan(eventito, NoteDuration.thirtysecond) && this.isNoteShorterThan(nextEvent, NoteDuration.thirtysecond))
-                BasicShapes.drawBeam(g, x + startX, startY, x + endX, endY, color, NoteDuration.sixtyfourth)
         }
-        for (let e of thisBeatNoteEvents) {
-            if (!e.areSubstemsDrawn)
-                this.drawSingleNote(g, e, 'black')
+        this.drawAsSingleNotesIfnotDrawnYet(g, thisBeatNoteEvents)
+
+    }
+    private static drawAsSingleNotesIfnotDrawnYet(g: Element, events: SoundEvent[]) {
+        for (let e of events) {
+            if (!e.areSubstemsDrawn) {
+                if (e.isPercussion)
+                    DrumsShapes.drawSingleNote(g, e, 'black')
+                else
+                    this.drawSingleNote(g, e, 'black')
+            }
         }
     }
 

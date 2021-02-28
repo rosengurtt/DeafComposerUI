@@ -9,6 +9,7 @@ export abstract class BasicShapes {
             arc.setAttributeNS(null, 'style', style)
         else {
             arc.setAttributeNS(null, 'stroke', color)
+            arc.setAttributeNS(null, 'style', `fill:${color}`)
             arc.setAttributeNS(null, 'stroke-width', strokeWidth.toString())
         }
         if (transform != null)
@@ -88,7 +89,7 @@ export abstract class BasicShapes {
         }
         else
             y = topY
-        
+
         if (isUp)
             this.drawPath(g, color, 2, `M ${x + 19},${zero + bottomY} V ${zero + y} z`)
         else
@@ -122,8 +123,9 @@ export abstract class BasicShapes {
     }
     public static drawSubStems(g: Element, x: number, y: number, color: string = 'black', qtySubstems: number) {
         for (let i = 0; i < qtySubstems; i++) {
-            BasicShapes.drawPath(g, color, 1, `m ${x + 20},${y + 43 + 4 * i} c 19.5,4.9 10.5,22.1 8.8,28.1 16,-21.9 -8.5,-30.8 -8.8,-44.1 z`,
-                null)
+            BasicShapes.drawPath(g, color, 1,
+                `m ${27},${61 + 6 * i} c 19.5,4.9 10.5,22.1 8.8,28.1 16,-21.9 -8.5,-30.8 -8.8,-44.1 z`,
+                null, `translate(${x},${y}) scale(0.7)`)
         }
     }
     public static writeEventInfo(g: Element, e: any): void {
@@ -134,6 +136,7 @@ export abstract class BasicShapes {
         // BasicShapes.createText(g, `tie=${e.isTiedToPrevious}`, e.x, 148, 12, `red`)
         // BasicShapes.createText(g, `x=${e.x}`, e.x, 160, 12, `red`)
         // BasicShapes.createText(g, `y=${e.bottomY}`, e.x, 172, 12, `red`)
+
     }
     public static writeBeamInfo(g: Element, startX: number, endX: number, startY: number, endY: number): void {
         BasicShapes.createText(g, `startX=${startX}`, startX, 184, 12, `red`)

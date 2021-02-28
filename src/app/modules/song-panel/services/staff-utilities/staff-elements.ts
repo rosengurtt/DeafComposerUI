@@ -49,9 +49,7 @@ export abstract class StaffElements {
                 const notesSimultaneousToThisOne = beatEvents.filter(x => x.startTick == e.startTick && x.endTick == e.endTick && x.pitch != e.pitch)
                 // if there is a single note, or there are some but they are simultaneous to this one,
                 // we don't have to care about beams, just draw it
-                // if it is percussion we also just draw it as a single note, because the beams are a pain when there are notes with
-                // stems up and stems down
-                if (e.isPercussion || beatEvents.filter(x => x.type == SoundEventType.note && !notesSimultaneousToThisOne.includes(x)).length == 1) {
+                if ( beatEvents.filter(x => x.type == SoundEventType.note && !notesSimultaneousToThisOne.includes(x)).length == 1) {
                     const graph = Notes.drawSingleNote(g, e)
                     e.graphic.push(graph)
                 }

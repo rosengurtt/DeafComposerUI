@@ -27,7 +27,7 @@ export class SoundEvent {
     bottomY: number             // Represents the vertical location where we draw the circle of a note
     topY: number                // Represents the vertical location of the top of the stem of a note
     areSubstemsDrawn: boolean   // Eights, sixteens and thirtyseconds need substems drawn. This flag indicates if they have already been drawn or not
-
+    isStemUp: boolean           // Indicates if the stem is drawn upwards or downwards fromthe note circle
 
     get durationInTicks() {
         return this.endTick - this.startTick
@@ -61,6 +61,7 @@ export class SoundEvent {
         this.alterationApplied = null
         this.isPercussion = isPercussion
         this.areSubstemsDrawn = false
+        this.isStemUp = true
     }
 
 
