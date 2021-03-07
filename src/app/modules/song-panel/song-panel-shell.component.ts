@@ -42,6 +42,7 @@ export class SongPanelShellComponent implements OnInit {
             this.viewType$ = this.mainStore.select(getSongViewType, { songId: this.songId })
             this.songSimplificationVersion$ = this.mainStore.select(getSongSimplificationSelected, { songId: this.songId })
             this.songSliderPosition$ = this.mainStore.select(getSongSliderPositionForSongId, { songId: this.songId })
+            this.mainStore.select(getSongSliderPositionForSongId, { songId: this.songId }).subscribe(x=>console.log("estoy en song panel shell y slider="+x))
         })
     }
     displacementChanged(value: Coordenadas): void {

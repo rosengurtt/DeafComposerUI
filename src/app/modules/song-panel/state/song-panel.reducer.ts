@@ -54,11 +54,12 @@ export const songPanelReducer = createReducer<SongPanelState>(
     }),
     on(SongPanelPageActions.elapsedSecondPlayingSong, (state, action): SongPanelState => {
         let newState = cloneDeep(state)
+        const nextValue = state.playingSong.elapsedMilliSeconds + (500 * state.playingSong.tempoRatio)
         if (state.playingSong) {
-            if (state.playingSong.elapsedMilliSeconds + 500 >= state.playingSong.durationInSeconds * 1000)
+            if (nextValue >= state.playingSong.durationInSeconds * 1000)
                 newState.playingSong = null
             else
-                newState.playingSong.elapsedMilliSeconds = state.playingSong.elapsedMilliSeconds + 500
+                newState.playingSong.elapsedMilliSeconds = nextValue
         }
         return newState
     }),

@@ -50,6 +50,8 @@ export class DrawingMusicalNotationTrackService {
         eventsToDrawGlobal: Array<Array<SoundEvent>>): [number, number] {
 
         this.svgBox = document.getElementById(svgBoxId)
+        // when we are here but the svg box hasn't been created in the browser yet we return this special response with invalid
+        // values, so the caller knows what happens
         if (!this.svgBox) {
             return [-1, -1]
         }

@@ -48,7 +48,6 @@ export class SongPanelComponent implements OnInit, OnChanges, OnDestroy, AfterVi
 
   resetEventSubject: Subject<boolean> = new Subject<boolean>()
   moveProgressBarSubject: Subject<number> = new Subject<number>()
-  songSliderPositionChangeSubject: Subject<number> = new Subject<number>()
 
   tracks: number[]
   sliderMax: number
@@ -96,9 +95,9 @@ export class SongPanelComponent implements OnInit, OnChanges, OnDestroy, AfterVi
     for (const propName in changes) {
       if (propName == "song" || propName == "songSimplificationVersion") this.setTracks()
       if (propName == "playingSong" && this.slider) {
-        this.slider.value = this.playingSong?.elapsedMilliSeconds / 1000
+        this.slider.value = this.playingSong ? this.playingSong.elapsedMilliSeconds / 1000 : null
         this.moveProgressBarSubject.next(this.playingSong?.elapsedMilliSeconds / 1000)
-        this.songSliderPositionChangeSubject.next(this.songSliderPosition)
+     //   this.songSliderPositionChangeSubject.next(this.slider.value)
       }
     }
   }
@@ -106,6 +105,10 @@ export class SongPanelComponent implements OnInit, OnChanges, OnDestroy, AfterVi
     this.scaleChanged.emit(value * this.scale)
   }
 
+  getSongTempoInBeatsPerMinute(song: Song) {
+    const tempoInMicrosecondsPerBeat = song.tempoChanges[0].microsecondsPerQuarterNote
+    return Math.round(120 * 500000 / tempoInMicrosecondsPerBeat)
+  }
 
   reset(unmuteAlltracks = true) {
     MIDIjs.stop()
@@ -118,8 +121,7 @@ export class SongPanelComponent implements OnInit, OnChanges, OnDestroy, AfterVi
     this.resetEventSubject.next(unmuteAlltracks)
     if (this.slider) this.slider.value = 0 // during onInit we do a reset, but the slider doesn't exist yet
     // Reset tempo
-    const tempoInMicrosecondsPerBeat = this.song.tempoChanges[0].microsecondsPerQuarterNote
-    const tempoInBeatsPerMinute = Math.round(120 * 500000 / tempoInMicrosecondsPerBeat)
+    const tempoInBeatsPerMinute = this.getSongTempoInBeatsPerMinute(this.song)
     this.tempoBox.setValue(tempoInBeatsPerMinute)
   }
 
@@ -131,7 +133,8 @@ export class SongPanelComponent implements OnInit, OnChanges, OnDestroy, AfterVi
     }
     else {
       let mutedTracksParam = this.mutedTracks.length > 0 ? `&mutedTracks=${this.mutedTracks.join(",")}` : ""
-      MIDIjs.play(`https://localhost:9001/api/song/${this.song.id}/midi?simplificationVersion=${this.songSimplificationVersion}&startInSeconds=${this.slider.value}${mutedTracksParam}&tempoInBeatsPerMinute=${this.tempoBox.value}`)
+      const midiUrl = `https://localhost:9001/api/song/${this.song.id}/midi?simplificationVersion=${this.songSimplificationVersion}&startInSeconds=${this.slider.value}${mutedTracksParam}&tempoInBeatsPerMinute=${this.tempoBox.value}`
+      MIDIjs.play(midiUrl)
       MIDIjs.message_callback = this.getPlayingStatus.bind(this)
     }
     // reset this flag
@@ -143,6 +146,9 @@ export class SongPanelComponent implements OnInit, OnChanges, OnDestroy, AfterVi
   }
 
   stop(): void {
+    this.displacementChanged.emit(new Coordenadas(0, 0))
+    this.sliderHasBeenMoved = true
+    this.songSliderPositionChanged.emit(0)
     MIDIjs.stop()
     this.songStoppedPlaying.emit()
   }
@@ -153,12 +159,13 @@ export class SongPanelComponent implements OnInit, OnChanges, OnDestroy, AfterVi
   // This is called by midijs when the song starts to play
   getPlayingStatus(mes) {
     if (mes.includes('Playing')) {
-      let playingSong = new PlayingSong(this.songId, this.slider.value, this.song.songStats.durationInSeconds)
+      let playingSong = new PlayingSong(this.songId, this.slider.value, this.song.songStats.durationInSeconds, this.tempoBox.value / this.getSongTempoInBeatsPerMinute(this.song))
       this.songStartedPlaying.emit(playingSong)
     }
   };
   sliderMoved(event: MatSliderChange): void {
     this.sliderHasBeenMoved = true
+    // when the user moves the slider we want to move the display (specially in music notation) to show that part of the song
     this.songSliderPositionChanged.emit(event.value)
   }
   muteStatusChange(muteChange) {

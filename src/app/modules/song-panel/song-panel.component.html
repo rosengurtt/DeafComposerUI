@@ -12,8 +12,7 @@
   <mat-form-field appearance="fill">
     <mat-label>Simplifications</mat-label>
     <mat-select matNativeControl required (selectionChange)="changeSimplification($event.value)" value="1">
-      <mat-option value="0">Original Midi</mat-option>
-      <mat-option value="1">Data cleaned of little imperfections</mat-option>
+      <mat-option value="1">Original cleaned of little imperfections</mat-option>
       <mat-option value="2">Embelishments removed</mat-option>
       <mat-option value="3">Passing notes removed</mat-option>
     </mat-select>
@@ -44,7 +43,7 @@
       </button>
 
       <button mat-mini-fab color="warn" aria-label="Pause" (click)="pause()" matTooltip="Pause"
-       [disabled]="playingSong === null">
+       [disabled]="playingSong === null || playingSong.isPaused === true ">
         <mat-icon>pause_circle_filled</mat-icon>
       </button>
       
@@ -87,7 +86,8 @@
     (muteStatusChange)="muteStatusChange($event)"
     [resetEvent]="resetEventSubject.asObservable()"
     [moveProgressBarEvent]="moveProgressBarSubject.asObservable()"
-    [songSliderPosition]="songSliderPosition"></dc-track>
+    [songSliderPosition]="songSliderPosition"
+    [playingSong]="playingSong"></dc-track>
 </div>
 
 

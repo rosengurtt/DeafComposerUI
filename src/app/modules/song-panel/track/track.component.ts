@@ -9,6 +9,7 @@ import { SongViewType } from 'src/app/core/models/SongViewTypes.enum'
 import { DrawingPianoRollService } from '../services/drawing-piano-roll.service'
 import { DrawingMusicalNotationTrackService } from '../services/drawing-musical-notation-track.service'
 import { DrawingMusicalNotationGlobalService } from '../services/drawing-musical-notation-global.service'
+import { PlayingSong } from 'src/app/core/models/playing-song'
 
 
 @Component({
@@ -40,6 +41,7 @@ export class TrackComponent implements OnChanges, AfterViewInit {
   @Input() moveProgressBarEvent: Observable<number>
   @Input() songSliderPosition: number
   @Input() muteStatus: number
+  @Input() playingSong: PlayingSong
   @Output() displaceChange = new EventEmitter<Coordenadas>()
   @Output() muteStatusChange = new EventEmitter<{ songId: number, track: number, status: boolean }>()
 
@@ -92,6 +94,7 @@ export class TrackComponent implements OnChanges, AfterViewInit {
     var redrawSvgBox = false
 
     for (const propName in changes) {
+
       if (propName == "songId") {
         this.initializePage()
       }
@@ -100,8 +103,12 @@ export class TrackComponent implements OnChanges, AfterViewInit {
           this.drawingPianoRollService.drawPianoRollGraphic(this.trackId, this.svgBoxId, this.song, this.simplification)
         }
         else {
+          // the variable eventsToDraw is needed by all tracks and is expensive to compute, so we use a singleton service to
+          // calculate it
           let eventsToDraw = this.drawingMusicalNotationGlobalService.getEventsToDrawForSong(this.song, this.simplification);
 
+          // if the svg box hasn't been created by the browser yet, we save that fact in the variable mustRedrawSvgBox
+          // and the next times onChanges run, if the value is still set and the svg box has become available, it will draw
           [this.totalWidthOfRythmDrawing, this.averageYofNotes] = this.drawingMusicalNotationTrackService.drawMusicNotationGraphic(this.trackId, this.svgBoxId, this.song, this.simplification, eventsToDraw);
           if (this.totalWidthOfRythmDrawing == -1) this.mustRedrawSvgBox = true
           else this.mustRedrawSvgBox = false
@@ -117,8 +124,9 @@ export class TrackComponent implements OnChanges, AfterViewInit {
           var redrawSvgBox = true
       }
     }
-    if (redrawSvgBox)
+    if (redrawSvgBox) {
       this.updateSvgBox()
+    }
   }
 
 
@@ -140,7 +148,10 @@ export class TrackComponent implements OnChanges, AfterViewInit {
 
         break;
       case SongViewType.rythmMusicNotation:
-        minX = this.songSliderPosition / this.song.songStats.durationInSeconds * this.totalWidthOfRythmDrawing
+        if (this.playingSong && this.displacement)
+          minX = this.displacement.x
+        else
+          minX = this.songSliderPosition / this.song.songStats.durationInSeconds * this.totalWidthOfRythmDrawing
         minY = -30 + this.averageYofNotes / 2
         width = width == null ? 1200 * this.scale * 2.2 : width
         height = height == null ? 128 * this.scale * 2.2 : height
@@ -184,9 +195,11 @@ export class TrackComponent implements OnChanges, AfterViewInit {
   }
 
   moveProgressBar(secondsElapsed: number): void {
+    console.log(`estoy en track comp y me llego este valor de secondsElapsed: ${secondsElapsed}`)
     let numberOfTicks: number
+    let adjustment = 0
     if (secondsElapsed)
-      numberOfTicks = (secondsElapsed * this.song.songStats.numberOfTicks) / this.song.songStats.durationInSeconds
+      numberOfTicks = ((secondsElapsed - adjustment) * this.song.songStats.numberOfTicks) / this.song.songStats.durationInSeconds
     else
       numberOfTicks = null
 
@@ -196,7 +209,7 @@ export class TrackComponent implements OnChanges, AfterViewInit {
     else {
       const displacement = this.drawingMusicalNotationTrackService.paintNotesBeingPlayed(numberOfTicks)
       // We don't want to raise a displacement event for each voice, but a single one for each elapsed second
-      if (secondsElapsed * 2 % this.totalVoices != this.trackId) return
+      if (this.trackId > 0) return
       // We don't want to move continuosly the staff, because it would be unpleasant to follow, we want to freeze
       // the staf while the time moves from the notes in the left to the one in the right, and then we move 
       // "one page", so the viewer starts looking again in the left

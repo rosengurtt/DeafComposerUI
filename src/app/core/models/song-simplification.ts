@@ -10,12 +10,22 @@ export class SongSimplification {
     voicesWithNotes: number[]
 
     constructor(data: any) {
-        this.id = data.id
-        this.songId = data.songId
-        this.simplificationVersion = data.simplificationVersion
-        this.notes = data.notes
-        this.numberOfVoices = data.numberOfVoices
-        this.voicesWithNotes = this.getVoicesWithNotes()
+        if (data != null) {
+            this.id = data.id
+            this.songId = data.songId
+            this.simplificationVersion = data.simplificationVersion
+            this.notes = data.notes
+            this.numberOfVoices = data.numberOfVoices
+            this.voicesWithNotes = this.getVoicesWithNotes()
+        }
+        else {
+            this.id = 0
+            this.songId = 0
+            this.simplificationVersion = 0
+            this.notes = null
+            this.numberOfVoices = 0
+            this.voicesWithNotes = null
+        }
     }
 
     public getVoicesWithNotes(): number[] {
